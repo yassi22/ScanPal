@@ -1,0 +1,95 @@
+import type { Pool } from "pg";
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  name?: string | null;
+  avatar_url?: string | null;
+  auth_provider?: string | null;
+};
+
+export type TeamResult = {
+  team: { id: string; name: string };
+  membership: { team_id: string; user_id: string; role: string; status: string };
+  user: { id: string; email: string; onboarding_completed_at: Date | null };
+};
+
+export async function ensureUserTeam(
+  db: Pool,
+  user: AuthUser,
+): Promise<TeamResult> {
+  const client = await db.connect();
+  try {
+    await client.query("begin");
+
+    await client.query(
+      `insert into users (id, email, name, avatar_url, auth_provider, last_login_at)
+       values ($1, $2, $3, $4, $5, now())
+       on conflict (id) do update set
+         email = excluded.email,
+         name = coalesce(excluded.name, users.name),
+         avatar_url = coalesce(excluded.avatar_url, users.avatar_url),
+         auth_provider = coalesce(excluded.auth_provider, users.auth_provider),
+         last_login_at = now()`,
+      [user.id, user.email, user.name ?? null, user.avatar_url ?? null, user.auth_provider ?? null],
+    );
+
+    const existing = await client.query(
+      "select team_id, role, status from memberships where user_id = $1",
+      [user.id],
+    );
+
+    let teamId: string;
+    let role = "member";
+    let status = "accepted";
+
+    if (existing.rowCount === 0) {
+      const teamName = user.name ? `${user.name.split(" ")[0]}'s team` : "Mijn team";
+      const team = await client.query(
+        "insert into teams (name) values ($1) returning id",
+        [teamName],
+      );
+      teamId = team.rows[0].id as string;
+      role = "owner";
+      await client.query(
+        "insert into memberships (team_id, user_id, role, status) values ($1, $2, 'owner', 'accepted')",
+        [teamId, user.id],
+      );
+    } else {
+      teamId = existing.rows[0].team_id as string;
+      role = existing.rows[0].role as string;
+      status = existing.rows[0].status as string;
+    }
+
+    const team = await client.query(
+      "select id, name from teams where id = $1",
+      [teamId],
+    );
+    const userRow = await client.query(
+      "select id, email, onboarding_completed_at from users where id = $1",
+      [user.id],
+    );
+
+    await client.query("commit");
+
+    return {
+      team: team.rows[0],
+      membership: { team_id: teamId, user_id: user.id, role, status },
+      user: userRow.rows[0],
+    };
+  } catch (err) {
+    await client.query("rollback");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function completeOnboarding(
+  db: Pool,
+  userId: string,
+): Promise<void> {
+  await db.query("update users set onboarding_completed_at = now() where id = $1", [
+    userId,
+  ]);
+}

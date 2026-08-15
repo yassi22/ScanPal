@@ -1,0 +1,26 @@
+{
+  "name": "scanpal",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.27.0",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "start": "pnpm --filter web start",
+    "lint": "pnpm --filter web lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter web test",
+    "db:migrate": "pnpm --filter db migrate",
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "unrs-resolver"
+    ]
+  }
+}
