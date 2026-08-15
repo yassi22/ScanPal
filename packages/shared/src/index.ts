@@ -80,3 +80,36 @@ export const magicLinkInputSchema = z.object({
   email: z.string().trim().email("Voer een geldig e-mailadres in"),
 });
 export type MagicLinkInput = z.infer<typeof magicLinkInputSchema>;
+
+export const inviteInputSchema = z.object({
+  email: z.string().trim().email("Voer een geldig e-mailadres in"),
+  role: userRoleSchema.optional().default("member"),
+});
+export type InviteInput = z.infer<typeof inviteInputSchema>;
+
+export const invitationSchema = z.object({
+  id: z.string().uuid(),
+  team_id: z.string().uuid(),
+  email: z.string().email(),
+  role: userRoleSchema,
+  token: z.string(),
+  expires_at: z.string().datetime(),
+  accepted_at: z.string().datetime().nullable(),
+  created_at: z.string().datetime(),
+});
+export type Invitation = z.infer<typeof invitationSchema>;
+
+export const teamMemberSchema = z.object({
+  user_id: z.string().uuid(),
+  name: z.string().nullable(),
+  email: z.string().email(),
+  role: userRoleSchema,
+  status: membershipStatusSchema,
+  created_at: z.string().datetime(),
+});
+export type TeamMember = z.infer<typeof teamMemberSchema>;
+
+export const roleChangeSchema = z.object({
+  role: userRoleSchema,
+});
+export type RoleChange = z.infer<typeof roleChangeSchema>;

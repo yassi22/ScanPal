@@ -41,6 +41,14 @@ export default async function DashboardLayout({
                 Dashboard
               </Link>
             )}
+            {!needsOnboarding && (
+              <Link
+                href="/settings/team"
+                className="transition hover:text-slate-200"
+              >
+                Team
+              </Link>
+            )}
             <span className="hidden text-slate-600 sm:inline">{result.team.name}</span>
             <LogoutButton />
           </nav>

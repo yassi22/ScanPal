@@ -44,16 +44,17 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isPublic = PUBLIC_PATHS.includes(pathname);
+  const isInvite = pathname.startsWith("/invite");
   const isRoot = pathname === "/";
 
-  if (!user && !isPublic && !isRoot) {
+  if (!user && !isPublic && !isInvite && !isRoot) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && isPublic) {
+  if (user && isPublic && !isInvite) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
     redirectUrl.search = "";

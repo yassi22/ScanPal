@@ -9,6 +9,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(10),
   APP_URL: z.url().optional().default("http://localhost:3000"),
   SCAN_MODE: z.enum(["inline", "queue"]).optional().default("inline"),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_FROM: z.string().default("ScanPal <no-reply@scanpal.dev>"),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -30,5 +32,7 @@ export const env = {
   databaseUrl: raw.DATABASE_URL,
   appUrl: raw.APP_URL,
   scanMode: raw.SCAN_MODE,
+  resendApiKey: raw.RESEND_API_KEY,
+  resendFrom: raw.RESEND_FROM,
 };
 
