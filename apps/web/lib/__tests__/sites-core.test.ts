@@ -24,6 +24,8 @@ function makeSite(
     url,
     github_repo: null,
     label: null,
+    public_status_slug: null,
+    github_webhook_configured: false,
     last_scan_id: null,
     last_scan_status: null,
     last_scan_score: null,
@@ -96,12 +98,20 @@ function fakePool() {
     }
 
     if (text.startsWith("update sites set")) {
-      const [label, githubRepo] = params as [string | null, string | null];
-      const [siteId, teamId] = params.slice(2) as [string, string];
+      const assignments = text.match(/update sites set (.+?) where/)?.[1] ?? "";
+      const cols = [...assignments.matchAll(/([a-z_]+)\s*=\s*\$\d+/g)].map(
+        (m) => m[1],
+      );
+      const values = params.slice(0, cols.length);
+      const [siteId, teamId] = params.slice(cols.length) as [string, string];
       const site = sites.find((s) => s.id === siteId && s.team_id === teamId);
       if (!site) return { rowCount: 0, rows: [] };
-      site.label = label;
-      site.github_repo = githubRepo;
+      cols.forEach((col, i) => {
+        if (col === "label") site.label = values[i] as string | null;
+        if (col === "github_repo") site.github_repo = values[i] as string | null;
+        if (col === "public_status_slug")
+          site.public_status_slug = values[i] as string | null;
+      });
       return { rowCount: 1, rows: [{ ...site }] };
     }
 
@@ -316,6 +326,53 @@ describe("updateSite", () => {
         label: "x",
       }),
     ).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  it("genereert een slug bij 'publiek maken'", async () => {
+    state.sites.push(makeSite("site-1", "example.com", { team_id: "team-1" }));
+
+    const site = await updateSite(state.db, {
+      teamId: "team-1",
+      siteId: "site-1",
+      publicStatus: { enabled: true },
+    });
+
+    expect(site.public_status_slug).toMatch(/^[0-9a-f]{16}$/);
+  });
+
+  it("behoudt een bestaande slug bij her-activeren", async () => {
+    state.sites.push(
+      makeSite("site-1", "example.com", {
+        team_id: "team-1",
+        public_status_slug: "abc123def4567890",
+      }),
+    );
+
+    const site = await updateSite(state.db, {
+      teamId: "team-1",
+      siteId: "site-1",
+      publicStatus: { enabled: true },
+      currentSlug: "abc123def4567890",
+    });
+
+    expect(site.public_status_slug).toBe("abc123def4567890");
+  });
+
+  it("verwijdert de slug bij 'niet meer publiek'", async () => {
+    state.sites.push(
+      makeSite("site-1", "example.com", {
+        team_id: "team-1",
+        public_status_slug: "abc123def4567890",
+      }),
+    );
+
+    const site = await updateSite(state.db, {
+      teamId: "team-1",
+      siteId: "site-1",
+      publicStatus: { enabled: false },
+    });
+
+    expect(site.public_status_slug).toBeNull();
   });
 });
 

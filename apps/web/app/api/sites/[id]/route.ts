@@ -36,7 +36,11 @@ export async function PATCH(
   }
   const teamId = auth.ctx.teamId;
 
-  if (!(await authorizeSite(id, teamId))) {
+  const current = await pool.query<{ public_status_slug: string | null }>(
+    "select public_status_slug from sites where id = $1 and team_id = $2",
+    [id, teamId],
+  );
+  if ((current.rowCount ?? 0) === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -78,6 +82,8 @@ export async function PATCH(
       siteId: id,
       label: parsed.data.label,
       githubRepo,
+      publicStatus: parsed.data.public_status,
+      currentSlug: current.rows[0]?.public_status_slug ?? null,
     });
     const parsedSite = siteWithStatusSchema.safeParse(toSiteJson(site));
     if (!parsedSite.success) {

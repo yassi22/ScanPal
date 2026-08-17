@@ -5,8 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { getScanTrend } from "@/lib/scans-core";
+import { getPlanForTeam } from "@/lib/credits";
 import { ScanTrendChart } from "@/components/scan-trend-chart";
 import { DomainWatchtowerCard } from "@/components/domain-watchtower-card";
+import { PublicStatusToggle } from "@/components/public-status-toggle";
+import { DeployWebhookCard } from "@/components/deploy-webhook-card";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +64,8 @@ export default async function SiteDetailPage({
   });
 
   if (!site) notFound();
+
+  const plan = await getPlanForTeam(pool, result.team.id);
 
   const trendPoints: ScanTrendPoint[] = points.map((p) => ({
     id: p.id,
@@ -147,6 +152,15 @@ export default async function SiteDetailPage({
 
       <DomainWatchtowerCard siteId={site.id} />
 
+      <PublicStatusToggle siteId={site.id} initialSlug={site.public_status_slug} />
+
+      <DeployWebhookCard
+        siteId={site.id}
+        githubRepo={site.github_repo}
+        configured={site.github_webhook_configured}
+        onDeployEnabled={plan.features.onDeploy}
+      />
+
       <div>
         <h2 className="text-lg font-semibold">Recente scans</h2>
         {recent.length === 0 ? (
@@ -202,7 +216,11 @@ export default async function SiteDetailPage({
                       )}
                     </td>
                     <td className="px-5 py-4 text-slate-400">
-                      {scan.trigger === "manual" ? "Handmatig" : "Gepland"}
+                      {scan.trigger === "manual"
+                        ? "Handmatig"
+                        : scan.trigger === "deploy"
+                          ? "Deploy"
+                          : "Gepland"}
                     </td>
                     <td className="px-5 py-4 text-slate-400">
                       {formatDateTime(scan.completed_at ?? scan.created_at)}

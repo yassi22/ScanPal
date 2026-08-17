@@ -3,6 +3,7 @@ import {
   canonicalizeGithubRepo,
   canonicalizeSiteUrl,
   detectGithubRepoFromUrl,
+  generatePublicStatusSlug,
 } from "@scanpal/shared";
 import { setSiteScanState } from "@scanpal/scan-core";
 
@@ -12,6 +13,9 @@ export type SiteRowWithStatus = {
   url: string;
   github_repo: string | null;
   label: string | null;
+  public_status_slug: string | null;
+  /** Plan 58: on-deploy-webhook geconfigureerd (secret aanwezig, nooit het secret zelf). */
+  github_webhook_configured: boolean;
   last_scan_id: string | null;
   last_scan_status: "queued" | "running" | "completed" | "failed" | null;
   last_scan_score: number | null;
@@ -36,7 +40,8 @@ export class SiteError extends Error {
 
 export { setSiteScanState };
 
-const SITE_COLUMNS = `id, team_id, url, github_repo, label,
+const SITE_COLUMNS = `id, team_id, url, github_repo, label, public_status_slug,
+  (github_webhook_secret is not null) as github_webhook_configured,
   last_scan_id, last_scan_status, last_scan_score, last_scanned_at,
   uptime_state, scan_frequency, next_scan_at, created_at`;
 
@@ -128,6 +133,10 @@ export async function updateSite(
     siteId: string;
     label?: string | null;
     githubRepo?: string | null;
+    /** Plan 57: publieke statuspagina aan/uit; `currentSlug` behoudt een
+     *  bestaande slug bij her-toggle (geen onnodige rotatie). */
+    publicStatus?: { enabled: boolean } | undefined;
+    currentSlug?: string | null;
   },
 ): Promise<SiteRowWithStatus> {
   const patches: string[] = [];
@@ -142,6 +151,13 @@ export async function updateSite(
       input.githubRepo ? canonicalizeGithubRepo(input.githubRepo) : null,
     );
     patches.push(`github_repo = $${params.length}`);
+  }
+  if (input.publicStatus !== undefined) {
+    const slug = input.publicStatus.enabled
+      ? input.currentSlug ?? generatePublicStatusSlug()
+      : null;
+    params.push(slug);
+    patches.push(`public_status_slug = $${params.length}`);
   }
 
   params.push(input.siteId, input.teamId);
