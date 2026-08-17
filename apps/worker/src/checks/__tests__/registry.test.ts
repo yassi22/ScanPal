@@ -11,9 +11,11 @@ describe("skeletonTotals (progress-skelet)", () => {
     // + 5 cookie-checks + secrets-in-bundles + cors = http, meta-tags = seo;
     // active-tests telt niet mee zonder flag. aeo-engine-matrix (plan 55)
     // draait in de http-worker met categorie aeo → telt mee onder aeo.
+    // compliance (plan 61) produceert 5 passieve checks onder categorie compliance.
     expect(totals.http).toBe(19);
     expect(totals.seo).toBe(1);
     expect(totals.aeo).toBe(1);
+    expect(totals.compliance).toBe(5);
     // Categorieën zonder queue-owner krijgen geen key (initialProgressDetails
     // default naar 0).
     expect(totals.github).toBeUndefined();
@@ -24,6 +26,7 @@ describe("skeletonTotals (progress-skelet)", () => {
     const totals = skeletonTotals(registry, ["http", "browser"], true);
     // 11 actieve-test-catalog-checks + 19 passieve http-checks.
     expect(totals.http).toBe(30);
+    expect(totals.compliance).toBe(5);
   });
 
   it("draagt github-checks alleen mee als de queue draait", () => {
