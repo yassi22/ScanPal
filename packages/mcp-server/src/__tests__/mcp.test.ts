@@ -55,6 +55,7 @@ describe("createApiClient", () => {
       status: "open",
     });
     await client.listSites();
+    await client.getFixPrompt("00000000-0000-4000-8000-000000000002");
 
     const paths = vi.mocked(fetch).mock.calls.map(([url]) => String(url));
     expect(paths[0]).toBe(
@@ -67,6 +68,9 @@ describe("createApiClient", () => {
       "https://app.example.com/api/scans/00000000-0000-4000-8000-000000000002/findings?severity=critical&status=open",
     );
     expect(paths[3]).toBe("https://app.example.com/api/sites");
+    expect(paths[4]).toBe(
+      "https://app.example.com/api/scans/00000000-0000-4000-8000-000000000002/fix-prompt",
+    );
   });
 
   it("POST /api/scans stuurt een JSON-body", async () => {
@@ -112,7 +116,7 @@ describe("createApiClient", () => {
 });
 
 describe("createScanpalServer", () => {
-  it("registreert de 5 tools (smoke)", () => {
+  it("registreert de 6 tools (smoke)", () => {
     const client = createApiClient({ baseUrl: BASE_URL, apiKey: API_KEY });
     const server = createScanpalServer(client);
 
@@ -122,6 +126,7 @@ describe("createScanpalServer", () => {
       "get_findings",
       "list_sites",
       "get_uptime",
+      "generate_fix_prompt",
     ]);
     expect(server.isConnected()).toBe(false);
   });
@@ -133,6 +138,11 @@ describe("createScanpalServer", () => {
       getFindings: vi.fn().mockResolvedValue({ findings: [] }),
       listSites: vi.fn().mockResolvedValue({ sites: [] }),
       getUptime: vi.fn().mockResolvedValue({ sites: [] }),
+      getFixPrompt: vi.fn().mockResolvedValue({
+        prompt: "# Fix prompt",
+        findings_covered: 1,
+        truncated: false,
+      }),
     } as unknown as ReturnType<typeof createApiClient>;
 
     const byName = new Map(toolDefs.map((tool) => [tool.name, tool.handler(client)]));
@@ -163,6 +173,13 @@ describe("createScanpalServer", () => {
 
     await byName.get("get_uptime")!({});
     expect(client.getUptime).toHaveBeenCalled();
+
+    await byName.get("generate_fix_prompt")!({
+      id: "00000000-0000-4000-8000-000000000002",
+    });
+    expect(client.getFixPrompt).toHaveBeenCalledWith(
+      "00000000-0000-4000-8000-000000000002",
+    );
   });
 
   it("geeft client-fouten door als tool-fout (bijv. rate-limit)", async () => {

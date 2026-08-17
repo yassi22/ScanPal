@@ -9,6 +9,7 @@ export type ApiClient = {
   getFindings(id: string, query?: Record<string, string>): Promise<unknown>;
   listSites(): Promise<unknown>;
   getUptime(): Promise<unknown>;
+  getFixPrompt(id: string): Promise<unknown>;
 };
 
 export class ApiError extends Error {
@@ -71,5 +72,7 @@ export function createApiClient({ baseUrl, apiKey }: ApiClientOptions): ApiClien
     },
     listSites: () => request("/api/sites"),
     getUptime: () => request("/api/uptime"),
+    getFixPrompt: (id) =>
+      request(`/api/scans/${encodeURIComponent(id)}/fix-prompt`),
   };
 }

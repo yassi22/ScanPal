@@ -77,6 +77,17 @@ export const toolDefs: ToolSpec[] = [
     inputSchema: {},
     handler: (client) => async () => toText(await client.getUptime()),
   },
+  {
+    name: "generate_fix_prompt",
+    title: "Fix-prompt genereren",
+    description:
+      "Genereer één copy-paste fix-prompt (Engels) voor alle open findings " +
+      "van een scan, gegroepeerd per bestand/route — voor Cursor/Claude/" +
+      "Windsurf. Retourneert { prompt, findings_covered, truncated }.",
+    inputSchema: { id: z.string().uuid("Geldige scan-id (uuid)") },
+    handler: (client) => async (args) =>
+      toText(await client.getFixPrompt(String(args.id))),
+  },
 ];
 
 export function createScanpalServer(client: ApiClient): McpServer {
