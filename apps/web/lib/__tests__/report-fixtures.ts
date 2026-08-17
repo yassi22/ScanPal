@@ -52,6 +52,7 @@ export function makeReportData(overrides: Partial<ReportData> = {}): ReportData 
 export function makeRenderData(
   overrides: Partial<ReportData> = {},
   omitted: SeverityCounts = EMPTY_OMITTED,
+  prompts?: string[],
 ): ReportRenderData {
-  return { data: makeReportData(overrides), omitted };
+  return { data: makeReportData(overrides), omitted, ...(prompts ? { prompts } : {}) };
 }

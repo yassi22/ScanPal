@@ -100,4 +100,25 @@ describe("renderMarkdown", () => {
     const md = renderMarkdown(makeRenderData({ findings: [] }));
     expect(md).toContain("No findings in this scan.");
   });
+
+  it("toont een Fix Prompts-sectie wanneer prompts zijn meegegeven (plan 60)", () => {
+    const md = renderMarkdown(
+      makeRenderData(
+        {
+          findings: [
+            makeFinding({
+              id: "https:missing",
+              title: "HTTPS ontbreekt",
+              severity: "high",
+            }),
+          ],
+        },
+        undefined,
+        ["# Fix prompt — Example Site\n\nFix the HTTPS issue."],
+      ),
+    );
+    expect(md).toContain("## Fix Prompts");
+    expect(md).toContain("### Fix prompt 1");
+    expect(md).toContain("Fix the HTTPS issue.");
+  });
 });
