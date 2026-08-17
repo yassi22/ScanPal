@@ -2,7 +2,16 @@
 
 **Doel**: Uitbreiding van de secrets-check (33): naast HTML ook de JavaScript-bundles van de site scannen op gelekte keys — met sourcemap-ondersteuning (inline `//# sourceMappingURL=` + `.map`-siblings) en provider-specifieke patronen (Stripe, OpenAI, Supabase, Firebase, GitHub, AWS…). Vindt wat een naive HTML-scan mist: keys die alleen in gecompileerde client-bundles zitten (CheckVibe: "source-map-aware extraction").
 
-**Status**: In uitvoering (🚧).
+**Status**: Klaar.
+
+> **Uitvoering (2026-08-17)**: de check draait in de http-worker
+> (`apps/worker/src/checks/http/secrets-in-bundles.ts`, geregistreerd in de
+> registry), niet in de tijdelijke inline probe — besluit 8 is daarmee ingehaald
+> door de inmiddels gelande Fase-3-pipeline (plan 27 ✅). De pure logica ligt in
+> `packages/shared/src/bundle-secrets.ts`; bron van de bundel-URL's is `script
+> src` uit de pagina-HTML (mini-crawler-uitvoer uit plan 54 komt er later bij).
+> Tests: `packages/shared/src/__tests__/bundle-secrets.test.ts` +
+> `apps/worker/src/checks/http/__tests__/secrets-in-bundles.test.ts`.
 
 ## Besluiten (bevestigd 2026-08-16)
 
