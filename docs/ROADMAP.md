@@ -93,8 +93,8 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 | `docs/plans/57-public-status-page.md` | 57 | ✅ |
 | `docs/plans/58-on-deploy-triggers.md` | 58 | ✅ |
 | `docs/plans/59-diff-monitoring.md` | 59 | ✅ |
-| `docs/plans/60-ai-fix-prompts.md` | 60 | 📝 |
-| `docs/plans/61-compliance-pillar.md` | 61 | 📝 |
+| `docs/plans/60-ai-fix-prompts.md` | 60 | ✅ |
+| `docs/plans/61-compliance-pillar.md` | 61 | 🚧 |
 | `docs/plans/62-crux-field-data.md` | 62 | 📝 |
 | `docs/plans/63-mcp-expansion.md` | 63 | 📝 |
 | `docs/plans/64-team-seats-white-label.md` | 64 | 📝 |

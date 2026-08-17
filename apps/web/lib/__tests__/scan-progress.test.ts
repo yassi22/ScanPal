@@ -49,8 +49,8 @@ describe("advanceProgressDetails (queue-modus: current_check = zojuist voltooid)
     }
 
     expect(progress).toEqual([0, 33, 67, 100]);
-    expect(details.categories.http.status).toBe("done");
-    expect(details.categories.seo.status).toBe("done");
+    expect(details.categories.http!.status).toBe("done");
+    expect(details.categories.seo!.status).toBe("done");
     expect(details.checks_done).toBe(3);
   });
 
@@ -67,7 +67,7 @@ describe("advanceProgressDetails (queue-modus: current_check = zojuist voltooid)
     });
 
     details = advanceProgressDetails(details, "https", NOW);
-    expect(details.categories.http.current_check).toBe("HTTPS");
+    expect(details.categories.http!.current_check).toBe("HTTPS");
 
     details = advanceProgressDetails(details, "security-header-csp", NOW);
     expect(details.categories.http).toMatchObject({

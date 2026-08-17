@@ -37,6 +37,7 @@ function makeProgressDetails(): ProgressDetails {
       seo: emptyCategory,
       aeo: emptyCategory,
       github: emptyCategory,
+      compliance: emptyCategory,
     },
     checks_done: 0,
     checks_total: 0,

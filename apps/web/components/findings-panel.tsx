@@ -5,8 +5,10 @@ import {
   bundleKeyTypeLabels,
   bundleProviderLabels,
   categoryLabels,
+  COMPLIANCE_DISCLAIMER,
   severityOrder,
   type BundleSecretEvidence,
+  type ComplianceEvidence,
   type EngineMatrixEvidence,
   type Finding,
   type FindingSeverity,
@@ -135,6 +137,24 @@ function EngineMatrixEvidenceNote({
       {parseable}/{evidence.engine_matrix.length} bots parseerbaar; {llms}. De
       volledige per-engine matrix staat bovenaan de resultatenpagina.
     </p>
+  );
+}
+
+/** Plan 61: compliance-signalen ("waarom is dit een signaal") per bevinding. */
+function ComplianceEvidenceNote({
+  evidence,
+}: {
+  evidence: ComplianceEvidence;
+}) {
+  return (
+    <ul className="space-y-1.5">
+      {evidence.signals.map((signal) => (
+        <li key={signal.signal} className="flex items-start gap-2">
+          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+          <span className="text-xs text-slate-300">{signal.detail}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -657,8 +677,16 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                       ) : "kind" in finding.evidence &&
                         finding.evidence.kind === "aeo-engine-matrix" ? (
                         <EngineMatrixEvidenceNote evidence={finding.evidence} />
+                      ) : "kind" in finding.evidence &&
+                        finding.evidence.kind === "compliance" ? (
+                        <ComplianceEvidenceNote evidence={finding.evidence} />
                       ) : null}
                     </div>
+                  )}
+                  {finding.category === "compliance" && (
+                    <p className="text-[10px] leading-relaxed text-slate-500">
+                      {COMPLIANCE_DISCLAIMER}
+                    </p>
                   )}
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">

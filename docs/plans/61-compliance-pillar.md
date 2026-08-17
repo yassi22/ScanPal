@@ -2,9 +2,9 @@
 
 **Doel**: Een eigen compliance-check-set op de live site — cookie-banner/CMP-detectie (OneTrust, Cookiebot, Usercentrics, …), consent-API, privacy-policy-pagina, terms/imprint, GDPR-signalen (DSAR, verwijderingsverwijzing) — als nieuwe score-categorie naast security/SEO/AEO (CheckVibe's "Compliance: cookies, privacy and legal signals"). Bevindingen zijn signalen met uitleg, geen juridische oordelen.
 
-**Status**: Nog niet gestart.
+**Status**: 🚧 In uitvoering — catalog-contract, checks, scoring-gewicht, UI en export geïmplementeerd; DB-migratie `022` klaar, nog niet op een live DB toegepast.
 
-## Besluiten (bevestigd 2026-08-16)
+## Besluiten (bevestigd 2026-08-16, aangevuld 2026-08-17)
 
 1. **Nieuwe categorie `compliance`**: het progress-enum uit plan 06 (`http | seo | aeo | github`) wordt uitgebreid → contractwijziging in `packages/shared` (progress-schema's, categorie-labels, scoring)
 2. **Passief**: de checks kruipen + analyseren HTML/DOM alleen; er worden **geen** cookies geplaatst (geen interactie met de banner)
@@ -19,8 +19,14 @@
 | gdpr-signals | GDPR-signalen | DSAR/data-verwijdering-verwijzing, IAB-TCF/CMP-signalen |
 
 4. **Geen juridische claims**: finding-teksten zijn observaties ("geen privacy-policy-link gevonden in footer") met uitleg + disclaimer-lijn in het rapport (plan 10); dit is geen legal-advies
-5. **Score**: compliance telt mee in de overall-score met een ondersteunend gewicht (afstemmen in de aggregatie; voorstel: 10% — naast http/seo/aeo/github)
+5. **Score**: compliance telt mee in de overall-score met een ondersteunend gewicht (10% — naast http/seo/aeo/github); zónder compliance-findings is de overall-score ongewijzigd
 6. First pass: GDPR-signalen (EU-centrisch); CCPA/regionale varianten expliciet later
+
+### Open vragen — opgelost (2026-08-17)
+
+- ~~CMP-lijst: welke 10–20 leveranciers in v1~~ → 15 leveranciers in `CMP_PROVIDERS` (shared `compliance.ts`): OneTrust, Cookiebot, Usercentrics, Axeptio, Didomi, Quantcast, Sourcepoint, TrustArc, iubenda, Complianz, Ketch, Pandectes, Cookie Information e.a.; catalogus-versie-beheer via het shared-package
+- ~~Meertalige sites~~ → privacy/legal-kernwoorden in NL/EN/DE/FR/ES (`PRIVACY_KEYWORDS`, `TERMS_KEYWORDS`, enz.)
+- ~~Score-gewicht~~ → 10% in overall via `COMPLIANCE_WEIGHT` (scoring.ts); afwezig = alleen rest-ratio
 
 ## Uitgangssituatie (code vandaag)
 
@@ -51,8 +57,8 @@
 
 ## Acceptatiecriteria
 
-- [ ] Vijf compliance-checks draaien passief; geen cookies worden geplaatst
-- [ ] Nieuwe categorie `compliance` werkt door in progress, scoring en resultaten-UI
-- [ ] Bekende CMP's worden herkend (fixtures per leverancier); privacy-policy/legal-links uit de footer gevonden
-- [ ] Bevindingen bevatten uitleg + disclaimer; geen juridische claims
-- [ ] Compliance-score telt mee in overall (gewicht) en in het export-rapport
+- [x] Vijf compliance-checks draaien passief; geen cookies worden geplaatst
+- [x] Nieuwe categorie `compliance` werkt door in progress, scoring en resultaten-UI
+- [x] Bekende CMP's worden herkend (fixtures per leverancier); privacy-policy/legal-links uit de footer gevonden
+- [x] Bevindingen bevatten uitleg + disclaimer; geen juridische claims
+- [x] Compliance-score telt mee in overall (gewicht) en in het export-rapport

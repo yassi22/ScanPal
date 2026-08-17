@@ -272,6 +272,7 @@ export type ScanTrendPointRow = {
     seo: number | null;
     aeo: number | null;
     github: number | null;
+    compliance: number | null;
   } | null;
   trigger: "manual" | "schedule";
   created_at: Date;

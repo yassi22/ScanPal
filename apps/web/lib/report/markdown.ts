@@ -49,6 +49,16 @@ export function renderMarkdown(input: ReportRenderData): string {
     );
   }
 
+  if (category_scores.compliance !== null) {
+    lines.push(
+      "",
+      "> Compliance findings are automated observations based on the publicly accessible",
+      "> HTML/scripts of the site. They are not legal advice and not a complete obligations",
+      "> check (e.g. GDPR/CCPA).",
+      "",
+    );
+  }
+
   lines.push("", "## Summary", "", "| Severity | Count |", "|---|---|");
   for (const severity of severityOrder) {
     lines.push(`| ${severityLabel[severity]} | ${summary[severity]} |`);

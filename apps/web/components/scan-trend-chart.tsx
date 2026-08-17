@@ -17,6 +17,7 @@ const CATEGORY_COLORS: Record<ScanCategory, string> = {
   seo: "#a78bfa",
   aeo: "#fbbf24",
   github: "#f472b6",
+  compliance: "#38bdf8",
 };
 
 /**
@@ -38,13 +39,14 @@ export function ScanTrendChart({ points }: Props) {
       seo: [],
       aeo: [],
       github: [],
+      compliance: [],
     };
     for (const p of withIndex) {
       const cs = p.category_scores;
       for (const cat of scanCategories) {
         categories[cat].push({
           x: p._i,
-          value: cs ? cs[cat] : null,
+          value: cs ? (cs[cat] ?? null) : null,
           at: p.created_at,
         });
       }

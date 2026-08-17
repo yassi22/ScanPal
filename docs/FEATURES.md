@@ -24,7 +24,7 @@ Volledige feature-lijst met MVP-afbakening en plan-koppeling. Legenda:
 | 8 | Findings: gefilterde lijst op ernst/categorie, per finding details + remediatie | ✅ | 09-findings | ✅ |
 | 9 | Export: PDF (react-pdf) en Markdown rapport | ✅ | 10-export | ✅ |
 | 10 | Historische scans vergelijken (score-trend per site) | ✅ | `app/(dashboard)/sites/[id]` + `api/sites/[id]/trend` | ✅ |
-| 60 | AI fix-prompts: per finding én per scan een copy-paste prompt (Cursor/Claude/Windsurf) met locatie + remediatie | 🔶 | 60-ai-fix-prompts | 📝 |
+| 60 | AI fix-prompts: per finding én per scan een copy-paste prompt (Cursor/Claude/Windsurf) met locatie + remediatie | 🔶 | 60-ai-fix-prompts | ✅ |
 
 ## Monitoring
 
@@ -83,7 +83,7 @@ Volledige feature-lijst met MVP-afbakening en plan-koppeling. Legenda:
 | 53 | JS-bundle inspectie: sourcemap-aware secrets-extractie uit client-bundles | 🔶 | 53-js-bundle-inspection | ✅ |
 | 54 | Route-discovery + per-route checks: SPA-aware crawl (sitemap/links/chunks), plan-limiet routes | 🔶 | 54-route-discovery-crawl | 📝 |
 | 55 | AEO per-engine matrix: GPTBot/ClaudeBot/PerplexityBot/Copilot/Meta/Mistral-toegang + llms.txt | 🔶 | 55-aeo-engine-matrix | 📝 |
-| 61 | Compliance-pijler: cookie-banner/CMP, privacy-policy, legal-pagina's, GDPR-signalen (nieuwe score-categorie) | 🔶 | 61-compliance-pillar | 📝 |
+| 61 | Compliance-pijler: cookie-banner/CMP, privacy-policy, legal-pagina's, GDPR-signalen (nieuwe score-categorie) | 🔶 | 61-compliance-pillar | 🚧 |
 | 62 | CrUX field data: p75 + fracties naast lab-CWV, lab/field-divergentie-flag | 🔶 | 62-crux-field-data | 📝 |
 
 ## MCP-server

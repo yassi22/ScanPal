@@ -7,6 +7,7 @@ import {
   AI_ENGINE_BOTS,
   categoryLabels,
   checksForCategory,
+  COMPLIANCE_DISCLAIMER,
   scanCategories,
   type CategoryProgress,
   type EngineMatrixEvidence,
@@ -249,6 +250,30 @@ function EngineMatrixSection({ items }: { items: Finding[] }) {
   );
 }
 
+function ComplianceSection({ items }: { items: Finding[] }) {
+  const compliance = items.filter(
+    (item) => item.category === "compliance" && !item.active,
+  );
+  if (compliance.length === 0) return null;
+
+  return (
+    <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-bold">Compliance & privacy</h2>
+        <span className="rounded-full border border-slate-600 bg-slate-800/60 px-2.5 py-0.5 text-[10px] font-semibold text-slate-300">
+          Indicatief
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-slate-500">{COMPLIANCE_DISCLAIMER}</p>
+      <p className="mt-3 text-xs text-slate-400">
+        Passieve detectie op basis van de publieke HTML — de site wordt niet
+        aangeraakt en er worden geen cookies geplaatst. Bekijk de details van
+        elke bevinding voor de uitleg waarom dit een signaal is.
+      </p>
+    </section>
+  );
+}
+
 function ReachBadge({ ok }: { ok: boolean }) {
   return ok ? (
     <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
@@ -322,11 +347,14 @@ function StatusBadge({ status }: { status: ScanViewState["status"] }) {
 function ExportMenu({ scanId }: { scanId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [includePrompts, setIncludePrompts] = useState(false);
 
   function close() {
     setOpen(false);
     router.refresh();
   }
+
+  const promptParam = includePrompts ? "&include_prompts=1" : "";
 
   return (
     <div className="relative">
@@ -338,9 +366,9 @@ function ExportMenu({ scanId }: { scanId: string }) {
         Exporteren
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-48 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-lg">
+        <div className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-lg">
           <a
-            href={`/api/reports/${scanId}?format=pdf`}
+            href={`/api/reports/${scanId}?format=pdf${promptParam}`}
             onClick={close}
             className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-slate-200 transition hover:bg-slate-800"
           >
@@ -348,13 +376,22 @@ function ExportMenu({ scanId }: { scanId: string }) {
             <span className="text-xs text-slate-500">.pdf</span>
           </a>
           <a
-            href={`/api/reports/${scanId}?format=md`}
+            href={`/api/reports/${scanId}?format=md${promptParam}`}
             onClick={close}
             className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-slate-200 transition hover:bg-slate-800"
           >
             Markdown
             <span className="text-xs text-slate-500">.md</span>
           </a>
+          <label className="flex items-center gap-2 border-t border-slate-800 px-4 py-2.5 text-xs text-slate-400">
+            <input
+              type="checkbox"
+              checked={includePrompts}
+              onChange={(event) => setIncludePrompts(event.target.checked)}
+              className="accent-brand"
+            />
+            AI fix-prompts meenemen
+          </label>
         </div>
       )}
     </div>
@@ -684,6 +721,8 @@ export function ScanResultView({
               <ActiveTestsSection items={findingsItems} />
 
               <EngineMatrixSection items={findingsItems} />
+
+              <ComplianceSection items={findingsItems} />
 
               <DiffPanel scanId={scanId} />
 

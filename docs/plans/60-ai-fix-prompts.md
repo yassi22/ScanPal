@@ -2,7 +2,7 @@
 
 **Doel**: Elke finding (en de hele scan) omzetten in een copy-paste prompt voor Cursor/Claude/Windsurf: context, locatie (bestandspad bij gekoppelde GitHub-repo, anders route + element), de remediatie en een "laat een diff zien"-instructie. "Eén prompt fix ze allemaal" (CheckVibe: "every finding ships with an AI-ready fix prompt").
 
-**Status**: Nog niet gestart.
+**Status**: Klaar (geïmplementeerd en getest, 2026-08-17).
 
 ## Besluiten (bevestigd 2026-08-16)
 
@@ -21,7 +21,7 @@
 ## Contract / DB / API
 
 - Shared: `fixPromptTemplate` per catalog-check-id + fallback-generiek template; `fixPromptSchema` (`{ prompt: string, findings_covered: number, truncated: bool }`)
-- `GET /api/findings/[id]/prompt` (authz als scans) → één prompt
+- `GET /api/scans/[id]/findings/[findingId]/prompt` (authz als scans) → één prompt (de finding-detail-routes leven scan-scoped in de codebase; er is geen losse `/api/findings`-route)
 - `GET /api/scans/[id]/fix-prompt` → gegroepeerde prompt; `truncated` bij > ~1500 tokens met "en N meer" (vgl. plan 10 top-100-cap)
 - Geen DB-wijziging (prompts worden niet opgeslagen)
 
@@ -36,14 +36,14 @@
 
 ## Open vragen
 
-- Engelse prompts zijn het doel (AI-editors), maar de UI is Nederlands — labels "Copy prompt" of "Kopieer prompt"?
-- Welke detail-prijs per finding meegeven in de prompt (evidence request/response is al lang; wel/niet opnemen)?
-- Template-versiebeheer: templates veranderen met de check-catalog — versie op de prompt zetten ("prompt v3")?
+- ~~Engelse prompts zijn het doel (AI-editors), maar de UI is Nederlands — labels "Copy prompt" of "Kopieer prompt"?~~ → opgelost: UI-labels zijn Nederlands ("Kopieer prompt", "Genereer fix-prompt"); de prompt-inhoud is Engels
+- ~~Welke detail-prijs per finding meegeven in de prompt (evidence request/response is al lang; wel/niet opnemen)?~~ → opgelost: evidence wordt meegegeven, afgekapt via `trimToChars` (single 800, grouped 240 chars) om de prompt compact te houden
+- ~~Template-versiebeheer: templates veranderen met de check-catalog — versie op de prompt zetten ("prompt v3")?~~ → opgelost: geen versiemarker in MVP; templates + catalog leven samen in `packages/shared` en wijzigen als één geheel
 
 ## Acceptatiecriteria
 
-- [ ] Elke finding levert een copy-paste prompt met context, locatie en remediatie; onbekende check-ids krijgen een werkende fallback
-- [ ] Scan-prompt groepeert niet-fixed/ignored findings per bestand/route; bij > 1500 tokens truncatie met "en N meer"
-- [ ] Bestandspaden alleen bij gekoppelde repo/findings; anders route + element
-- [ ] Copy-knoppen werken; prompts belanden optioneel in het MD-rapport
-- [ ] MCP-tool deelt dezelfde helper (geen duplicatie)
+- [x] Elke finding levert een copy-paste prompt met context, locatie en remediatie; onbekende check-ids krijgen een werkende fallback
+- [x] Scan-prompt groepeert niet-fixed/ignored findings per bestand/route; bij > 1500 tokens truncatie met "en N meer"
+- [x] Bestandspaden alleen bij gekoppelde repo/findings; anders route + element
+- [x] Copy-knoppen werken; prompts belanden optioneel in het MD-rapport
+- [x] MCP-tool deelt dezelfde helper (geen duplicatie)

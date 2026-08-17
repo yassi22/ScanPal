@@ -48,7 +48,7 @@ export const toolDefs: ToolSpec[] = [
     inputSchema: {
       id: z.string().uuid("Geldige scan-id (uuid)"),
       severity: z.enum(["critical", "high", "medium", "low", "info"]).optional(),
-      category: z.enum(["http", "seo", "aeo", "github"]).optional(),
+      category: z.enum(["http", "seo", "aeo", "github", "compliance"]).optional(),
       status: z.enum(["open", "fixed", "ignored"]).optional(),
       q: z.string().optional(),
       limit: z.coerce.number().int().min(1).max(200).optional(),

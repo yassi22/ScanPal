@@ -62,6 +62,7 @@ describe("buildReportData", () => {
       seo: null,
       aeo: null,
       github: null,
+      compliance: null,
     });
     expect(result.data.findings.map((f) => f.id)).toEqual(["a:1", "b:2"]);
     expect(result.data.scan.completed_at).toBe("2026-08-15T09:00:00.000Z");

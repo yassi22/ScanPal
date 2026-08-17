@@ -15,7 +15,7 @@ voor run/curl/MCP-config.
 ┌──────────────────────────────────────────────────────────────┐
 │  MCP CLIENT (Claude, editors, agents)                         │
 │  calls tools: run_scan, get_scan, get_findings,              │
-│              list_sites, get_uptime                           │
+│              list_sites, get_uptime, generate_fix_prompt      │
 └──────────────────────────┬───────────────────────────────────┘
                            ▼  JSON-RPC over stdio/HTTP
 ┌──────────────────────────────────────────────────────────────┐
@@ -36,6 +36,7 @@ voor run/curl/MCP-config.
 | `get_findings` | `GET /api/findings?scan_id=…` | findings with severity/category filters |
 | `list_sites` | `GET /api/sites` | sites of the team |
 | `get_uptime` | `GET /api/uptime` | current status + metrics per site |
+| `generate_fix_prompt` | `GET /api/scans/[id]/fix-prompt` | één copy-paste AI fix-prompt voor alle open findings (plan 60) |
 
 > Contract (plan 11, geleverd): `GET /api/uptime` → `{ sites: UptimeSummary[] }`
 > per site `{ site_id, url, label, uptime_state, uptime_state_changed_at,

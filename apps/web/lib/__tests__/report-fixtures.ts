@@ -42,7 +42,7 @@ export function makeReportData(overrides: Partial<ReportData> = {}): ReportData 
     },
     site: { url: "example.com", label: "Example Site" },
     score: 80,
-    category_scores: { http: 100, seo: 67, aeo: null, github: null },
+    category_scores: { http: 100, seo: 67, aeo: null, github: null, compliance: null },
     summary: { critical: 0, high: 1, medium: 2, low: 0, info: 3 },
     findings: [],
     ...overrides,

@@ -150,6 +150,7 @@ export const categoryLabelEn: Record<ScanCategory, string> = {
   seo: "SEO & Content",
   aeo: "AEO & Browser",
   github: "GitHub & Repo",
+  compliance: "Compliance & Privacy",
 };
 
 export const triggerLabelEn: Record<ScanTrigger, string> = {

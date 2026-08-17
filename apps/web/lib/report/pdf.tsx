@@ -160,6 +160,14 @@ export function ReportDocument({ input }: { input: ReportRenderData }) {
           ),
         )}
 
+        {category_scores.compliance !== null && (
+          <Text style={styles.footer}>
+            Compliance findings are automated observations based on the publicly
+            accessible HTML/scripts of the site. They are not legal advice and not
+            a complete obligations check (e.g. GDPR/CCPA).
+          </Text>
+        )}
+
         <Text style={styles.section}>Summary</Text>
         {tableRow(["Severity", "Count"], true)}
         {severityOrder.map((severity) =>
