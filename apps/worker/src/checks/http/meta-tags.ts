@@ -1,6 +1,16 @@
+import {
+  evaluateMetaTags,
+  extractMetaTags,
+  metaTagsEvidence,
+} from "@scanpal/shared";
 import type { CheckImplementation } from "../types";
 import { fetchPage } from "../types";
 
+/**
+ * Plan 35 — meta/OG/canonical/hreflang check op de pagina-HTML. Eén fetch per
+ * route, pure logica in `packages/shared/src/meta-tags.ts`. Status: fail als
+ * title ontbreekt, warn als description/canonical ontbreekt, pass anders.
+ */
 export const metaTagsCheck: CheckImplementation = {
   id: "meta-tags",
   category: "seo",
@@ -19,15 +29,15 @@ export const metaTagsCheck: CheckImplementation = {
         ];
       }
       const html = await response.text();
-      const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
+      const result = extractMetaTags(html);
+      const { status, detail } = evaluateMetaTags(result);
       return [
         {
           id: "meta-tags",
           name: "Meta & OG-tags",
-          status: title ? "pass" : "warn",
-          detail: title
-            ? `Pagina heeft een <title> ("${title.slice(0, 80)}")`
-            : "Pagina is HTML maar heeft geen <title> tag",
+          status,
+          detail,
+          evidence: metaTagsEvidence(result),
         },
       ];
     } catch (err) {

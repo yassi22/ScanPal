@@ -10,6 +10,7 @@ import {
   aiEngineLabels,
 } from "./aeo-engine-matrix";
 import { complianceEvidenceSchema, type ComplianceEvidence } from "./compliance";
+import { metaTagsEvidenceSchema, type MetaTagsEvidence } from "./meta-tags";
 import {
   findingSeveritySchema,
   severityOrder,
@@ -43,7 +44,7 @@ export const findingSchema = z.object({
   title: z.string(),
   description: z.string(),
   remediation: z.string(),
-  /** String (passieve checks) óf structured `{ request, response }` (actieve tests, plan 52) óf bundel-secret-evidence (plan 53) óf AEO-engine-matrix (plan 55) óf compliance-signalen (plan 61). */
+  /** String (passieve checks) óf structured `{ request, response }` (actieve tests, plan 52) óf bundel-secret-evidence (plan 53) óf AEO-engine-matrix (plan 55) óf compliance-signalen (plan 61) óf meta-tags-evidence (plan 35). */
   evidence: z
     .union([
       z.string(),
@@ -51,6 +52,7 @@ export const findingSchema = z.object({
       bundleSecretEvidenceSchema,
       engineMatrixEvidenceSchema,
       complianceEvidenceSchema,
+      metaTagsEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -190,6 +192,7 @@ export type InlineCheckLike = {
     | BundleSecretEvidence
     | EngineMatrixEvidence
     | ComplianceEvidence
+    | MetaTagsEvidence
     | string
     | null;
 };
@@ -202,6 +205,7 @@ export function evidenceText(
     | BundleSecretEvidence
     | EngineMatrixEvidence
     | ComplianceEvidence
+    | MetaTagsEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -231,6 +235,9 @@ export function evidenceText(
       return evidence.signals
         .map((signal) => `${signal.signal}: ${signal.detail}`)
         .join("\n");
+    }
+    if (evidence.kind === "meta-tags") {
+      return `present: ${evidence.present.join(", ")}; missing: ${evidence.missing.join(", ")}`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;

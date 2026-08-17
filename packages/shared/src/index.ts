@@ -130,3 +130,4 @@ export * from "./deploy-webhooks";
 export * from "./diff";
 export * from "./fix-prompt";
 export * from "./compliance";
+export * from "./meta-tags";
