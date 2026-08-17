@@ -14,6 +14,18 @@ export type TlsCertInput = {
   /** Canonical hostnaam (SNI / hostname-match). */
   host: string;
   now?: Date;
+  /**
+   * Feature 31 — Node's ketting-validatie (`socket.authorized`). `undefined`
+   * (default) wordt als `true` behandeld (backward-compat met pure tests).
+   * Alleen `false` triggert de chain-validation warn.
+   */
+  authorized?: boolean;
+  /** `socket.authorizationError` — reden waarom de ketting niet vertrouwd is. */
+  authorizationError?: string;
+  /** ALPN-protocol (`socket.alpnProtocol`): `"h2"` = HTTP/2, `"http/1.1"`, … */
+  alpnProtocol?: string | null;
+  /** TLS-protocolversie (`socket.getCipher().version`), bijv. `"TLSv1.3"`. */
+  protocolVersion?: string;
 };
 
 /**
@@ -42,9 +54,14 @@ export function evaluateTlsCert({
   cert,
   host,
   now = new Date(),
+  authorized = true,
+  authorizationError,
+  alpnProtocol = null,
+  protocolVersion,
 }: TlsCertInput): InlineCheckLike {
   const name = checkById("tls-cert")?.name ?? "TLS/SSL-certificaat";
   const id = "tls-cert";
+  const supportsH2 = alpnProtocol === "h2";
 
   if (!cert) {
     return {
@@ -67,6 +84,9 @@ export function evaluateTlsCert({
     issuer: issuerCn,
     subject: subjectCn,
     san,
+    alpn: alpnProtocol ?? "",
+    tls: protocolVersion ?? "",
+    authorized,
   });
 
   if (!notBefore || !notAfter) {
@@ -130,7 +150,21 @@ export function evaluateTlsCert({
       id,
       name,
       status: "warn",
-      detail: `TLS-certificaat is self-signed (issuer == subject: ${issuerCn}). CN=${subjectCn}, verloopt ${notAfter.toISOString()}.`,
+      detail: `TLS-certificaat is self-signed (issuer == subject: ${issuerCn}). CN=${subjectCn}, verloopt ${notAfter.toISOString()}.${http2Detail(supportsH2)}`,
+      evidence,
+    };
+  }
+
+  // Feature 31 — ketting-validatie: Node vertrouwt de ketting niet (ontbrekende
+  // intermediate, untrusted CA, …). Treedt alleen op als de specifiekere checks
+  // (self-signed, expiry, hostname) de cert niet al hebben verklaard.
+  if (authorized === false) {
+    const reason = authorizationError ? ` (${authorizationError})` : "";
+    return {
+      id,
+      name,
+      status: "warn",
+      detail: `TLS-certificaatketting wordt niet vertrouwd door de CA-store${reason}. CN=${subjectCn}, uitgegeven door ${issuerCn}, verloopt ${notAfter.toISOString()}.${http2Detail(supportsH2)}`,
       evidence,
     };
   }
@@ -139,9 +173,14 @@ export function evaluateTlsCert({
     id,
     name,
     status: "pass",
-    detail: `CN=${subjectCn}, verloopt ${notAfter.toISOString()} (${daysLeft} d), uitgegeven door ${issuerCn}.`,
+    detail: `CN=${subjectCn}, verloopt ${notAfter.toISOString()} (${daysLeft} d), uitgegeven door ${issuerCn}.${http2Detail(supportsH2)}`,
     evidence,
   };
+}
+
+/** Feature 31 — HTTP/2-suffix voor de detail-regel (alleen tonen als bekend). */
+function http2Detail(supportsH2: boolean): string {
+  return supportsH2 ? " HTTP/2 ondersteund (ALPN h2)." : "";
 }
 
 type TlsEvidence = {
@@ -150,11 +189,17 @@ type TlsEvidence = {
   issuer: string;
   subject: string;
   san: string;
+  /** Feature 31 — ALPN-protocol (h2 = HTTP/2). */
+  alpn: string;
+  /** Feature 31 — TLS-protocolversie (TLSv1.3, …). */
+  tls: string;
+  /** Feature 31 — ketting vertrouwd door Node's CA-store. */
+  authorized: boolean;
 };
 
 function evidenceString(evidence: TlsEvidence | null): string {
-  if (!evidence) return "notBefore=—|notAfter=—|issuer=—|subject=—|san=—";
-  return `notBefore=${evidence.notBefore || "—"}|notAfter=${evidence.notAfter || "—"}|issuer=${evidence.issuer}|subject=${evidence.subject}|san=${evidence.san || "—"}`;
+  if (!evidence) return "notBefore=—|notAfter=—|issuer=—|subject=—|san=—|alpn=—|tls=—|authorized=—";
+  return `notBefore=${evidence.notBefore || "—"}|notAfter=${evidence.notAfter || "—"}|issuer=${evidence.issuer}|subject=${evidence.subject}|san=${evidence.san || "—"}|alpn=${evidence.alpn || "—"}|tls=${evidence.tls || "—"}|authorized=${evidence.authorized}`;
 }
 
 /**
@@ -256,6 +301,12 @@ export const tlsCertCheck: CheckImplementation = {
         port,
         servername: host,
         timeout: SOCKET_TIMEOUT_MS,
+        // Feature 31 — rejectUnauthorized:false zodat secureConnect altijd
+        // doorgaat en we socket.authorized + alpnProtocol kunnen uitlezen
+        // (ketting-validatie + HTTP/2-detectie). Non-invasive: we lezen alleen
+        // het certificaat, versturen geen data.
+        rejectUnauthorized: false,
+        ALPNProtocols: ["h2", "http/1.1"],
       });
 
       const finish = (result: InlineCheckLike) => {
@@ -269,7 +320,27 @@ export const tlsCertCheck: CheckImplementation = {
 
       socket.once("secureConnect", () => {
         const cert = socket.getPeerCertificate() as PeerCert | null;
-        resolve([evaluateTlsCert({ cert, host })]);
+        const authorized = (socket as { authorized?: boolean }).authorized ?? true;
+        const authError = (socket as { authorizationError?: Error | string }).authorizationError;
+        const authorizationError =
+          authError instanceof Error ? authError.message : authError;
+        const alpnProtocol = (socket as { alpnProtocol?: string | null }).alpnProtocol ?? null;
+        let protocolVersion: string | undefined;
+        try {
+          protocolVersion = (socket.getCipher() as { version?: string } | null)?.version;
+        } catch {
+          // getCipher() kan null geven na destruct — negeren
+        }
+        resolve([
+          evaluateTlsCert({
+            cert,
+            host,
+            authorized,
+            authorizationError,
+            alpnProtocol,
+            protocolVersion,
+          }),
+        ]);
         try {
           socket.destroy();
         } catch {

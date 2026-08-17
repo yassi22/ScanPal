@@ -389,7 +389,7 @@ const ISSUE_TITLES: Record<
     fail: "AI-bots zijn geblokkeerd voor de site",
   },
   "tls-cert": {
-    warn: "TLS-certificaat verloopt binnen 30 dagen",
+    warn: "TLS-certificaat of -ketting vereist aandacht",
     fail: "TLS-certificaat is verlopen of nog niet geldig",
   },
   "domain-watchtower": {
@@ -476,7 +476,7 @@ const REMEDIATION: Record<string, string> = {
   "aeo-engine-matrix":
     "Zorg dat AI-crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Bingbot, CCBot, MistralAI) de site mogen bereiken in robots.txt en niet door de WAF worden geblokkeerd; publiceer een llms.txt met geldige links; render kerncontent server-side zodat titel, headings en voldoende tekst zonder JavaScript zichtbaar zijn.",
   "tls-cert":
-    "Verleng het TLS-certificaat tijdig (bijv. via Let's Encrypt met auto-renewal); zorg dat notAfter ≥ 30 d in de toekomst ligt en dat de SAN/CN overeenkomt met de hostnaam.",
+    "Verleng het TLS-certificaat tijdig (bijv. via Let's Encrypt met auto-renewal); zorg dat notAfter ≥ 30 d in de toekomst ligt en dat de SAN/CN overeenkomt met de hostnaam. Serveer de volledige ketting (leaf + intermediate) zodat de CA-store de ketting vertrouwt, en gebruik ALPN om HTTP/2 te onderhandelen.",
   "domain-watchtower":
     "Verleng de domeinregistratie tijdig (auto-renew aanzetten bij de registrar); schakel DNSSEC in; houd de nameservers stabiel en CAA-records restrictief; vernieuw het TLS-certificaat vóór de 14-dagen-runway.",
   "cookie-banner":
