@@ -11,6 +11,7 @@ import { notificationTypes } from "@scanpal/shared";
 const EVENT_LABELS: Record<NotificationType, string> = {
   scan_done: "Scan voltooid",
   score_drop: "Score gedaald",
+  scan_diff: "Wijzigingen gedetecteerd",
   site_down: "Site down",
   site_recovered: "Site hersteld",
   critical_finding: "Kritieke bevinding",

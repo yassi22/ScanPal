@@ -25,7 +25,7 @@ export type ScanHistoryRow = {
   progress: number;
   score: number | null;
   active_tests: boolean;
-  trigger: "manual" | "schedule";
+  trigger: "manual" | "schedule" | "deploy";
   scheduled_for: Date | null;
   created_at: Date;
   completed_at: Date | null;
@@ -76,15 +76,20 @@ export type CreateScanOutcome = {
 };
 
 /**
- * Start een directe scan (trigger='manual'): site-ownership-check,
+ * Start een directe scan (trigger='manual' of 'deploy'): site-ownership-check,
  * overlap-check, credit-afschrijving (atomair) en een `queued` scans-rij
  * aanmaken. De webapp enqueue daarna `scan.dispatcher` en antwoordt 202 —
  * de worker-pipeline voert de scan uit (plan 27, besluit 7). Geen inline
- * probe meer.
+ * probe meer. Plan 58: on-deploy-webhooks starten met `trigger: "deploy"`.
  */
 export async function createManualScan(
   db: Pool,
-  input: { teamId: string; siteId: string; activeTests?: boolean },
+  input: {
+    teamId: string;
+    siteId: string;
+    activeTests?: boolean;
+    trigger?: "manual" | "deploy";
+  },
 ): Promise<CreateScanOutcome> {
   const client = await db.connect();
   let scan: ScanRowWithMeta | null = null;
@@ -111,11 +116,12 @@ export async function createManualScan(
     }
 
     const activeTests = input.activeTests ?? false;
+    const trigger = input.trigger ?? "manual";
     const inserted = await client.query(
       `insert into scans (site_id, status, trigger, active_tests)
-       values ($1, 'queued', 'manual', $2)
+       values ($1, 'queued', $2, $3)
        returning *`,
-      [input.siteId, activeTests],
+      [input.siteId, trigger, activeTests],
     );
     scan = inserted.rows[0] as ScanRowWithMeta;
 
@@ -275,7 +281,10 @@ export type ScanTrendPointRow = {
 export type ScanTrendSiteSummary = {
   id: string;
   url: string;
+  github_repo: string | null;
+  github_webhook_configured: boolean;
   label: string | null;
+  public_status_slug: string | null;
   last_scan_score: number | null;
   last_scanned_at: Date | null;
 };
@@ -294,7 +303,9 @@ export async function getScanTrend(
   const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
 
   const siteResult = await db.query(
-    `select id, url, label, last_scan_score, last_scanned_at
+    `select id, url, github_repo, label, public_status_slug,
+       (github_webhook_secret is not null) as github_webhook_configured,
+       last_scan_score, last_scanned_at
        from sites
       where id = $1 and team_id = $2`,
     [input.siteId, input.teamId],

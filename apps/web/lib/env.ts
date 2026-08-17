@@ -20,6 +20,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   /** 32-byte base64 AES-GCM-sleutel voor outbound webhook-secrets (plan 15). */
   WEBHOOK_SECRET_KEY: z.string().min(1).optional(),
+  /** Plan 58: Vercel on-deploy webhook-secret (x-vercel-signature verificatie). */
+  VERCEL_WEBHOOK_SECRET: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -50,5 +52,6 @@ export const env = {
   stripePriceProAnnual: raw.STRIPE_PRICE_PRO_ANNUAL,
   stripePublishableKey: raw.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   webhookSecretKey: raw.WEBHOOK_SECRET_KEY,
+  vercelWebhookSecret: raw.VERCEL_WEBHOOK_SECRET,
 };
 

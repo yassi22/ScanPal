@@ -151,6 +151,7 @@ export const categoryLabelEn: Record<ScanCategory, string> = {
 export const triggerLabelEn: Record<ScanTrigger, string> = {
   manual: "Manual",
   schedule: "Scheduled",
+  deploy: "Deploy",
 };
 
 export const statusLabelEn: Record<FindingStatus, string> = {

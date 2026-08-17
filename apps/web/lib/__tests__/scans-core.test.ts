@@ -57,6 +57,7 @@ function makeScan(
     progress_details: makeProgressDetails(),
     score: null,
     findings: {},
+    diff: {},
     category_scores: null,
     active_tests: false,
     trigger: "manual",
@@ -165,9 +166,13 @@ function fakePool() {
     }
 
     if (text.startsWith("insert into scans")) {
-      const [siteId, activeTests] = params as [string, boolean];
+      const [siteId, trigger, activeTests] = params as [
+        string,
+        "manual" | "deploy",
+        boolean,
+      ];
       const scan = makeScan(`scan-${++scanSeq}`, siteId, {
-        trigger: "manual",
+        trigger,
         status: "queued",
         active_tests: activeTests,
       });
@@ -284,7 +289,7 @@ function fakePool() {
       return sub ? { rowCount: 1, rows: [{ 1: 1 }] } : { rowCount: 0, rows: [] };
     }
 
-    if (text.startsWith("select id, url, label, last_scan_score, last_scanned_at from sites")) {
+    if (text.startsWith("select id, url, github_repo, label, public_status_slug")) {
       const site = sites.find((s) => s.id === a && s.team_id === b);
       return site
         ? {
@@ -293,7 +298,10 @@ function fakePool() {
               {
                 id: site.id,
                 url: site.url,
+                github_repo: null,
+                github_webhook_configured: false,
                 label: null,
+                public_status_slug: null,
                 last_scan_score: site.last_scan_score,
                 last_scanned_at: null,
               },
