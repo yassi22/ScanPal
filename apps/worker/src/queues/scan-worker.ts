@@ -56,6 +56,8 @@ function errorFinding(
     active: false,
     status: "open",
     note: null,
+    regressed: false,
+    snooze_until: null,
     route_url: routeUrl,
     created_at: now,
   };

@@ -17,6 +17,8 @@ function makeItem(overrides: Partial<Finding> = {}): Finding {
     active: false,
     status: "open",
     note: null,
+    regressed: false,
+    snooze_until: null,
     created_at: "2026-08-15T09:00:00.000Z",
     route_url: null,
     ...overrides,

@@ -2,16 +2,16 @@
 
 **Doel**: Geplande scans vergelijken met de laatste schone snapshot — in de UI een "wat is er veranderd"-view (nieuw / opgelost / teruggekeerd), alerts alleen bij daadwerkelijke verandering, detectie van "dismissed-then-returned" findings en snooze-rules op notificaties. Dit vervangt/uitbreidt de eenvoudige score-daling-mail uit plan 05 (CheckVibe: "every run is compared against your last clean snapshot — we surface what changed").
 
-**Status**: Nog niet gestart.
+**Status**: Klaar (2026-08-17).
 
 ## Besluiten (bevestigd 2026-08-16)
 
 1. **Snapshot-definitie**: een scan is "schoon" als er geen critical/high-findings open staan **of** de overall-score ≥ 80 (drempel afstemmen); de laatste schone scan is de referentie
-2. **Diff-berekening in de dispatcher-finish** (27): per finding een stabiele fingerprint = hash van `check_id + rule-id + route_url + status`; uitkomsten: `new` (niet in snapshot), `resolved` (was er wel, nu niet), `unchanged`, en `regressed` (was ooit fixed/ignored én komt terug — feature 20/plan 09)
-3. **Opslag**: `scans.diff jsonb` (`{ new: counts, resolved: counts, regressed: counts }` per ernst) + de diff-geselecteerde finding-id's; trends (10) kunnen dit later hergebruiken
+2. **Diff-berekening in de scan-finish** (27): per finding een stabiele fingerprint = sha256(`check_id + route_url + title`) — rule-only, status/severity/detail wisselen verandert de fingerprint niet; uitkomsten: `new` (niet in snapshot), `resolved` (was er wel, nu niet), `unchanged`, en `regressed` (was ooit fixed/ignored én komt terug — feature 20/plan 09); active-test-findings (52) tellen niet mee
+3. **Opslag**: `scans.diff jsonb` (`{ new, resolved, regressed, unchanged }` per ernst + `new_finding_ids`, `regressed_finding_ids`, `alert_new`, `alert_regressed`) + `regressed: true` op de finding zelf; trends (10) kunnen dit later hergebruiken
 4. **Alerts**: alleen bij `new`/`regressed` boven een ernst-drempel (≥ medium) of score-daling ≥ 5 punten; handmatige scans doen geen diff-mail (consistent met plan 05); notificatiehub (13) consumeert de diff
-5. **Snooze**: per finding per site tijdelijk dempen (7/30 dagen of "tot volgende scan"), opgeslagen in de `notifications`/`findings`-state; gesnoozde findings tellen niet mee in diff-alerts maar wel in de view
-6. **UI**: "Wijzigingen" tab op de resultatenpagina (nieuw/opgelost/teruggekeerd met badges), plus een what-changed-sectie in de maandelijkse/wekelijks-dashboard (Fase 4 uitbreiding)
+5. **Snooze**: per finding per site tijdelijk dempen (7/30 dagen of "tot volgende scan", sentinel `"next-scan"` wordt verbruikt bij de eerstvolgende scan-finish), opgeslagen op de finding (`snooze_until`, draagt over via carry-over plan 09); gesnoozde findings tellen niet mee in diff-alerts maar wel in de view
+6. **UI**: "Wijzigingen"-sectie op de resultatenpagina (nieuw/opgelost/teruggekeerd met badges + snooze-knoppen per finding), plus een what-changed-sectie in de maandelijkse/wekelijks-dashboard (Fase 4 uitbreiding, nog niet gedaan)
 
 ## Uitgangssituatie (code vandaag)
 
@@ -37,14 +37,14 @@
 
 ## Open vragen
 
-- Fingerprint-stabiliteit bij kleine tekstwijzigingen in een finding (detailveld wisselt, rule blijft): rule-only of rule+detail-hash?
-- "Schone snapshot" is dynamisch (laatste scan ≥ 80): wat als een site structureel onder de 80 zit — snapshot vervalt dan nooit en alles blijft "new" (alternatief: laatste scan als referentie met losse ernst-drempels?)
-- Snooze en "mark as fixed" tegelijk: wat toont de what-changed-view bij beide?
+- ~~Fingerprint-stabiliteit bij kleine tekstwijzigingen in een finding (detailveld wisselt, rule blijft): rule-only of rule+detail-hash?~~ → opgelost: rule-only. Fingerprint = sha256(`check_id + \u0000 + route_url + \u0000 + title`); detail/evidence/severity wisselen heeft geen invloed op de diff.
+- ~~"Schone snapshot" is dynamisch (laatste scan ≥ 80): wat als een site structureel onder de 80 zit — snapshot vervalt dan nooit en alles blijft "new" (alternatief: laatste scan als referentie met losse ernst-drempels?)~~ → opgelost: schoon = score ≥ 80 **of** geen open critical/high (non-active). Heeft een site nog nooit een schone scan gehad, dan is er geen snapshot en blijft de diff leeg (geen valse "nieuw"-vloedgolf).
+- ~~Snooze en "mark as fixed" tegelijk: wat toont de what-changed-view bij beide?~~ → opgelost: status en snooze zijn onafhankelijk (snooze-only PATCH verandert de status niet). Snooze draagt over via de carry-over (plan 09) en toont in de view een "gesnoozd"-indicator; het dempt alleen de diff-alerts.
 
 ## Acceptatiecriteria
 
-- [ ] Elke geplande scan produceert een diff t.o.v. de laatste schone snapshot (new/resolved/regressed/unchanged per ernst)
-- [ ] "Dismissed-then-returned" findings krijgen `regressed: true` en een badge "Teruggekeerd"
-- [ ] Alerts alleen bij verandering boven de drempel; handmatige scans sturen geen diff-mail
-- [ ] Snooze (7/30d) dempt alerts maar houdt de finding zichtbaar in de view
-- [ ] Wijzigingen-tab toont nieuw/opgelost/teruggekeerd correct; `GET /api/scans/[id]/diff` werkt met dezelfde authz
+- [x] Elke geplande scan produceert een diff t.o.v. de laatste schone snapshot (new/resolved/regressed/unchanged per ernst)
+- [x] "Dismissed-then-returned" findings krijgen `regressed: true` en een badge "Teruggekeerd"
+- [x] Alerts alleen bij verandering boven de drempel; handmatige scans sturen geen diff-mail
+- [x] Snooze (7/30d) dempt alerts maar houdt de finding zichtbaar in de view
+- [x] Wijzigingen-tab toont nieuw/opgelost/teruggekeerd correct; `GET /api/scans/[id]/diff` werkt met dezelfde authz

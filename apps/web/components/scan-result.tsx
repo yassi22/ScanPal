@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AI_ENGINE_BOTS,
-  aiEngineLabels,
   categoryLabels,
   checksForCategory,
   scanCategories,
@@ -17,6 +16,7 @@ import {
 } from "@scanpal/shared";
 import { useScanProgress, type ScanViewState } from "@/lib/use-scan-progress";
 import { FindingsPanel } from "./findings-panel";
+import { DiffPanel } from "./diff-panel";
 
 type Props = {
   scanId: string;
@@ -684,6 +684,8 @@ export function ScanResultView({
               <ActiveTestsSection items={findingsItems} />
 
               <EngineMatrixSection items={findingsItems} />
+
+              <DiffPanel scanId={scanId} />
 
               <div className="mt-6">
                 <FindingsPanel scanId={scanId} legacy={legacyFindings} />

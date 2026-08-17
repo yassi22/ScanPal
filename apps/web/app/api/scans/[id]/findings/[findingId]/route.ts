@@ -12,9 +12,11 @@ export const runtime = "nodejs";
 
 /**
  * PATCH /api/scans/[id]/findings/[findingId] — status (open/fixed/ignored)
- * + optionele note op één finding (plan 09, feature 20). Zelfde authz als
- * de GET-route; onbekende finding in deze scan → 404. De note wordt bij elke
- * status-wijziging zonder opgegeven note leeggemaakt.
+ * + optionele note (plan 09) én snooze_until (7/30 dagen of "next-scan",
+ * plan 59). Beide zijn optioneel: een snooze-actie verandert de status niet
+ * en omgekeerd. Zelfde authz als de GET-route; onbekende finding in deze
+ * scan → 404. De note wordt bij een status-wijziging zonder opgegeven note
+ * leeggemaakt.
  */
 export async function PATCH(
   request: Request,
@@ -41,7 +43,7 @@ export async function PATCH(
   const parsedBody = findingStatusUpdateSchema.safeParse(body);
   if (!parsedBody.success) {
     return NextResponse.json(
-      { error: "Ongeldige body — verwacht { status, note? }" },
+      { error: "Ongeldige body — verwacht { status?, note?, snooze_until? }" },
       { status: 400 },
     );
   }
@@ -67,11 +69,16 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const updated: Finding = {
-    ...items[index],
-    status: parsedBody.data.status,
-    note: parsedBody.data.note ?? null,
-  };
+  const patch: Partial<Finding> = {};
+  if (parsedBody.data.status !== undefined) {
+    patch.status = parsedBody.data.status;
+    patch.note = parsedBody.data.note ?? null;
+  }
+  if (parsedBody.data.snooze_until !== undefined) {
+    patch.snooze_until = parsedBody.data.snooze_until;
+  }
+
+  const updated: Finding = { ...items[index], ...patch };
   items[index] = updated;
 
   await pool.query("update scans set findings = $1 where id = $2", [

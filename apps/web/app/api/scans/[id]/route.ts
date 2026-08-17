@@ -57,6 +57,7 @@ export async function GET(
     progress_details: row.progress_details ?? null,
     score: row.score,
     findings,
+    diff: row.diff ?? {},
     summary:
       row.status === "completed" ? summarizeFindings(findings) : null,
     error:

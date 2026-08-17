@@ -24,6 +24,8 @@ export function makeFinding(overrides: Partial<Finding> = {}): Finding {
     active: false,
     status: "open",
     note: null,
+    regressed: false,
+    snooze_until: null,
     created_at: NOW,
     route_url: null,
     ...overrides,

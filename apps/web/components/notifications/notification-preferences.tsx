@@ -10,6 +10,12 @@ const TYPE_META: { type: NotificationType; label: string; description: string }[
     description: "Wanneer de score van een site daalt bij een geplande scan.",
   },
   {
+    type: "scan_diff",
+    label: "Wijzigingen gedetecteerd",
+    description:
+      "Wanneer een geplande scan nieuwe of teruggekeerde bevindingen toont (vanaf medium) of de score ≥ 5 punten daalt.",
+  },
+  {
     type: "critical_finding",
     label: "Kritieke bevinding",
     description: "Wanneer een scan een of meer kritieke bevindingen oplevert.",

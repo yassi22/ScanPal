@@ -7,6 +7,7 @@ import type { NotificationType, NotificationView } from "@scanpal/shared";
 const TYPE_LABELS: Record<NotificationType, string> = {
   scan_done: "Scan voltooid",
   score_drop: "Score gedaald",
+  scan_diff: "Wijzigingen gedetecteerd",
   site_down: "Site down",
   site_recovered: "Site hersteld",
   critical_finding: "Kritieke bevinding",
@@ -20,6 +21,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 const TYPE_COLORS: Record<NotificationType, string> = {
   scan_done: "bg-teal-500/15 text-teal-400",
   score_drop: "bg-amber-500/15 text-amber-400",
+  scan_diff: "bg-sky-500/15 text-sky-400",
   site_down: "bg-red-500/15 text-red-400",
   site_recovered: "bg-emerald-500/15 text-emerald-400",
   critical_finding: "bg-red-500/15 text-red-400",

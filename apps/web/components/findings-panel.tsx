@@ -11,6 +11,7 @@ import {
   type Finding,
   type FindingSeverity,
   type FindingStatus,
+  type FixPrompt,
   type ScanCategory,
   type SeverityCounts,
 } from "@scanpal/shared";
@@ -146,6 +147,169 @@ function routePath(url: string): string {
   }
 }
 
+function snoozeDays(days: number): string {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+/** Clipboard met fallback (navigator.clipboard vereist een secure context). */
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // valt door naar de fallback
+  }
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Plan 60: kopieer-knop per finding — haalt de enkelvoudige fix-prompt op
+ * en kopieert die direct naar het klembord.
+ */
+function CopyFindingPromptButton({
+  scanId,
+  finding,
+}: {
+  scanId: string;
+  finding: Finding;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleClick() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/scans/${scanId}/findings/${encodeURIComponent(finding.id)}/prompt`,
+      );
+      if (!res.ok) throw new Error("Ophalen mislukt");
+      const data = (await res.json()) as { prompt: string };
+      const ok = await copyToClipboard(data.prompt);
+      if (ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        setError("Kopiëren mislukt");
+      }
+    } catch {
+      setError("Prompt ophalen mislukt");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={handleClick}
+        className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-slate-500 disabled:opacity-50"
+      >
+        {busy ? "Laden…" : copied ? "Gekopieerd ✓" : "Kopieer prompt"}
+      </button>
+      {error && <span className="text-xs text-red-400">{error}</span>}
+    </div>
+  );
+}
+
+/**
+ * Plan 60: "Genereer fix-prompt"-knop bovenaan de findings — genereert de
+ * gegroepeerde scan-prompt en toont die in een panel met kopieer-knop.
+ */
+function ScanFixPromptPanel({ scanId }: { scanId: string }) {
+  const [prompt, setPrompt] = useState<FixPrompt | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function generate() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/scans/${scanId}/fix-prompt`);
+      if (!res.ok) throw new Error("Ophalen mislukt");
+      setPrompt((await res.json()) as FixPrompt);
+    } catch {
+      setError("Fix-prompt genereren mislukt. Probeer het opnieuw.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function copy() {
+    if (!prompt) return;
+    const ok = await copyToClipboard(prompt.prompt);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      setError("Kopiëren mislukt");
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <button
+        type="button"
+        disabled={loading}
+        onClick={generate}
+        className="rounded-lg bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand transition hover:bg-brand/20 disabled:opacity-50"
+      >
+        {loading ? "Genereren…" : "Genereer fix-prompt"}
+      </button>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      {prompt && (
+        <div className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Fix-prompt (Engels, voor AI-editors)
+            </p>
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span>{prompt.findings_covered} open findings</span>
+              {prompt.truncated && (
+                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 font-semibold text-amber-400">
+                  Afgekapt
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={copy}
+                className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-brand/90"
+              >
+                {copied ? "Gekopieerd ✓" : "Kopieer"}
+              </button>
+            </div>
+          </div>
+          <textarea
+            readOnly
+            value={prompt.prompt}
+            rows={14}
+            className="mt-3 w-full resize-y rounded-lg bg-slate-900 p-3 font-mono text-xs leading-relaxed text-slate-300"
+            aria-label="Fix-prompt"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FindingsPanel({ scanId, legacy }: Props) {
   const [filters, setFilters] = useState<Filters>({
     severity: null,
@@ -230,6 +394,27 @@ export function FindingsPanel({ scanId, legacy }: Props) {
       await fetchPage(0, true);
     } catch {
       setError("Status bijwerken mislukt. Probeer het opnieuw.");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function snoozeFinding(finding: Finding, snoozeUntil: string | null) {
+    setUpdatingId(finding.id);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/scans/${scanId}/findings/${encodeURIComponent(finding.id)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snooze_until: snoozeUntil }),
+        },
+      );
+      if (!res.ok) throw new Error("Snooze mislukt");
+      await fetchPage(0, true);
+    } catch {
+      setError("Snooze bijwerken mislukt. Probeer het opnieuw.");
     } finally {
       setUpdatingId(null);
     }
@@ -426,6 +611,11 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                 <span className={`text-xs ${STATUS_COLORS[finding.status]}`}>
                   {STATUS_LABELS[finding.status]}
                 </span>
+                {finding.snooze_until && (
+                  <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-400">
+                    Gesnoozd
+                  </span>
+                )}
                 <span className="text-xs text-slate-600">
                   {expanded ? "−" : "+"}
                 </span>
@@ -551,6 +741,49 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                       >
                         Reopen
                       </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                      Snooze-alert
+                    </span>
+                    {finding.snooze_until ? (
+                      <button
+                        type="button"
+                        disabled={updatingId === finding.id}
+                        onClick={() => snoozeFinding(finding, null)}
+                        className="rounded-lg border border-sky-500/40 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:border-sky-500 disabled:opacity-50"
+                      >
+                        Snooze opheffen
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={updatingId === finding.id}
+                          onClick={() => snoozeFinding(finding, snoozeDays(7))}
+                          className="rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-sky-500/20 disabled:opacity-50"
+                        >
+                          7 dagen
+                        </button>
+                        <button
+                          type="button"
+                          disabled={updatingId === finding.id}
+                          onClick={() => snoozeFinding(finding, snoozeDays(30))}
+                          className="rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-sky-500/20 disabled:opacity-50"
+                        >
+                          30 dagen
+                        </button>
+                        <button
+                          type="button"
+                          disabled={updatingId === finding.id}
+                          onClick={() => snoozeFinding(finding, "next-scan")}
+                          className="rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-sky-500/20 disabled:opacity-50"
+                        >
+                          Tot volgende scan
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

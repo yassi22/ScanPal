@@ -268,15 +268,24 @@ describe("listUptimeSummaries", () => {
       makeSite("site-2", "team-1", { uptime_enabled: false }),
       makeSite("site-ander", "team-2"),
     ]);
+    const hour = 3600 * 1000;
     f.events.push(
-      makeEvent("site-1", { checked_at: new Date("2026-08-16T09:30:00Z"), status: "up", latency_ms: 100 }),
       makeEvent("site-1", {
-        checked_at: new Date("2026-08-16T11:00:00Z"),
+        checked_at: new Date(Date.now() - 3 * hour),
+        status: "up",
+        latency_ms: 100,
+      }),
+      makeEvent("site-1", {
+        checked_at: new Date(Date.now() - 1 * hour),
         status: "down",
         latency_ms: null,
         error: "timeout",
       }),
-      makeEvent("site-2", { checked_at: new Date("2026-08-16T09:00:00Z"), status: "up", latency_ms: 50 }),
+      makeEvent("site-2", {
+        checked_at: new Date(Date.now() - 1 * hour),
+        status: "up",
+        latency_ms: 50,
+      }),
     );
 
     const summaries = await listUptimeSummaries(f.pool, "team-1");

@@ -215,9 +215,10 @@ describe("GET/PATCH /api/notifications/preferences", () => {
     const byType = new Map(
       body.preferences.map((p: { type: string; enabled: boolean }) => [p.type, p.enabled]),
     );
-    expect(byType.size).toBe(10);
+    expect(byType.size).toBe(11);
     expect(byType.get("scan_done")).toBe(true);
     expect(byType.get("score_drop")).toBe(true);
+    expect(byType.get("scan_diff")).toBe(true);
     expect(byType.get("site_down")).toBe(true);
     expect(byType.get("scan_failed")).toBe(true);
     expect(byType.get("webhook_disabled")).toBe(true);

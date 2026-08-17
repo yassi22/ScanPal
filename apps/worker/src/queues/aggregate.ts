@@ -2,8 +2,11 @@ import type { Pool } from "pg";
 import type { NotifyInput } from "@scanpal/notify";
 import {
   categoryScoresFromFindings,
+  countAtOrAbove,
   findingsPayloadSchema,
   overallScoreFromFindings,
+  scanDiffSchema,
+  type SeverityCounts,
 } from "@scanpal/shared";
 import {
   buildFindingsFromChecks,
@@ -50,9 +53,13 @@ async function previousScore(
  * Aggregator (plan 27, stap 7): draait pas als álle children compleet zijn
  * (flow-semantiek). Bouwt de finale findings-payload uit de `checks`-rijen,
  * valideert met `findingsPayloadSchema`, berekent overall + per-categorie
- * scores en roept `finishScan` (race-guard op canceled). Daarna notificaties:
- * scan_done + critical_finding (via de gedeelde helper), score_drop bij een
- * daling t.o.v. de vorige voltooide scan.
+ * scores en roept `finishScan` (race-guard op canceled; schrijft ook de diff
+ * t.o.v. de laatste schone snapshot, plan 59). Daarna notificaties:
+ * scan_done + critical_finding (via de gedeelde helper) en één `scan_diff`-
+ * alert bij daadwerkelijke verandering — alleen voor niet-handmatige scans
+ * (plan 59, besluit 4): nieuwe/teruggekeerde bevindingen ≥ medium óf een
+ * score-daling ≥ 5 punten. De oude `score_drop`-mail (plan 05) is hiermee
+ * vervangen; gesnoozde findings tellen niet mee (alert_new/alert_regressed).
  */
 export function createAggregateProcessor(
   db: Pool,
@@ -106,24 +113,77 @@ export function createAggregateProcessor(
       notify,
     );
 
-    const previous = await previousScore(db, scan.site_id, scanId);
-    if (previous !== null && finished.score !== null && finished.score < previous) {
-      await notify({
-        type: "score_drop",
-        teamId: scan.team_id,
-        entityId: scanId,
-        payload: {
-          site_name: siteName,
-          previous_score: previous,
-          new_score: finished.score,
-        },
-      });
-    }
+    await emitScanDiffAlert(db, notify, {
+      scan,
+      scanId,
+      finished,
+      siteName,
+    });
 
     log(
       `aggregate: scan ${scanId} afgerond (${finished.status}, score ${finished.score ?? "—"})`,
     );
   };
+}
+
+type DiffAlertInput = {
+  scan: AggregateRow;
+  scanId: string;
+  finished: { score: number | null; trigger: string; diff: Record<string, unknown> };
+  siteName: string;
+};
+
+function totalCount(counts: SeverityCounts): number {
+  return (
+    counts.critical + counts.high + counts.medium + counts.low + counts.info
+  );
+}
+
+/**
+ * Diff-alert (plan 59, besluit 4): alleen voor niet-handmatige scans, en alleen
+ * bij verandering boven de drempel — nieuwe/teruggekeerde bevindingen vanaf
+ * medium, of een score-daling ≥ 5 punten. Gesnoozde findings zitten niet in
+ * `alert_new`/`alert_regressed` (wél in de stored diff voor de view).
+ */
+async function emitScanDiffAlert(
+  db: Pool,
+  notify: (input: NotifyInput) => Promise<unknown> | unknown,
+  input: DiffAlertInput,
+): Promise<void> {
+  if (input.finished.trigger === "manual") return;
+
+  const diff = scanDiffSchema.safeParse(input.finished.diff);
+  if (!diff.success) return;
+
+  const newMediumPlus = countAtOrAbove(diff.data.alert_new, "medium");
+  const regressedMediumPlus = countAtOrAbove(diff.data.alert_regressed, "medium");
+
+  const previous = await previousScore(db, input.scan.site_id, input.scanId);
+  const scoreDrop =
+    previous !== null && input.finished.score !== null
+      ? previous - input.finished.score
+      : null;
+
+  const hasNewOrRegressed = newMediumPlus > 0 || regressedMediumPlus > 0;
+  const hasScoreDrop = scoreDrop !== null && scoreDrop >= 5;
+  if (!hasNewOrRegressed && !hasScoreDrop) return;
+
+  await notify({
+    type: "scan_diff",
+    teamId: input.scan.team_id,
+    entityId: input.scanId,
+    payload: {
+      site_name: input.siteName,
+      new_count: totalCount(diff.data.alert_new),
+      resolved_count: totalCount(diff.data.resolved),
+      regressed_count: totalCount(diff.data.alert_regressed),
+      new_high: countAtOrAbove(diff.data.alert_new, "high"),
+      regressed_high: countAtOrAbove(diff.data.alert_regressed, "high"),
+      score_drop: hasScoreDrop ? scoreDrop : undefined,
+      previous_score: hasScoreDrop ? previous : undefined,
+      new_score: hasScoreDrop ? input.finished.score : undefined,
+    },
+  });
 }
 
 /**

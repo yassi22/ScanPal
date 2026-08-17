@@ -36,6 +36,8 @@ function makeItem(overrides: Record<string, unknown> = {}) {
     evidence: null,
     status: "open",
     note: null,
+    regressed: false,
+    snooze_until: null,
     created_at: "2026-08-15T09:00:00.000Z",
     ...overrides,
   };
@@ -150,5 +152,61 @@ describe("PATCH /api/scans/[id]/findings/[findingId]", () => {
     const body = await response.json();
     expect(body.status).toBe("open");
     expect(body.note).toBeNull();
+  });
+
+  it("snoozet een finding zonder de status te veranderen (snooze-only)", async () => {
+    queryMock.mockResolvedValueOnce({
+      rowCount: 1,
+      rows: [{ findings: makePayload([makeItem()]) }],
+    } as never);
+    queryMock.mockResolvedValueOnce({ rowCount: 1, rows: [] } as never);
+
+    const snoozeUntil = "2026-08-22T09:00:00.000Z";
+    const response = await patchResponse({ snooze_until: snoozeUntil });
+    expect(response.status).toBe(200);
+
+    const body = await response.json();
+    expect(body.status).toBe("open");
+    expect(body.snooze_until).toBe(snoozeUntil);
+
+    const updateCall = queryMock.mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].startsWith("update scans"),
+    );
+    const stored = JSON.parse(updateCall![1][0] as string);
+    expect(stored.items[0]).toMatchObject({
+      id: FINDING_ID,
+      status: "open",
+      snooze_until: snoozeUntil,
+    });
+  });
+
+  it("accepteert 'next-scan' als snooze-waarde", async () => {
+    queryMock.mockResolvedValueOnce({
+      rowCount: 1,
+      rows: [{ findings: makePayload([makeItem()]) }],
+    } as never);
+    queryMock.mockResolvedValueOnce({ rowCount: 1, rows: [] } as never);
+
+    const response = await patchResponse({ snooze_until: "next-scan" });
+    expect(response.status).toBe(200);
+    expect((await response.json()).snooze_until).toBe("next-scan");
+  });
+
+  it("heft een snooze op met snooze_until: null", async () => {
+    queryMock.mockResolvedValueOnce({
+      rowCount: 1,
+      rows: [
+        {
+          findings: makePayload([
+            makeItem({ snooze_until: "2026-08-22T09:00:00.000Z" }),
+          ]),
+        },
+      ],
+    } as never);
+    queryMock.mockResolvedValueOnce({ rowCount: 1, rows: [] } as never);
+
+    const response = await patchResponse({ snooze_until: null });
+    expect(response.status).toBe(200);
+    expect((await response.json()).snooze_until).toBeNull();
   });
 });

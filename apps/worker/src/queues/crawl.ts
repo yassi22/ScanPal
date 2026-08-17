@@ -97,6 +97,8 @@ function routeLimitFinding(
     active: false,
     status: "open",
     note: null,
+    regressed: false,
+    snooze_until: null,
     route_url: null,
     created_at: now,
   };
