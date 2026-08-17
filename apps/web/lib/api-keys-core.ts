@@ -98,6 +98,23 @@ export async function findApiKey(
 }
 
 /**
+ * Feature 25 — lookup op prefix voor HMAC-auth (de client stuurt alleen de
+ * prefix, niet de full key). Prefix is uniek per key (32 random bytes).
+ */
+export async function findApiKeyByPrefix(
+  db: Pool,
+  prefix: string,
+): Promise<ApiKeyRow | null> {
+  const result = await db.query(
+    `select id, team_id, created_by, name, prefix, key_hash,
+       last_used_at, revoked_at, expires_at, created_at
+     from api_keys where prefix = $1`,
+    [prefix],
+  );
+  return result.rowCount ? (result.rows[0] as ApiKeyRow) : null;
+}
+
+/**
  * Fire-and-forget per verzoek: last_used_at + dag-teller (api_key_usage).
  * Failures worden gelogd, nooit de request laten falen.
  */

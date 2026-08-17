@@ -6,7 +6,12 @@ import {
 import { getSessionUser } from "@/lib/supabase/server";
 import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
-import { findApiKey, hashApiKey, recordApiKeyUsage } from "@/lib/api-keys-core";
+import { findApiKey, findApiKeyByPrefix, hashApiKey, recordApiKeyUsage } from "@/lib/api-keys-core";
+import {
+  canonicalRequestString,
+  sha256Hex,
+  signHmacRequest,
+} from "@/lib/api-hmac";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getPlanForTeam } from "@/lib/credits";
 
@@ -22,6 +27,7 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/lib/api-keys-core", () => ({
   findApiKey: vi.fn(),
+  findApiKeyByPrefix: vi.fn(),
   hashApiKey: vi.fn((key: string) => `hashed:${key}`),
   recordApiKeyUsage: vi.fn().mockResolvedValue(undefined),
 }));
@@ -35,6 +41,7 @@ vi.mock("@/lib/credits", () => ({
 const getUserMock = vi.mocked(getSessionUser);
 const ensureTeamMock = vi.mocked(ensureUserTeam);
 const findKeyMock = vi.mocked(findApiKey);
+const findPrefixMock = vi.mocked(findApiKeyByPrefix);
 const hashKeyMock = vi.mocked(hashApiKey);
 const usageMock = vi.mocked(recordApiKeyUsage);
 const rateLimitMock = vi.mocked(checkRateLimit);
@@ -46,6 +53,37 @@ function bearerRequest(key: string): Request {
   return new Request("http://localhost/api/scans", {
     headers: { Authorization: `Bearer ${key}` },
   });
+}
+
+/** Feature 25 — bouw een HMAC-request met geldige signature. */
+function hmacRequest(
+  prefix: string,
+  secret: string,
+  overrides: {
+    method?: string;
+    path?: string;
+    body?: string;
+    timestamp?: string;
+    signature?: string;
+    omitSignature?: boolean;
+    omitTimestamp?: boolean;
+  } = {},
+): Request {
+  const method = overrides.method ?? "GET";
+  const path = overrides.path ?? "/api/scans";
+  const timestamp = overrides.timestamp ?? String(Math.floor(Date.now() / 1000));
+  const bodyHash =
+    method === "GET" || method === "HEAD" || method === "DELETE"
+      ? sha256Hex("")
+      : sha256Hex(overrides.body ?? "");
+  const canonical = canonicalRequestString(method, path, timestamp, bodyHash);
+  const signature = overrides.signature ?? signHmacRequest(secret, canonical);
+  const headers: Record<string, string> = {
+    Authorization: `HMAC ${prefix}`,
+  };
+  if (!overrides.omitTimestamp) headers["X-Timestamp"] = timestamp;
+  if (!overrides.omitSignature) headers["X-Signature"] = signature;
+  return new Request(`http://localhost${path}`, { method, headers, body: overrides.body });
 }
 
 function makeKeyRow(overrides: Record<string, unknown> = {}) {
@@ -156,6 +194,116 @@ describe("requireTeam", () => {
     const result = await requireTeam(bearerRequest("sp_live_abc"));
 
     expect(result).toEqual({ ok: false, status: 429, retryAfter: 10 });
+  });
+
+  // Feature 25 — HMAC-request-signing.
+  it("HMAC met geldige signature → team-id (zelfde pad als bearer)", async () => {
+    findPrefixMock.mockResolvedValue(makeKeyRow() as never);
+
+    const result = await requireTeam(
+      hmacRequest("sp_live_abc", "hashed:sp_live_abc"),
+    );
+
+    expect(findPrefixMock).toHaveBeenCalledWith(pool, "sp_live_abc");
+    expect(rateLimitMock).toHaveBeenCalledWith("key:key-1", 120);
+    expect(rateLimitMock).toHaveBeenCalledWith("team:team-1", 120);
+    expect(usageMock).toHaveBeenCalledWith(pool, "key-1");
+    expect(result).toMatchObject({
+      ok: true,
+      ctx: { teamId: "team-1", auth: { type: "key", keyId: "key-1" } },
+    });
+  });
+
+  it("HMAC met verkeerde signature → 401", async () => {
+    findPrefixMock.mockResolvedValue(makeKeyRow() as never);
+
+    const result = await requireTeam(
+      hmacRequest("sp_live_abc", "wrong-secret"),
+    );
+
+    expect(result).toEqual({ ok: false, status: 401 });
+    expect(rateLimitMock).not.toHaveBeenCalled();
+  });
+
+  it("HMAC zonder X-Signature header → 401", async () => {
+    findPrefixMock.mockResolvedValue(makeKeyRow() as never);
+
+    const result = await requireTeam(
+      hmacRequest("sp_live_abc", "hashed:sp_live_abc", { omitSignature: true }),
+    );
+
+    expect(result).toEqual({ ok: false, status: 401 });
+  });
+
+  it("HMAC met verlopen timestamp → 401 (replay-bescherming)", async () => {
+    findPrefixMock.mockResolvedValue(makeKeyRow() as never);
+
+    const result = await requireTeam(
+      hmacRequest("sp_live_abc", "hashed:sp_live_abc", {
+        timestamp: String(Math.floor(Date.now() / 1000) - 600),
+      }),
+    );
+
+    expect(result).toEqual({ ok: false, status: 401 });
+  });
+
+  it("HMAC met onbekende prefix → 401", async () => {
+    findPrefixMock.mockResolvedValue(null as never);
+
+    const result = await requireTeam(
+      hmacRequest("sp_live_unknown", "whatever"),
+    );
+
+    expect(result).toEqual({ ok: false, status: 401 });
+  });
+
+  it("HMAC met gerevokede key → 401", async () => {
+    findPrefixMock.mockResolvedValue(
+      makeKeyRow({ revoked_at: new Date("2026-08-16T09:00:00Z") }) as never,
+    );
+
+    const result = await requireTeam(
+      hmacRequest("sp_live_abc", "hashed:sp_live_abc"),
+    );
+
+    expect(result).toEqual({ ok: false, status: 401 });
+  });
+
+  it("HMAC POST met body → signature over body-hash verifieert", async () => {
+    findPrefixMock.mockResolvedValue(makeKeyRow() as never);
+
+    const body = JSON.stringify({ url: "https://example.com" });
+    const result = await requireTeam(
+      hmacRequest("sp_live_abc", "hashed:sp_live_abc", {
+        method: "POST",
+        body,
+      }),
+    );
+
+    expect(result).toMatchObject({ ok: true });
+  });
+
+  it("HMAC POST met gewijzigde body → signature wijst af", async () => {
+    findPrefixMock.mockResolvedValue(makeKeyRow() as never);
+
+    // Signature over oorspronkelijke body, request stuurt andere body.
+    const result = await requireTeam(
+      hmacRequest("sp_live_abc", "hashed:sp_live_abc", {
+        method: "POST",
+        body: JSON.stringify({ url: "https://other.com" }),
+        signature: signHmacRequest(
+          "hashed:sp_live_abc",
+          canonicalRequestString(
+            "POST",
+            "/api/scans",
+            String(Math.floor(Date.now() / 1000)),
+            sha256Hex(JSON.stringify({ url: "https://example.com" })),
+          ),
+        ),
+      }),
+    );
+
+    expect(result).toEqual({ ok: false, status: 401 });
   });
 });
 
