@@ -14,6 +14,7 @@ import { SECURITY_HEADER_CHECK_IDS, securityHeadersCheck } from "./http/security
 import { metaTagsCheck } from "./http/meta-tags";
 import { COOKIE_CHECK_IDS, cookiesCheck } from "./http/cookies";
 import { createSecretsInBundlesCheck } from "./http/secrets-in-bundles";
+import { secretsInHtmlCheck } from "./http/secrets-in-html";
 import { createActiveTestsCheck } from "./http/active-tests";
 import { corsCheck } from "./http/cors";
 import { aeoEngineMatrixCheck } from "./http/aeo-engine-matrix";
@@ -60,6 +61,8 @@ export function buildRegistry(rateLimit: RateLimiter): Record<QueueName, Impleme
       toImplemented(cookiesCheck, [...COOKIE_CHECK_IDS]),
       toImplemented(corsCheck),
       toImplemented(createSecretsInBundlesCheck(rateLimit)),
+      // Feature 33: secrets-in-HTML — inline scripts/comments/attributen.
+      toImplemented(secretsInHtmlCheck),
       toImplemented(createActiveTestsCheck(rateLimit), activeTestCatalogIds),
       // Plan 55: AEO per-engine matrix draait in de http-worker (geen browser
       // nodig); catalog-categorie is aeo (progress wordt via http voortgeschoven).

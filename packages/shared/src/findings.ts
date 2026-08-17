@@ -32,6 +32,10 @@ import {
   type SecurityTxtEvidence,
 } from "./security-txt";
 import {
+  secretsInHtmlEvidenceSchema,
+  type SecretsInHtmlEvidence,
+} from "./secrets-in-html";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -78,6 +82,7 @@ export const findingSchema = z.object({
       subresourcesEvidenceSchema,
       structuredDataEvidenceSchema,
       securityTxtEvidenceSchema,
+      secretsInHtmlEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -223,6 +228,7 @@ export type InlineCheckLike = {
     | SubresourcesEvidence
     | StructuredDataEvidence
     | SecurityTxtEvidence
+    | SecretsInHtmlEvidence
     | string
     | null;
 };
@@ -241,6 +247,7 @@ export function evidenceText(
     | SubresourcesEvidence
     | StructuredDataEvidence
     | SecurityTxtEvidence
+    | SecretsInHtmlEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -290,6 +297,11 @@ export function evidenceText(
     }
     if (evidence.kind === "security-txt") {
       return `security_txt=${evidence.security_txt.present} favicon=${evidence.favicon.present} 404=${evidence.not_found_page.is_404}`;
+    }
+    if (evidence.kind === "secrets-in-html") {
+      return evidence.matches
+        .map((match) => `${match.key_type} ${match.provider} ${match.location} ${match.match_preview}`)
+        .join(" ");
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -363,6 +375,10 @@ const ISSUE_TITLES: Record<
   "secrets-in-bundles": {
     warn: "Mogelijke gelekte API-keys in JS-bundels",
     fail: "Gelekte API-keys in JS-bundels",
+  },
+  "secrets-in-html": {
+    warn: "Mogelijke gelekte API-keys in inline HTML",
+    fail: "Gelekte API-keys in inline HTML",
   },
   cors: {
     warn: "CORS laat arbitraire origins toe",
@@ -483,6 +499,8 @@ const REMEDIATION: Record<string, string> = {
     "Voeg geldig JSON-LD toe (<script type=\"application/ld+json\">) met een @type uit schema.org (bijv. Organization, WebSite, BreadcrumbList, Article) en valideer via de Rich Results Test van Google.",
   "security-txt":
     "Publiceer een /.well-known/security.txt volgens RFC 9116 met verplichte velden `Contact:` en `Expires:` (in de toekomst), plus een favicon op /favicon.ico en een custom 404-pagina met h1, zoekfunctie en een link naar de homepage.",
+  "secrets-in-html":
+    "Verwijder het geheim uit de inline HTML/JS en roteer het direct (behandel het als gelekt). Plaats secrets server-side in omgevingsvariabelen of een secrets-manager en lever ze via een beveiligde API-endpoint, nooit inline in het HTML-document of in inline <script>-blokken.",
 };
 
 /**

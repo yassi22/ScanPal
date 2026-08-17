@@ -8,14 +8,14 @@ describe("skeletonTotals (progress-skelet)", () => {
     const registry = buildRegistry(rateLimit);
     const totals = skeletonTotals(registry, ["http", "browser"], false);
     // reachability + https + tls-cert + domain-watchtower + 8 security-header-checks
-    // + 5 cookie-checks + secrets-in-bundles + cors = http, meta-tags = seo;
-    // active-tests telt niet mee zonder flag. aeo-engine-matrix (plan 55)
-    // draait in de http-worker met categorie aeo → telt mee onder aeo.
-    // compliance (plan 61) produceert 5 passieve checks onder categorie compliance.
-    // stack-detection (plan 40) is category seo → telt mee onder seo.
-    // redirects-mixed + subresources (plan 32/34) zijn category http.
-    // structured-data + security-txt (plan 39/37) zijn category seo.
-    expect(totals.http).toBe(21);
+    // + 5 cookie-checks + secrets-in-bundles + secrets-in-html + cors = http,
+    // meta-tags = seo; active-tests telt niet mee zonder flag.
+    // aeo-engine-matrix (plan 55) draait in de http-worker met categorie aeo
+    // → telt mee onder aeo. compliance (plan 61) produceert 5 passieve checks
+    // onder categorie compliance. stack-detection (plan 40) is category seo →
+    // telt mee onder seo. redirects-mixed + subresources (plan 32/34) zijn
+    // category http. structured-data + security-txt (plan 39/37) zijn category seo.
+    expect(totals.http).toBe(22);
     expect(totals.seo).toBe(4);
     expect(totals.aeo).toBe(1);
     expect(totals.compliance).toBe(5);
@@ -27,8 +27,8 @@ describe("skeletonTotals (progress-skelet)", () => {
   it("telt de actieve-test-checks mee met de flag aan", () => {
     const registry = buildRegistry(rateLimit);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
-    // 11 actieve-test-catalog-checks + 21 passieve http-checks.
-    expect(totals.http).toBe(32);
+    // 11 actieve-test-catalog-checks + 22 passieve http-checks.
+    expect(totals.http).toBe(33);
     expect(totals.compliance).toBe(5);
   });
 

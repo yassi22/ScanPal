@@ -136,3 +136,4 @@ export * from "./redirects-mixed";
 export * from "./subresources";
 export * from "./structured-data";
 export * from "./security-txt";
+export * from "./secrets-in-html";
