@@ -16,7 +16,7 @@ describe("skeletonTotals (progress-skelet)", () => {
     // telt mee onder seo. redirects-mixed + subresources (plan 32/34) zijn
     // category http. structured-data + security-txt (plan 39/37) zijn category seo.
     expect(totals.http).toBe(22);
-    expect(totals.seo).toBe(4);
+    expect(totals.seo).toBe(5);
     expect(totals.aeo).toBe(1);
     expect(totals.compliance).toBe(5);
     // Categorieën zonder queue-owner krijgen geen key (initialProgressDetails

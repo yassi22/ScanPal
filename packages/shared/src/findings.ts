@@ -36,6 +36,10 @@ import {
   type SecretsInHtmlEvidence,
 } from "./secrets-in-html";
 import {
+  miniCrawlEvidenceSchema,
+  type MiniCrawlEvidence,
+} from "./mini-crawl";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -83,6 +87,7 @@ export const findingSchema = z.object({
       structuredDataEvidenceSchema,
       securityTxtEvidenceSchema,
       secretsInHtmlEvidenceSchema,
+      miniCrawlEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -229,6 +234,7 @@ export type InlineCheckLike = {
     | StructuredDataEvidence
     | SecurityTxtEvidence
     | SecretsInHtmlEvidence
+    | MiniCrawlEvidence
     | string
     | null;
 };
@@ -248,6 +254,7 @@ export function evidenceText(
     | StructuredDataEvidence
     | SecurityTxtEvidence
     | SecretsInHtmlEvidence
+    | MiniCrawlEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -302,6 +309,9 @@ export function evidenceText(
       return evidence.matches
         .map((match) => `${match.key_type} ${match.provider} ${match.location} ${match.match_preview}`)
         .join(" ");
+    }
+    if (evidence.kind === "mini-crawl") {
+      return `images_total=${evidence.image_audit.total} images_missing_alt=${evidence.image_audit.missing} orphans=${evidence.orphan_pages.orphan_count}/${evidence.orphan_pages.sitemap_count}`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -379,6 +389,10 @@ const ISSUE_TITLES: Record<
   "secrets-in-html": {
     warn: "Mogelijke gelekte API-keys in inline HTML",
     fail: "Gelekte API-keys in inline HTML",
+  },
+  "mini-crawl": {
+    warn: "Ontbrekende image-alt of orphan-pagina's gevonden",
+    fail: "Ontbrekende image-alt of orphan-pagina's gevonden",
   },
   cors: {
     warn: "CORS laat arbitraire origins toe",
@@ -501,6 +515,8 @@ const REMEDIATION: Record<string, string> = {
     "Publiceer een /.well-known/security.txt volgens RFC 9116 met verplichte velden `Contact:` en `Expires:` (in de toekomst), plus een favicon op /favicon.ico en een custom 404-pagina met h1, zoekfunctie en een link naar de homepage.",
   "secrets-in-html":
     "Verwijder het geheim uit de inline HTML/JS en roteer het direct (behandel het als gelekt). Plaats secrets server-side in omgevingsvariabelen of een secrets-manager en lever ze via een beveiligde API-endpoint, nooit inline in het HTML-document of in inline <script>-blokken.",
+  "mini-crawl":
+    "Voeg een beschrijvend `alt`-attribuut toe aan elke `<img>` (lege `alt=\"\"` alleen voor puur decoratieve images) voor toegankelijkheid en SEO. Zorg dat elke pagina in de sitemap vanaf minstens één andere pagina intern gelinkt is (voeg interne links toe of verwijder orphan-pagina's uit de sitemap).",
 };
 
 /**

@@ -24,6 +24,7 @@ import { redirectsMixedCheck } from "./http/redirects-mixed";
 import { subresourcesCheck } from "./http/subresources";
 import { structuredDataCheck } from "./http/structured-data";
 import { securityTxtCheck } from "./http/security-txt";
+import { miniCrawlCheck } from "./http/mini-crawl";
 
 /**
  * Geïmplementeerde check per queue (plan 27, besluit 8). `outputCheckIds`
@@ -80,6 +81,8 @@ export function buildRegistry(rateLimit: RateLimiter): Record<QueueName, Impleme
       toImplemented(structuredDataCheck),
       // Plan 37: security.txt (RFC 9116) + favicon + 404-page kwaliteit.
       toImplemented(securityTxtCheck),
+      // Feature 38: mini-crawl — image-alt audit + orphan-page detectie.
+      toImplemented(miniCrawlCheck),
     ],
     // Features 41–43 vullen de browser-worker; feature 27 levert alleen de
     // pipeline (geen aeo-checks geïmplementeerd).
