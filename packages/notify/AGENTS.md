@@ -16,9 +16,10 @@ per-user voorkeuren en dedup.
   gebruikt `uptime_state_changed_at` als incident-id (1× per incident);
   scan-scoped types gebruiken de scan-id (1× per scan). Webhooks: unieke
   `dedup_key` op de delivery-rij (1× per event per webhook).
-- **Defaults** (besluit plan 13): score-drop, site-down/-herstel, kritieke
-  finding, credit-skip, scan-failed, webhook_disabled en payment_failed
-  **aan**; scan_done **uit**. Ontbrekende voorkeurrij = default.
+- **Defaults** (besluit plan 13): score-drop, scan-diff (plan 59), site-down/
+  -herstel, kritieke finding, credit-skip, scan-failed, webhook_disabled en
+  payment_failed **aan**; scan_done **uit**. Ontbrekende voorkeurrij =
+  default.
   Webhook-delivery is team-breed en volgt géén per-user voorkeuren.
   `payment_failed` (plan 16) wordt alleen door de Stripe-webhook-route
   aangeroepen (dedup per invoice-id).

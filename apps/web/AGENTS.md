@@ -66,7 +66,8 @@ covers the webapp layer only.
 | `api/sites/[id]/schedule` | 5, 18 | daily/weekly schema (09:00 UTC, `next_scan_at`), Pro-gate → 403 + upsell |
 | `api/scans` + `api/scans/[id]` | 19 | create (202 + enqueue `scan.dispatcher`), get (progress/result), list, cancel |
 | `api/scans/[id]/stream` | 6 | SSE progress (contract in plan 06) |
-| `api/scans/[id]/findings` + `api/scans/[id]/findings/[findingId]` | 20 | GET: filter (severity/category/status/q, server-side) + counts; PATCH: status/note per finding (plan 09) |
+| `api/scans/[id]/findings` + `api/scans/[id]/findings/[findingId]` | 20 | GET: filter (severity/category/status/q, server-side) + counts; PATCH: status/note per finding (plan 09) én `snooze_until` (plan 59: 7/30d of `"next-scan"`, snooze-only verandert de status niet) |
+| `api/scans/[id]/diff` | 59 | GET: diff t.o.v. de laatste schone snapshot + geselecteerde findings (nieuw + teruggekeerd); authz als de scans-routes; lege diff voor oude scans |
 | `api/reports/[scanId]` + `api/reports` + `api/reports/[id]/content` | 9, 21 | export (plan 10): generate PDF (react-pdf) + Markdown per scan (`?format=md\|pdf`, alleen `completed` → anders 409 + status, `X-Report-Id`-header), historie-lijst (filter `site_id`, team-scoped, max 100), opgeslagen download (geen regeneratie); elke download legt een `reports`-rij vast; sessie óf API-key |
 | `api/billing*`, `api/webhooks/stripe` | 22 | checkout now; plan-sync after MVP |
 | `api/billing/invoices` + `api/billing/subscription` | 16 | facturen live uit de Stripe-API (geen lokale tabel); abonnement-view (DB + 1 live call), PATCH/DELETE owner-only (opzeggen = `cancel_at_period_end`), checkout-body `{ planId, interval }`; `invoice.payment_failed` → hub-notificatie `payment_failed` (dedup per invoice) |
@@ -77,6 +78,8 @@ covers the webapp layer only.
 | `api/sites/[id]/honeypot` | 12 | Pro-gated: honeypot aan/uit + token-rotatie, retourneert install-snippet |
 | `api/api-keys*` | 25 | bearer keys (`sp_live_`, plan 14): GET/POST lijst+create (full key 1×), DELETE soft-revoke; owner-only → 403 |
 | `api/webhooks` + `api/webhooks/[id]` + `[id]/secret` + `[id]/test` + `[id]/deliveries` | 15, 23 | outbound webhooks (plan 15): lijst/create (secret 1×), PATCH/DELETE, rotate (owner-only), test-delivery (event `test`), delivery-log; teamlid-sessie, géén bearer keys |
+| `api/webhooks/github` + `api/webhooks/vercel` | 58 | on-deploy triggers (plan 58): inbound, publiek, HMAC-verified (`x-hub-signature-256` met per-site secret / `x-vercel-signature` met env-secret); match repo/url → scan `trigger='deploy'` (202 `{ scans: [...] }`, 200 stil bij geen match, 401 ongeldig, cooldown 10 min/site via Redis) |
+| `api/sites/[id]/deploy-webhook` | 58 | webhook-setup (plan 58): genereert/roteert `sites.github_webhook_secret` (AES-GCM, owner-only), retourneert URL + secret 1× |
 
 ## Rules & conventions
 

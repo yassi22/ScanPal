@@ -16,7 +16,8 @@ never duplicate the SQL in `apps/*`. Pure math lives in `packages/shared`
 |---|---|
 | `src/types.ts` | `ScanRowWithMeta`, `ScanError`, `FinishScanInput` (shared web + worker types) |
 | `src/progress.ts` | `updateScanProgress` (simple) + `advanceCategoryProgress` (atomic, `select … for update`) + `writeProgressSkeleton` (dispatcher) |
-| `src/finish-scan.ts` | `setSiteScanState` (site-status-cache) + `finishScan` (finaliseert completed/failed, race-guard op `canceled`, schrijft `category_scores`) |
+| `src/finish-scan.ts` | `setSiteScanState` (site-status-cache) + `finishScan` (finaliseert completed/failed, race-guard op `canceled`, schrijft `category_scores` + `scans.diff`) |
+| `src/scan-diff.ts` | Plan 59: `findCleanSnapshot` (laatste schone scan van de site) + `computeAndWriteScanDiff` (diff-berekening binnen de finish-transactie, `regressed`-flags + `"next-scan"`-snooze-sentinels verbruiken) |
 | `src/build-findings.ts` | `buildFindingsFromChecks` — `checks`-rijen → versioned findings-payload (plan 27, besluit 5) |
 | `src/finding-status.ts` | `carryOverFindingStatuses` — fixed/ignored overnemen uit de vorige scan (plan 09) |
 | `src/notifications.ts` | `emitScanFinishedNotifications` — scan_done / critical_finding via `packages/notify` (send injected) |

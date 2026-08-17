@@ -103,7 +103,7 @@ docker-compose.yml
 1. `POST /api/scans` (of onboarding/scheduler) → webapp validates URL, creates `sites` + `scans` rows, enqueues `scan.dispatcher` (`jobId = scanId`) via `packages/scan-core`, responds `202` immediately.
 2. Dispatcher resolves scan+site, writes the progress skeleton (progress 0), and fans out via FlowProducer: parent job on `scan.aggregate`, children `scan.http` + `scan.browser` (+ `scan.github` if the site has a `github_repo`).
 3. Workers run their catalog checks (per-host concurrency limit + rate limit). Each check writes a `checks` row (idempotent upsert) and advances progress atomically (`advanceCategoryProgress`, `select … for update`).
-4. When all children complete, the `scan.aggregate` job runs: it builds the final `findings` payload from the `checks` rows, computes overall + per-category scores (`scans.category_scores`), calls `finishScan` (race-guard: `canceled` is never overwritten), and emits notifications (scan_done / critical_finding / score_drop). Partial failure after exhausted attempts → the whole scan ends `failed` + DLQ.
+4. When all children complete, the `scan.aggregate` job runs: it builds the final `findings` payload from the `checks` rows, computes overall + per-category scores (`scans.category_scores`), calls `finishScan` (race-guard: `canceled` is never overwritten), and emits notifications (scan_done / critical_finding / scan_diff — plan 59; the old score_drop mail is superseded by the diff-based alert). Partial failure after exhausted attempts → the whole scan ends `failed` + DLQ.
 5. Webapp polls `GET /api/scans/{id}` (or SSE) until `completed`, then renders results.
 
 ## Key invariants

@@ -14,7 +14,8 @@ BullMQ.
 | `src/scan-progress.ts` | `scanCategorySchema`, `categoryProgressSchema`, `progressDetailsSchema`, `scanProgressEventSchema` (plan 06) |
 | `src/scan-progress-math.ts` | Pure progress-math (plan 27): `initialProgressDetails` (catalog-totalen), `advanceProgressDetails` (queue-modus: `current_check` = zojuist voltooide check), `overallProgress`, `summarizeFindings`, `checksForCategoryInOrder` |
 | `src/check-catalog.ts` | Check catalog entries (`id`, `category`, `name`, `active`), `categoryLabels`, `queueCategories`/`checksForQueue` (queue-owner per categorie, plan 27) |
-| `src/findings.ts` | Versioned findings schema (severity, status, category, remediation), `findingId`, severity-helpers, carry-over + checks→findings mapper (plan 09) |
+| `src/findings.ts` | Versioned findings schema (severity, status, category, remediation), `findingId`, severity-helpers, carry-over + checks→findings mapper (plan 09); finding-state `regressed` + `snooze_until` (plan 59) |
+| `src/diff.ts` | Plan 59 diff-monitoring: pure SHA-256 (`sha256hex`), finding-fingerprint (rule-only), `isSnoozed`/`isCleanScan`, `scanDiffSchema` (`new/resolved/regressed/unchanged` per severity + `new_finding_ids`/`regressed_finding_ids`/`alert_*`), `computeScanDiff`, `emptyScanDiff`, `diffHasChanges`, `countAtOrAbove`, `scanDiffResponseSchema` |
 | `src/scoring.ts` | Category scores (`categoryScoresSchema`) + `categoryScoresFromFindings` (pass-ratio per categorie) + `overallScoreFromFindings` (plan 08/27) |
 | `src/report.ts` | Export-contract (plan 10): `reportFormatSchema`, `reportDataSchema`, `reportMetaSchema`, `reportListResponseSchema`, `reportListQuerySchema` |
 | `src/index.ts` | Re-exports |

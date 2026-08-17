@@ -18,7 +18,7 @@ webhooks ── webhook_deliveries (outbox) · reports (opgeslagen exports, plan
 |---|---|---|
 | `users`, `teams`, `memberships` | accounts + roles (owner/member) | invite flow per plan 02 |
 | `sites` | URLs, normalized, GitHub repo info | `last_scan_*` denormalized (plan 04) |
-| `scans` | status, `progress` int, `progress_details` JSONB, scores | `progress_details` contract in plan 06 |
+| `scans` | status, `progress` int, `progress_details` JSONB, scores, `diff` JSONB (plan 59) | `progress_details` contract in plan 06; `diff` contract in `packages/shared/src/diff.ts` |
 | `findings` | JSONB, versioned schema from `packages/shared` | never ad-hoc columns |
 | `checks` | one row per check run | isolated, idempotent |
 | `uptime_events` | probes + latency | 2-failure alert rule |

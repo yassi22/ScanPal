@@ -46,7 +46,8 @@ scan pipeline (plan 27, feature 27 ✅) is live; the uptime poller
    per-category scores (`packages/shared` scoring) and calls `finishScan`
    (`completed`/`failed`, race-guard on `canceled`), updates
    `sites.last_scan_*`, and emits notifications (scan_done, critical_finding,
-   score_drop).
+   scan_diff — plan 59 vervangt de oude score_drop-mail; handmatige scans
+   sturen geen diff-mail).
 4. Retry/timeout per queue (dispatcher: 1 · http: 3 · browser: 2 · github: 2 ·
    aggregate: 3) with backoff; after exhausted attempts the job is dead-lettered
    to `dlq.scan.*` and — for sub-jobs/aggregator — the whole scan is marked

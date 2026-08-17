@@ -42,7 +42,9 @@ docs/ROADMAP.md; `docker-compose.yml` exists at the repo root).
 - Everything config via environment (`.env` at repo root, gitignored); never
   commit secrets. Env vars include: `DATABASE_URL`, `REDIS_URL`,
   `NEXTAUTH_URL`/Supabase keys, `STRIPE_*`, `RESEND_API_KEY`,
-  `GITHUB_TOKEN`, `APP_URL`.
+  `GITHUB_TOKEN`, `APP_URL`. Plan 58: `WEBHOOK_SECRET_KEY` (AES-GCM sleutel
+  voor outbound webhook-secrets én `sites.github_webhook_secret`) en
+  `VERCEL_WEBHOOK_SECRET` (Vercel on-deploy-webhook-verificatie).
 - The webapp must not expose `DATABASE_URL` to the client bundle.
 - Backups: nightly `pg_dump` of postgres volume; test restore procedure
   before trusting it.

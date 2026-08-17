@@ -34,9 +34,9 @@ Volledige feature-lijst met MVP-afbakening en plan-koppeling. Legenda:
 | 12 | Threat-alerts paneel (honeypot + log-patroon-detectie) | 🔶 v2 | 12-threat-alerts | ✅ |
 | 13 | Notificaties: e-mail bij scan-done / site-down / kritieke finding | 🔶 | 13-notificaties (mail-basis in 05) | ✅ |
 | 56 | Domain watchtower: expiry, transfer-lock, nameserver-drift, DNSSEC, CAA, cert-runway — dagelijks, alert bij verandering | ✅ | 56-domain-watchtower | ✅ |
-| 57 | Publieke statuspagina per site: uptime-badge + 30/90-dagen-geschiedenis, no-login | 🔶 | 57-public-status-page | 📝 |
-| 58 | On-deploy triggers: GitHub/Vercel webhook → automatische re-scan (HMAC-verified) | 🔶 | 58-on-deploy-triggers | 📝 |
-| 59 | Diff-gebaseerde monitoring: wat-veranderd-view, dismissed-then-returned (regressed), snooze-rules | 🔶 | 59-diff-monitoring | 📝 |
+| 57 | Publieke statuspagina per site: uptime-badge + 30/90-dagen-geschiedenis, no-login | 🔶 | 57-public-status-page | ✅ |
+| 58 | On-deploy triggers: GitHub/Vercel webhook → automatische re-scan (HMAC-verified) | 🔶 | 58-on-deploy-triggers | ✅ |
+| 59 | Diff-gebaseerde monitoring: wat-veranderd-view, dismissed-then-returned (regressed), snooze-rules | 🔶 | 59-diff-monitoring | ✅ |
 
 ## Settings & admin
 
@@ -80,7 +80,7 @@ Volledige feature-lijst met MVP-afbakening en plan-koppeling. Legenda:
 | 46–49 | GitHub-worker: Semgrep (SAST), Gitleaks (secrets), OSV-Scanner (deps), repo-health | ✅ | nieuw (46–49) | 💡 |
 | 50 | Uptime-worker: HTTP-probe elke 60s, latency-metrics, 2-failure = alert | ✅ | 11-uptime-dashboard | ✅ |
 | 52 | Actieve vulnerability-tests (SQLi, XSS, CSRF, open redirect, IDOR, tenant-isolatie, GraphQL, JWT, webhook-signature) — opt-in + Pro | 🔶 | 52-active-vulnerability-tests | ✅ |
-| 53 | JS-bundle inspectie: sourcemap-aware secrets-extractie uit client-bundles | 🔶 | 53-js-bundle-inspection | 🚧 |
+| 53 | JS-bundle inspectie: sourcemap-aware secrets-extractie uit client-bundles | 🔶 | 53-js-bundle-inspection | ✅ |
 | 54 | Route-discovery + per-route checks: SPA-aware crawl (sitemap/links/chunks), plan-limiet routes | 🔶 | 54-route-discovery-crawl | 📝 |
 | 55 | AEO per-engine matrix: GPTBot/ClaudeBot/PerplexityBot/Copilot/Meta/Mistral-toegang + llms.txt | 🔶 | 55-aeo-engine-matrix | 📝 |
 | 61 | Compliance-pijler: cookie-banner/CMP, privacy-policy, legal-pagina's, GDPR-signalen (nieuwe score-categorie) | 🔶 | 61-compliance-pillar | 📝 |
