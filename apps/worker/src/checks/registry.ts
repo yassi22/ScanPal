@@ -26,6 +26,7 @@ import { structuredDataCheck } from "./http/structured-data";
 import { securityTxtCheck } from "./http/security-txt";
 import { miniCrawlCheck } from "./http/mini-crawl";
 import { repoHealthCheck } from "./github/repo-health";
+import { semgrepCheck } from "./github/semgrep";
 
 /**
  * Geïmplementeerde check per queue (plan 27, besluit 8). `outputCheckIds`
@@ -93,6 +94,8 @@ export function buildRegistry(rateLimit: RateLimiter): Record<QueueName, Impleme
       // Feature 49: repo-health (branch protection, LICENSE, CI, MFA-proxy, README)
       // via GitHub REST API. Site-level (route_url null in scan-worker).
       toImplemented(repoHealthCheck),
+      // Feature 46: Semgrep SAST via Docker (read-only repo-mount).
+      toImplemented(semgrepCheck),
     ],
   };
 }

@@ -44,6 +44,14 @@ import {
   type RepoHealthEvidence,
 } from "./repo-health";
 import {
+  semgrepEvidenceSchema,
+  gitleaksEvidenceSchema,
+  osvEvidenceSchema,
+  type SemgrepEvidence,
+  type GitleaksEvidence,
+  type OsvEvidence,
+} from "./sast-findings";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -93,6 +101,9 @@ export const findingSchema = z.object({
       secretsInHtmlEvidenceSchema,
       miniCrawlEvidenceSchema,
       repoHealthEvidenceSchema,
+      semgrepEvidenceSchema,
+      gitleaksEvidenceSchema,
+      osvEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -241,6 +252,9 @@ export type InlineCheckLike = {
     | SecretsInHtmlEvidence
     | MiniCrawlEvidence
     | RepoHealthEvidence
+    | SemgrepEvidence
+    | GitleaksEvidence
+    | OsvEvidence
     | string
     | null;
 };
@@ -262,6 +276,9 @@ export function evidenceText(
     | SecretsInHtmlEvidence
     | MiniCrawlEvidence
     | RepoHealthEvidence
+    | SemgrepEvidence
+    | GitleaksEvidence
+    | OsvEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -324,6 +341,17 @@ export function evidenceText(
       return evidence.signals
         .map((s) => `${s.signal}:${s.status} ${s.detail}`)
         .join(" | ");
+    }
+    if (evidence.kind === "semgrep") {
+      return `total=${evidence.total} high=${evidence.by_severity.high} medium=${evidence.by_severity.medium} low=${evidence.by_severity.low}`;
+    }
+    if (evidence.kind === "gitleaks") {
+      return evidence.samples
+        .map((s) => `${s.rule_id} ${s.file}:${s.start_line} ${s.match_preview}`)
+        .join(" ");
+    }
+    if (evidence.kind === "osv-scanner") {
+      return `total=${evidence.total} critical=${evidence.by_severity.critical} high=${evidence.by_severity.high} medium=${evidence.by_severity.medium} low=${evidence.by_severity.low}`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -409,6 +437,17 @@ const ISSUE_TITLES: Record<
   "repo-health": {
     warn: "Repo-health signaal(en) onvolledig",
     fail: "Default branch is niet beveiligd",
+  },
+  semgrep: {
+    warn: "Semgrep vond middelzware SAST-issues",
+    fail: "Semgrep vond kritieke SAST-issues",
+  },
+  gitleaks: {
+    fail: "Gitleaks vond gelekte secrets in de repo",
+  },
+  "osv-scanner": {
+    warn: "OSV-Scanner vond kwetsbare dependencies",
+    fail: "OSV-Scanner vond kritieke dependency-kwetsbaarheden",
   },
   cors: {
     warn: "CORS laat arbitraire origins toe",
@@ -535,6 +574,12 @@ const REMEDIATION: Record<string, string> = {
     "Voeg een beschrijvend `alt`-attribuut toe aan elke `<img>` (lege `alt=\"\"` alleen voor puur decoratieve images) voor toegankelijkheid en SEO. Zorg dat elke pagina in de sitemap vanaf minstens één andere pagina intern gelinkt is (voeg interne links toe of verwijder orphan-pagina's uit de sitemap).",
   "repo-health":
     "Beveilig de default branch (branch-protection met required reviews + enforce_admins), voeg een LICENSE en README toe, en configureer CI via .github/workflows. Schakel enforce_admins in zodat de regels ook voor admins gelden (MFA-proxy).",
+  semgrep:
+    "Los de SAST-issues op die Semgrep rapporteert (verving van gevaarlijke API's, input-validatie, pad-traversal, enz.). Behandel high-severity-issues als blockers; voeg Semgrep toe aan de CI om regressie te voorkomen.",
+  gitleaks:
+    "Verwijder het gelekte geheim uit de repo-geschiedenis (git filter-repo / BFG) en roteer het direct (behandel het als gelekt). Plaats secrets in een secrets-manager of omgevingsvariabelen, nooit in broncode of commits. Voeg gitleaks toe aan de CI als pre-commit/pre-push hook.",
+  "osv-scanner":
+    "Update de kwetsbare dependencies naar een niet-kwetsbare versie (zie het advisory-id in de evidence). Bij een onbeperkt advisary zonder patch: pin de versie, pas mitigaties toe of vervang de dependency. Voeg OSV-Scanner toe aan de CI voor continue controle.",
 };
 
 /**
