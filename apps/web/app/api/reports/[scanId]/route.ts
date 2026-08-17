@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { reportDataSchema, reportFormatSchema } from "@scanpal/shared";
+import {
+  buildFindingFixPrompt,
+  reportDataSchema,
+  reportFormatSchema,
+  type FixPromptScope,
+} from "@scanpal/shared";
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
 import { buildReportData, reportFilename, type ReportRenderData } from "@/lib/report/data";
@@ -39,6 +44,11 @@ export async function GET(
     );
   }
 
+  /** Plan 60: optioneel per finding een AI fix-prompt meenemen in het rapport. */
+  const includePrompts = ["1", "true", "yes"].includes(
+    (url.searchParams.get("include_prompts") ?? "").toLowerCase(),
+  );
+
   const { scanId } = await params;
   const result = await buildReportData(pool, scanId, teamId);
   if (!result.ok) {
@@ -61,6 +71,18 @@ export async function GET(
   }
 
   const input: ReportRenderData = { data: checked.data, omitted: result.omitted };
+  if (includePrompts) {
+    const scope: FixPromptScope = {
+      siteUrl: checked.data.site.url,
+      siteLabel: checked.data.site.label,
+      githubRepo: result.githubRepo,
+      scanId,
+      scanCreatedAt: checked.data.scan.created_at,
+    };
+    input.prompts = checked.data.findings.map((finding) =>
+      buildFindingFixPrompt(finding, scope),
+    );
+  }
   const filename = reportFilename(
     checked.data.site.url,
     checked.data.scan.completed_at,

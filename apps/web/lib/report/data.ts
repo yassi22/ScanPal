@@ -20,7 +20,7 @@ import {
 export const REPORT_MAX_PER_SEVERITY = 100;
 
 export type BuildReportDataResult =
-  | { ok: true; data: ReportData; siteId: string; omitted: SeverityCounts }
+  | { ok: true; data: ReportData; siteId: string; omitted: SeverityCounts; githubRepo: string | null }
   | { ok: false; reason: "not_found" }
   | { ok: false; reason: "not_completed"; status: string };
 
@@ -28,6 +28,8 @@ export type BuildReportDataResult =
 export type ReportRenderData = {
   data: ReportData;
   omitted: SeverityCounts;
+  /** Plan 60: optioneel gegenereerde AI fix-prompts per finding (Engels). */
+  prompts?: string[];
 };
 
 /**
@@ -44,7 +46,8 @@ export async function buildReportData(
 ): Promise<BuildReportDataResult> {
   const result = await db.query(
     `select s.id, s.status, s.score, s.findings, s.trigger, s.created_at,
-            s.completed_at, st.id as site_id, st.url as site_url, st.label as site_label
+            s.completed_at, st.id as site_id, st.url as site_url, st.label as site_label,
+            st.github_repo
      from scans s
      join sites st on st.id = s.site_id
      where s.id = $1 and st.team_id = $2`,
@@ -64,6 +67,7 @@ export async function buildReportData(
   return {
     ok: true,
     siteId: row.site_id,
+    githubRepo: row.github_repo ?? null,
     omitted,
     data: {
       scan: {

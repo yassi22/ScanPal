@@ -448,9 +448,12 @@ export function FindingsPanel({ scanId, legacy }: Props) {
     <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-bold">Findings</h2>
-        <span className="text-xs text-slate-500">
-          {data ? `${data.total} in deze scan` : "…"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-500">
+            {data ? `${data.total} in deze scan` : "…"}
+          </span>
+          <ScanFixPromptPanel scanId={scanId} />
+        </div>
       </div>
 
       <div className="mt-4 space-y-3">
@@ -742,6 +745,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                         Reopen
                       </button>
                     )}
+                    <CopyFindingPromptButton scanId={scanId} finding={finding} />
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">

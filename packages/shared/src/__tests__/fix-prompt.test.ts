@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { Finding } from "../findings";
 import {
   buildFindingFixPrompt,
   buildScanFixPrompt,
@@ -13,7 +14,6 @@ import {
   trimToChars,
   FIX_PROMPT_MAX_TOKENS,
   type FixPromptScope,
-  type Finding,
 } from "../fix-prompt";
 
 const NOW = "2026-08-15T09:00:00.000Z";
