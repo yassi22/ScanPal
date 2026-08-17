@@ -1,5 +1,6 @@
 import type { Pool, PoolClient } from "pg";
 import { carryOverFindingStatuses } from "./finding-status";
+import { computeAndWriteScanDiff } from "./scan-diff";
 import { ScanError, type FinishScanInput, type ScanRowWithMeta } from "./types";
 
 /**
@@ -26,8 +27,10 @@ export async function setSiteScanState(
 /**
  * Markeert een scan als completed/failed en werkt de denormaliseerde
  * site-status bij. Past finding-status-carry-over toe (plan 09) en schrijft
- * de per-categorie-scores (plan 08/27). De BullMQ-aggregator gebruikt deze
- * helper — de webapp re-exporteert.
+ * de per-categorie-scores (plan 08/27). Bij een completed scan wordt ook de
+ * diff t.o.v. de laatste schone snapshot berekend en in `scans.diff`
+ * geschreven (plan 59). De BullMQ-aggregator gebruikt deze helper — de
+ * webapp re-exporteert.
  *
  * Race-guard (plan 19): is de scan inmiddels gecanceld, dan wordt de status
  * nooit overschreven — de scan blijft `canceled` en de site-status blijft
@@ -63,18 +66,32 @@ export async function finishScan(
       findings: input.findings ?? {},
     });
 
+    let finalFindings = findings;
+    let diff: Record<string, unknown> = {};
+    if (input.status === "completed") {
+      const result = await computeAndWriteScanDiff(
+        client,
+        input.siteId,
+        input.scanId,
+        findings,
+      );
+      finalFindings = result.findings;
+      diff = result.diff ?? {};
+    }
+
     const updated = await client.query(
       `update scans
         set status = $2, progress = 100, score = $3, findings = $4,
-            category_scores = $5, completed_at = now()
+            category_scores = $5, diff = $6, completed_at = now()
        where id = $1
        returning *`,
       [
         input.scanId,
         input.status,
         input.score ?? null,
-        JSON.stringify(findings),
+        JSON.stringify(finalFindings),
         input.categoryScores ? JSON.stringify(input.categoryScores) : null,
+        JSON.stringify(diff),
       ],
     );
 

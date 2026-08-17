@@ -45,6 +45,8 @@ function makeReportData(overrides: Partial<ReportData> = {}): ReportData {
         note: null,
         created_at: NOW,
         route_url: null,
+        regressed: false,
+        snooze_until: null,
       },
     ],
     ...overrides,

@@ -1,3 +1,7 @@
+declare const crypto: {
+  randomUUID(): string;
+};
+
 declare const URLSearchParams: {
   new (
     init?:

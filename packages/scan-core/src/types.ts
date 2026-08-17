@@ -13,6 +13,8 @@ export type ScanRowWithMeta = {
   score: number | null;
   findings: Record<string, unknown>;
   category_scores: Record<string, unknown> | null;
+  /** Plan 59: diff t.o.v. de laatste schone snapshot (scanDiffSchema). */
+  diff: Record<string, unknown>;
   active_tests: boolean;
   trigger: ScanTrigger;
   scheduled_for: Date | null;

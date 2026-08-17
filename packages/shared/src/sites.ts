@@ -159,9 +159,15 @@ export const updateSiteInputSchema = z
       })
       .nullable()
       .optional(),
+    /** Plan 57: publieke statuspagina aan/uit — slug genereren/verwijderen. */
+    public_status: z.object({ enabled: z.boolean() }).optional(),
   })
   .superRefine((value, ctx) => {
-    if (value.label === undefined && value.github_repo === undefined) {
+    if (
+      value.label === undefined &&
+      value.github_repo === undefined &&
+      value.public_status === undefined
+    ) {
       ctx.addIssue({
         code: "custom",
         message: "Geef minimaal één veld om te wijzigen",
@@ -173,6 +179,10 @@ export type UpdateSiteInput = z.infer<typeof updateSiteInputSchema>;
 export const siteWithStatusSchema = siteSchema.extend({
   github_repo: z.string().nullable(),
   label: z.string().nullable(),
+  /** Plan 57: niet-rabare publieke status-slug (null = niet publiek). */
+  public_status_slug: z.string().nullable(),
+  /** Plan 58: on-deploy-webhook geconfigureerd (secret aanwezig, nooit het secret zelf). */
+  github_webhook_configured: z.boolean(),
   last_scan_id: z.string().uuid().nullable(),
   last_scan_status: scanStatusSchema.nullable(),
   last_scan_score: z.number().int().min(0).max(100).nullable(),

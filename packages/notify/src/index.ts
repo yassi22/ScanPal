@@ -35,6 +35,7 @@ export type NotifyResult = {
 export const defaultEnabled: Record<NotificationType, boolean> = {
   scan_done: false,
   score_drop: true,
+  scan_diff: true,
   site_down: true,
   site_recovered: true,
   critical_finding: true,
@@ -94,6 +95,20 @@ const templates: Record<NotificationType, Template> = {
     subject: (p) => `Score gedaald: ${SITE_NAME(p)}`,
     body: (p) =>
       `De scan-score van ${SITE_NAME(p)} is gedaald van ${num(p.previous_score)} naar ${num(p.new_score)}. Bekijk de bevindingen voor de oorzaak.`,
+    link: (id) => `/scans/${id}`,
+  },
+  scan_diff: {
+    title: () => "Wijzigingen gedetecteerd",
+    subject: (p) => `Wijzigingen op ${SITE_NAME(p)}`,
+    body: (p) => {
+      const parts = [
+        `De scan van ${SITE_NAME(p)} toont veranderingen t.o.v. de laatste schone snapshot: ${num(p.new_count)} nieuw, ${num(p.resolved_count)} opgelost en ${num(p.regressed_count)} teruggekeerd.`,
+        p.score_drop
+          ? `De score daalde met ${num(p.score_drop)} punten (${num(p.previous_score)} → ${num(p.new_score)}).`
+          : "",
+      ];
+      return parts.filter(Boolean).join(" ");
+    },
     link: (id) => `/scans/${id}`,
   },
   scan_done: {

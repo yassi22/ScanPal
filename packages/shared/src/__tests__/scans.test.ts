@@ -64,6 +64,8 @@ describe("siteWithStatusSchema.last_scan_status", () => {
       url: "example.com",
       github_repo: null,
       label: null,
+      public_status_slug: null,
+      github_webhook_configured: false,
       last_scan_id: null,
       last_scan_status: "canceled",
       last_scan_score: null,

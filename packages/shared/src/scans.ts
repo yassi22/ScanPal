@@ -2,11 +2,12 @@ import { z } from "zod";
 import { scanStatusSchema } from "./sites";
 import { progressDetailsSchema } from "./scan-progress";
 import { categoryScoresSchema } from "./scoring";
+import { scanDiffSchema } from "./diff";
 
 export const scanFrequencySchema = z.enum(["none", "daily", "weekly"]);
 export type ScanFrequency = z.infer<typeof scanFrequencySchema>;
 
-export const scanTriggerSchema = z.enum(["manual", "schedule"]);
+export const scanTriggerSchema = z.enum(["manual", "schedule", "deploy"]);
 export type ScanTrigger = z.infer<typeof scanTriggerSchema>;
 
 export const scanSchema = z.object({
@@ -17,6 +18,8 @@ export const scanSchema = z.object({
   progress_details: progressDetailsSchema.optional(),
   score: z.number().int().min(0).max(100).nullable(),
   findings: z.record(z.string(), z.unknown()).default({}),
+  /** Plan 59: diff t.o.v. de laatste schone snapshot (scanDiffSchema). */
+  diff: scanDiffSchema.optional(),
   active_tests: z.boolean().default(false),
   trigger: scanTriggerSchema,
   scheduled_for: z.string().datetime().nullable(),

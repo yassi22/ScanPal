@@ -29,6 +29,8 @@ export type Plan = {
     github: boolean;
     /** Plan 52: actieve vulnerability-tests (opt-in, alleen Pro). */
     activeTests: boolean;
+    /** Plan 58: on-deploy triggers (GitHub/Vercel webhooks) — alleen Pro. */
+    onDeploy: boolean;
   };
 };
 
@@ -41,7 +43,7 @@ export const plans: Record<PlanId, Plan> = {
     maxMembers: 3,
     apiRatePerMinute: 60,
     maxWebhooks: 1,
-    features: { uptime: false, github: false, activeTests: false },
+    features: { uptime: false, github: false, activeTests: false, onDeploy: false },
   },
   pro: {
     id: "pro",
@@ -52,7 +54,7 @@ export const plans: Record<PlanId, Plan> = {
     maxMembers: 10,
     apiRatePerMinute: 120,
     maxWebhooks: 3,
-    features: { uptime: true, github: true, activeTests: true },
+    features: { uptime: true, github: true, activeTests: true, onDeploy: true },
   },
 };
 
@@ -71,6 +73,7 @@ export const publicPlanSchema = z.object({
     uptime: z.boolean(),
     github: z.boolean(),
     activeTests: z.boolean(),
+    onDeploy: z.boolean(),
   }),
 });
 export type PublicPlan = z.infer<typeof publicPlanSchema>;

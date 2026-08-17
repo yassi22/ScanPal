@@ -1,7 +1,7 @@
 export const userRoles = ["owner", "member"] as const;
 export const membershipStatuses = ["pending", "accepted"] as const;
 export const scanStatuses = ["queued", "running", "completed", "failed"] as const;
-export const scanTriggers = ["manual", "schedule"] as const;
+export const scanTriggers = ["manual", "schedule", "deploy"] as const;
 export const scanFrequencies = ["none", "daily", "weekly"] as const;
 export const planIds = ["free", "pro"] as const;
 export const subscriptionStatuses = ["active", "trialing", "past_due", "canceled"] as const;
@@ -110,6 +110,8 @@ export type ScanRow = {
   progress_details: Record<string, unknown>;
   score: number | null;
   findings: Record<string, unknown>;
+  /** Plan 59: diff t.o.v. de laatste schone snapshot (scanDiffSchema). */
+  diff: Record<string, unknown>;
   active_tests: boolean;
   trigger: (typeof scanTriggers)[number];
   scheduled_for: Date | null;

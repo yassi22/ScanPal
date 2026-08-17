@@ -3,6 +3,7 @@ import { z } from "zod";
 export const notificationTypeSchema = z.enum([
   "scan_done",
   "score_drop",
+  "scan_diff",
   "site_down",
   "site_recovered",
   "critical_finding",
@@ -17,6 +18,7 @@ export type NotificationType = z.infer<typeof notificationTypeSchema>;
 export const notificationTypes: NotificationType[] = [
   "scan_done",
   "score_drop",
+  "scan_diff",
   "site_down",
   "site_recovered",
   "critical_finding",

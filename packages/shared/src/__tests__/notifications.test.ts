@@ -8,10 +8,11 @@ import {
 } from "../notifications";
 
 describe("notifications schemas", () => {
-  it("kent alle 10 types (incl. webhook_disabled, payment_failed, domain_alert)", () => {
+  it("kent alle 11 types (incl. scan_diff, webhook_disabled, payment_failed, domain_alert)", () => {
     expect(notificationTypes).toEqual([
       "scan_done",
       "score_drop",
+      "scan_diff",
       "site_down",
       "site_recovered",
       "critical_finding",

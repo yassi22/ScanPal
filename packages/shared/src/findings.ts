@@ -25,6 +25,15 @@ export type { FindingSeverity } from "./severity";
 export const findingStatusSchema = z.enum(["open", "fixed", "ignored"]);
 export type FindingStatus = z.infer<typeof findingStatusSchema>;
 
+/**
+ * Snooze (plan 59 besluit 5): ISO-datetime (7/30 dagen) óf `"next-scan"`.
+ * Gesnoozde findings tellen niet mee in diff-alerts maar blijven in de view.
+ */
+export const snoozeSchema = z
+  .union([z.string().datetime(), z.literal("next-scan")])
+  .nullable();
+export type Snooze = z.infer<typeof snoozeSchema>;
+
 export const findingSchema = z.object({
   id: z.string(),
   check_id: z.string(),
@@ -48,6 +57,10 @@ export const findingSchema = z.object({
   note: z.string().nullable(),
   /** Plan 54: route waarop de check de finding vond (null = site-level, bijv. github). */
   route_url: z.string().url().nullable().default(null),
+  /** Plan 59: dismissed-then-returned — was ooit fixed/ignored en komt terug. */
+  regressed: z.boolean().default(false),
+  /** Plan 59: tijdelijk dempen van diff-alerts (7/30 dagen of tot volgende scan). */
+  snooze_until: snoozeSchema.default(null),
   created_at: z.string().datetime(),
 });
 export type Finding = z.infer<typeof findingSchema>;
@@ -58,10 +71,19 @@ export const findingsPayloadSchema = z.object({
 });
 export type FindingsPayload = z.infer<typeof findingsPayloadSchema>;
 
-export const findingStatusUpdateSchema = z.object({
-  status: findingStatusSchema,
-  note: z.string().trim().max(500).optional(),
-});
+/**
+ * PATCH-body (plan 09, uitgebreid in plan 59): `status` én `snooze_until` zijn
+ * allebei optioneel — een snooze-actie verandert de status niet en omgekeerd.
+ */
+export const findingStatusUpdateSchema = z
+  .object({
+    status: findingStatusSchema.optional(),
+    note: z.string().trim().max(500).optional(),
+    snooze_until: snoozeSchema.optional(),
+  })
+  .refine((value) => value.status !== undefined || value.snooze_until !== undefined, {
+    message: "Geef status of snooze_until op",
+  });
 export type FindingStatusUpdate = z.infer<typeof findingStatusUpdateSchema>;
 
 export const findingsQuerySchema = z.object({
@@ -124,9 +146,11 @@ export function findingId(checkId: string, title: string): string {
 }
 
 /**
- * Kopieert status + note van de vorige scan naar de nieuwe op basis van de
- * stabiele finding-id: `fixed`/`ignored` (incl. note) blijven staan, `open`
- * wordt overschreven door de nieuwe scan (plan 09, besluit 8).
+ * Kopieert status + note + snooze van de vorige scan naar de nieuwe op basis
+ * van de stabiele finding-id: `fixed`/`ignored` (incl. note) blijven staan,
+ * `open` wordt overschreven door de nieuwe scan (plan 09, besluit 8). De
+ * snooze (plan 59) wordt altijd overgenomen zodat een 7/30-dagen-demping
+ * meerdere scans overleeft; `regressed` wordt per scan opnieuw berekend.
  */
 export function applyFindingStatusCarryOver(
   current: FindingsPayload,
@@ -138,8 +162,14 @@ export function applyFindingStatusCarryOver(
     ...current,
     items: current.items.map((item) => {
       const previousItem = previousById.get(item.id);
-      if (!previousItem || previousItem.status === "open") return item;
-      return { ...item, status: previousItem.status, note: previousItem.note };
+      if (!previousItem) return item;
+      return {
+        ...item,
+        snooze_until: previousItem.snooze_until,
+        ...(previousItem.status !== "open"
+          ? { status: previousItem.status, note: previousItem.note }
+          : {}),
+      };
     }),
   };
 }
@@ -354,6 +384,8 @@ export function inlineChecksToFindings(
       status: "open",
       note: null,
       route_url: routeUrl ?? null,
+      regressed: false,
+      snooze_until: null,
       created_at: now,
     };
   });

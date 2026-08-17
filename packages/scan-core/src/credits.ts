@@ -217,7 +217,7 @@ export async function refundCredit(
 export async function assertPlanFeature(
   db: Pool | PoolClient,
   teamId: string,
-  feature: "uptime" | "github",
+  feature: "uptime" | "github" | "activeTests" | "onDeploy",
 ): Promise<Plan> {
   const plan = await getPlanForTeam(db, teamId);
   if (!plan.features[feature]) {

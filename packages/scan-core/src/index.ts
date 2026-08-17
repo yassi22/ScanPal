@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./progress";
 export * from "./finish-scan";
+export * from "./scan-diff";
 export * from "./credits";
 export * from "./finding-status";
 export * from "./notifications";

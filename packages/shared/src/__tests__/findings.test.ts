@@ -30,6 +30,8 @@ function makeFinding(overrides: Partial<Finding> = {}): Finding {
     note: null,
     created_at: NOW,
     route_url: null,
+    regressed: false,
+    snooze_until: null,
     ...overrides,
   };
 }
