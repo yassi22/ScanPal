@@ -35,7 +35,7 @@ describe("skeletonTotals (progress-skelet)", () => {
   it("draagt github-checks alleen mee als de queue draait", () => {
     const registry = buildRegistry(rateLimit);
     const totals = skeletonTotals(registry, ["http", "browser", "github"], false);
-    // Feature 27 levert nog geen github-implementaties → geen key.
-    expect(totals.github).toBeUndefined();
+    // Feature 49: repo-health is de eerste github-implementatie (site-level).
+    expect(totals.github).toBe(1);
   });
 });

@@ -25,11 +25,12 @@ type ScanRow = {
   status: string;
   site_url: string;
   active_tests: boolean;
+  github_repo: string | null;
 };
 
 async function loadScan(db: Pool, scanId: string): Promise<ScanRow | null> {
   const result = await db.query<ScanRow>(
-    `select sc.id, sc.status, s.url as site_url, sc.active_tests
+    `select sc.id, sc.status, s.url as site_url, sc.active_tests, s.github_repo
      from scans sc
      join sites s on s.id = sc.site_id
      where sc.id = $1`,
@@ -40,12 +41,13 @@ async function loadScan(db: Pool, scanId: string): Promise<ScanRow | null> {
 
 function errorFinding(
   check: ImplementedCheck,
-  routeUrl: string,
+  routeUrl: string | null,
   message: string,
   now: string,
 ): Finding {
+  const idScope = routeUrl ? `${check.id}@${routeUrl}` : check.id;
   return {
-    id: findingId(`${check.id}@${routeUrl}`, `${check.id} kon niet worden uitgevoerd`),
+    id: findingId(idScope, `${check.id} kon niet worden uitgevoerd`),
     check_id: check.id,
     category: check.category,
     severity: "medium",
@@ -177,22 +179,26 @@ export function createScanProcessor(
           scanId,
           activeTests: scan.active_tests,
           rateLimit,
+          githubRepo: scan.github_repo,
         };
         const now = new Date().toISOString();
+        // Github-checks zijn site-level (AGENTS.md): findings krijgen geen
+        // route_url (null → aparte NULL-partial-index in de checks-tabel).
+        const routeUrlForFindings = impl.category === "github" ? null : route.url;
 
         let results: InlineCheckLike[];
         try {
           results = await impl.run(ctx);
         } catch (err) {
           const message = err instanceof Error ? err.message : "Onbekende fout";
-          const finding = errorFinding(impl, route.url, message, now);
+          const finding = errorFinding(impl, routeUrlForFindings, message, now);
           const list = findingsByCheckId.get(impl.id) ?? [];
           list.push(finding);
           findingsByCheckId.set(impl.id, list);
           continue;
         }
 
-        const routeFindings = inlineChecksToFindings(results, now, route.url);
+        const routeFindings = inlineChecksToFindings(results, now, routeUrlForFindings);
         for (const finding of routeFindings) {
           const list = findingsByCheckId.get(finding.check_id) ?? [];
           list.push(finding);

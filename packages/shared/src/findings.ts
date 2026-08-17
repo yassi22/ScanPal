@@ -40,6 +40,10 @@ import {
   type MiniCrawlEvidence,
 } from "./mini-crawl";
 import {
+  repoHealthEvidenceSchema,
+  type RepoHealthEvidence,
+} from "./repo-health";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -88,6 +92,7 @@ export const findingSchema = z.object({
       securityTxtEvidenceSchema,
       secretsInHtmlEvidenceSchema,
       miniCrawlEvidenceSchema,
+      repoHealthEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -235,6 +240,7 @@ export type InlineCheckLike = {
     | SecurityTxtEvidence
     | SecretsInHtmlEvidence
     | MiniCrawlEvidence
+    | RepoHealthEvidence
     | string
     | null;
 };
@@ -255,6 +261,7 @@ export function evidenceText(
     | SecurityTxtEvidence
     | SecretsInHtmlEvidence
     | MiniCrawlEvidence
+    | RepoHealthEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -312,6 +319,11 @@ export function evidenceText(
     }
     if (evidence.kind === "mini-crawl") {
       return `images_total=${evidence.image_audit.total} images_missing_alt=${evidence.image_audit.missing} orphans=${evidence.orphan_pages.orphan_count}/${evidence.orphan_pages.sitemap_count}`;
+    }
+    if (evidence.kind === "repo-health") {
+      return evidence.signals
+        .map((s) => `${s.signal}:${s.status} ${s.detail}`)
+        .join(" | ");
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -393,6 +405,10 @@ const ISSUE_TITLES: Record<
   "mini-crawl": {
     warn: "Ontbrekende image-alt of orphan-pagina's gevonden",
     fail: "Ontbrekende image-alt of orphan-pagina's gevonden",
+  },
+  "repo-health": {
+    warn: "Repo-health signaal(en) onvolledig",
+    fail: "Default branch is niet beveiligd",
   },
   cors: {
     warn: "CORS laat arbitraire origins toe",
@@ -517,6 +533,8 @@ const REMEDIATION: Record<string, string> = {
     "Verwijder het geheim uit de inline HTML/JS en roteer het direct (behandel het als gelekt). Plaats secrets server-side in omgevingsvariabelen of een secrets-manager en lever ze via een beveiligde API-endpoint, nooit inline in het HTML-document of in inline <script>-blokken.",
   "mini-crawl":
     "Voeg een beschrijvend `alt`-attribuut toe aan elke `<img>` (lege `alt=\"\"` alleen voor puur decoratieve images) voor toegankelijkheid en SEO. Zorg dat elke pagina in de sitemap vanaf minstens één andere pagina intern gelinkt is (voeg interne links toe of verwijder orphan-pagina's uit de sitemap).",
+  "repo-health":
+    "Beveilig de default branch (branch-protection met required reviews + enforce_admins), voeg een LICENSE en README toe, en configureer CI via .github/workflows. Schakel enforce_admins in zodat de regels ook voor admins gelden (MFA-proxy).",
 };
 
 /**

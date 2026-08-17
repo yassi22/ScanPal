@@ -17,6 +17,13 @@ export type CheckContext = {
   activeTests: boolean;
   /** Per-host Redis rate-limit (verplicht voor elke outbound check). */
   rateLimit: RateLimiter;
+  /**
+   * Features 46–49: GitHub-repo-slug (`owner/repo` of URL) voor de github-
+   * worker. Alleen gezet wanneer `sites.github_repo` is ingevuld (de
+   * dispatcher includeert de github-queue alleen dan). http/browser-checks
+   * negeren dit veld.
+   */
+  githubRepo?: string | null;
 };
 
 export type CheckImplementation = {

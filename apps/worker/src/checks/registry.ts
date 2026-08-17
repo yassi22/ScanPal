@@ -25,6 +25,7 @@ import { subresourcesCheck } from "./http/subresources";
 import { structuredDataCheck } from "./http/structured-data";
 import { securityTxtCheck } from "./http/security-txt";
 import { miniCrawlCheck } from "./http/mini-crawl";
+import { repoHealthCheck } from "./github/repo-health";
 
 /**
  * Geïmplementeerde check per queue (plan 27, besluit 8). `outputCheckIds`
@@ -88,7 +89,11 @@ export function buildRegistry(rateLimit: RateLimiter): Record<QueueName, Impleme
     // pipeline (geen aeo-checks geïmplementeerd).
     browser: [],
     // Features 46–49 vullen de github-worker.
-    github: [],
+    github: [
+      // Feature 49: repo-health (branch protection, LICENSE, CI, MFA-proxy, README)
+      // via GitHub REST API. Site-level (route_url null in scan-worker).
+      toImplemented(repoHealthCheck),
+    ],
   };
 }
 

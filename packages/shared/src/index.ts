@@ -138,3 +138,4 @@ export * from "./structured-data";
 export * from "./security-txt";
 export * from "./secrets-in-html";
 export * from "./mini-crawl";
+export * from "./repo-health";
