@@ -43,5 +43,6 @@ declare interface URL {
   port: string;
   pathname: string;
   search: string;
+  href: string;
   searchParams: URLSearchParams;
 }

@@ -15,9 +15,10 @@ export const categoryLabels: Record<ScanCategory, string> = {
   seo: "SEO & content",
   aeo: "AEO & browser",
   github: "GitHub & repo",
+  compliance: "Compliance & privacy",
 };
 
-export const scanCategories: ScanCategory[] = ["http", "seo", "aeo", "github"];
+export const scanCategories: ScanCategory[] = ["http", "seo", "aeo", "github", "compliance"];
 
 export const checkCatalog: CheckCatalogEntry[] = [
   { id: "reachability", category: "http", name: "Reachability", active: false },
@@ -61,6 +62,14 @@ export const checkCatalog: CheckCatalogEntry[] = [
   { id: "gitleaks", category: "github", name: "Gitleaks (secrets)", active: false },
   { id: "osv-scanner", category: "github", name: "OSV-Scanner (deps)", active: false },
   { id: "repo-health", category: "github", name: "Repo-health", active: false },
+  // Plan 61: compliance-pijler — passieve checks (cookie-banner/CMP-detectie,
+  // consent-API, privacy-policy, legal-pagina's, GDPR-signalen). Geen cookies
+  // plaatsen, geen interactie met de banner; bevindingen zijn observaties.
+  { id: "cookie-banner", category: "compliance", name: "Cookie-banner / CMP-detectie", active: false },
+  { id: "consent-api", category: "compliance", name: "Consent-API", active: false },
+  { id: "privacy-policy", category: "compliance", name: "Privacy-policy", active: false },
+  { id: "legal-pages", category: "compliance", name: "Legal-pagina's", active: false },
+  { id: "gdpr-signals", category: "compliance", name: "GDPR-signalen", active: false },
   { id: "sqli-probe", category: "http", name: "SQL-injection probe", active: true },
   { id: "xss-probe", category: "http", name: "Reflected XSS probe", active: true },
   { id: "csrf-check", category: "http", name: "CSRF-token-aanwezigheid", active: true },
@@ -92,7 +101,9 @@ export const queueSchema = z.enum(["http", "browser", "github"]);
 export type QueueName = z.infer<typeof queueSchema>;
 
 export const queueCategories: Record<QueueName, ScanCategory[]> = {
-  http: ["http", "seo"],
+  // Plan 61: compliance-checks draaien passief in de http-worker (HTML/DOM-
+  // analyse, geen cookies) → categorie-compliance hoort bij de http-queue.
+  http: ["http", "seo", "compliance"],
   browser: ["aeo"],
   github: ["github"],
 };

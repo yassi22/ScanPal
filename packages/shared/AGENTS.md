@@ -18,6 +18,7 @@ BullMQ.
 | `src/diff.ts` | Plan 59 diff-monitoring: pure SHA-256 (`sha256hex`), finding-fingerprint (rule-only), `isSnoozed`/`isCleanScan`, `scanDiffSchema` (`new/resolved/regressed/unchanged` per severity + `new_finding_ids`/`regressed_finding_ids`/`alert_*`), `computeScanDiff`, `emptyScanDiff`, `diffHasChanges`, `countAtOrAbove`, `scanDiffResponseSchema` |
 | `src/scoring.ts` | Category scores (`categoryScoresSchema`) + `categoryScoresFromFindings` (pass-ratio per categorie) + `overallScoreFromFindings` (plan 08/27) |
 | `src/report.ts` | Export-contract (plan 10): `reportFormatSchema`, `reportDataSchema`, `reportMetaSchema`, `reportListResponseSchema`, `reportListQuerySchema` |
+| `src/fix-prompt.ts` | AI fix-prompts (plan 60): `fixPromptSchema` (`{prompt, findings_covered, truncated}`), `fixPromptTemplates` per check-id + fallback, `buildFindingFixPrompt`/`buildScanFixPrompt` (grouping per bestand/route, ~1500-token-truncatie), `findingLocation`/`extractFilePath`, `estimateTokens` |
 | `src/index.ts` | Re-exports |
 
 ## Rules

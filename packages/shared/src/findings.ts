@@ -9,6 +9,7 @@ import {
   type EngineMatrixEvidence,
   aiEngineLabels,
 } from "./aeo-engine-matrix";
+import { complianceEvidenceSchema, type ComplianceEvidence } from "./compliance";
 import {
   findingSeveritySchema,
   severityOrder,
@@ -42,13 +43,14 @@ export const findingSchema = z.object({
   title: z.string(),
   description: z.string(),
   remediation: z.string(),
-  /** String (passieve checks) óf structured `{ request, response }` (actieve tests, plan 52) óf bundel-secret-evidence (plan 53) óf AEO-engine-matrix (plan 55). */
+  /** String (passieve checks) óf structured `{ request, response }` (actieve tests, plan 52) óf bundel-secret-evidence (plan 53) óf AEO-engine-matrix (plan 55) óf compliance-signalen (plan 61). */
   evidence: z
     .union([
       z.string(),
       evidenceSchema,
       bundleSecretEvidenceSchema,
       engineMatrixEvidenceSchema,
+      complianceEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -183,12 +185,24 @@ export type InlineCheckLike = {
   active?: boolean;
   /** Plan 53: severity-override (bijv. kritieke bundel-secrets). */
   severity?: FindingSeverity;
-  evidence?: FindingEvidence | BundleSecretEvidence | EngineMatrixEvidence | string | null;
+  evidence?:
+    | FindingEvidence
+    | BundleSecretEvidence
+    | EngineMatrixEvidence
+    | ComplianceEvidence
+    | string
+    | null;
 };
 
 /** Helper om evidence (string óf structured) als zoekbare tekst te gebruiken. */
 export function evidenceText(
-  evidence: string | FindingEvidence | BundleSecretEvidence | EngineMatrixEvidence | null,
+  evidence:
+    | string
+    | FindingEvidence
+    | BundleSecretEvidence
+    | EngineMatrixEvidence
+    | ComplianceEvidence
+    | null,
 ): string {
   if (!evidence) return "";
   if (typeof evidence === "string") return evidence;
@@ -212,6 +226,11 @@ export function evidenceText(
         ? `llms.txt aanwezig parseerbaar=${evidence.llms_txt.parseable}`
         : "llms.txt afwezig";
       return `${engines} ${llms}`;
+    }
+    if (evidence.kind === "compliance") {
+      return evidence.signals
+        .map((signal) => `${signal.signal}: ${signal.detail}`)
+        .join("\n");
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -302,6 +321,26 @@ const ISSUE_TITLES: Record<
     warn: "Domein loopt binnen 30 dagen af of DNSSEC is uitgeschakeld",
     fail: "Domeinregistratie is verlopen",
   },
+  "cookie-banner": {
+    warn: "Geen (herkenbare) cookie-banner gevonden",
+    fail: "Cookie-banner ontbreekt terwijl er wel cookies worden geplaatst",
+  },
+  "consent-api": {
+    warn: "Geen consent-API gevonden",
+    fail: "Consent-API ontbreekt terwijl de site scripts/cookies laadt",
+  },
+  "privacy-policy": {
+    warn: "Geen privacy-policy-link gevonden",
+    fail: "Privacy-policy is onbereikbaar",
+  },
+  "legal-pages": {
+    warn: "Legal-pagina's onvolledig",
+    fail: "Legal-pagina's ontbreken",
+  },
+  "gdpr-signals": {
+    warn: "Geen GDPR-signalen gevonden",
+    fail: "GDPR-signalen ontbreken",
+  },
 };
 
 const REMEDIATION: Record<string, string> = {
@@ -345,6 +384,16 @@ const REMEDIATION: Record<string, string> = {
     "Verleng het TLS-certificaat tijdig (bijv. via Let's Encrypt met auto-renewal); zorg dat notAfter ≥ 30 d in de toekomst ligt en dat de SAN/CN overeenkomt met de hostnaam.",
   "domain-watchtower":
     "Verleng de domeinregistratie tijdig (auto-renew aanzetten bij de registrar); schakel DNSSEC in; houd de nameservers stabiel en CAA-records restrictief; vernieuw het TLS-certificaat vóór de 14-dagen-runway.",
+  "cookie-banner":
+    "Implementeer een cookie-banner of CMP (bijv. OneTrust, Cookiebot, Usercentrics) die bezoekers een keuze geeft vóór het plaatsen van cookies.",
+  "consent-api":
+    "Implementeer een consent-API (bijv. IAB TCF via `__tcfapi`, Google consent mode via `googlefc`) zodat scripts pas laden na expliciete toestemming.",
+  "privacy-policy":
+    "Publiceer een privacy-policy-pagina (met contact-e-mail en last-updated-datum) en link er vanuit de footer.",
+  "legal-pages":
+    "Publiceer terms-of-service, imprint en een contactpagina en link ze vanuit de footer.",
+  "gdpr-signals":
+    "Voeg GDPR-signalen toe: een DSAR/data-verwijderingsverwijzing en een CMP/IAB-TCF-signaal zodat bezoekers hun rechten kunnen uitoefenen.",
 };
 
 /**

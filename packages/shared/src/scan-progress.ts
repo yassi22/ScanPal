@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const scanCategorySchema = z.enum(["http", "seo", "aeo", "github"]);
+export const scanCategorySchema = z.enum(["http", "seo", "aeo", "github", "compliance"]);
 export type ScanCategory = z.infer<typeof scanCategorySchema>;
 
 export const categoryStatusSchema = z.enum(["pending", "running", "done"]);
@@ -16,7 +16,9 @@ export const categoryProgressSchema = z.object({
 export type CategoryProgress = z.infer<typeof categoryProgressSchema>;
 
 export const progressDetailsSchema = z.object({
-  categories: z.record(scanCategorySchema, categoryProgressSchema),
+  // Value `.optional()` zodat oude progress-rijen (zonder de compliance-categorie)
+  // blijven valideren; nieuwe rijen bevatten altijd alle categorieën.
+  categories: z.record(scanCategorySchema, categoryProgressSchema.optional()),
   checks_done: z.number().int().min(0),
   checks_total: z.number().int().min(0),
   updated_at: z.string().datetime(),
@@ -41,7 +43,7 @@ export const scanProgressEventSchema = z.discriminatedUnion("event", [
       overall: z.number().int().min(0).max(100),
       checks_done: z.number().int().min(0),
       checks_total: z.number().int().min(0),
-      categories: z.record(scanCategorySchema, categoryProgressSchema),
+      categories: z.record(scanCategorySchema, categoryProgressSchema.optional()),
     }),
   }),
   z.object({

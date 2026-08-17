@@ -26,19 +26,20 @@ describe("initialProgressDetails (pipeline-variant)", () => {
     expect(details.categories.seo).toMatchObject({ total: 1 });
     expect(details.categories.aeo).toMatchObject({ total: 0 });
     expect(details.categories.github).toMatchObject({ total: 0 });
+    expect(details.categories.compliance).toMatchObject({ total: 0 });
     expect(details.updated_at).toBe(NOW);
   });
 
   it("laat ontbrekende categorieën op 0 staan (github zonder repo)", () => {
     const details = initialProgressDetails({ http: 3 }, NOW);
-    expect(details.categories.github.total).toBe(0);
+    expect(details.categories.github!.total).toBe(0);
     expect(details.checks_total).toBe(3);
   });
 
   it("klemt negatieve/gebroken totalen af", () => {
     const details = initialProgressDetails({ http: -2, seo: 2.7 }, NOW);
-    expect(details.categories.http.total).toBe(0);
-    expect(details.categories.seo.total).toBe(2);
+    expect(details.categories.http!.total).toBe(0);
+    expect(details.categories.seo!.total).toBe(2);
   });
 });
 
@@ -60,8 +61,8 @@ describe("advanceProgressDetails (queue-modus)", () => {
     }
 
     expect(progress).toEqual([0, 20, 40, 60, 80, 100]);
-    expect(details.categories.http.status).toBe("done");
-    expect(details.categories.seo.status).toBe("done");
+    expect(details.categories.http!.status).toBe("done");
+    expect(details.categories.seo!.status).toBe("done");
     expect(details.checks_done).toBe(5);
   });
 
@@ -78,7 +79,7 @@ describe("advanceProgressDetails (queue-modus)", () => {
     });
 
     details = advanceProgressDetails(details, "secrets-in-bundles", NOW);
-    expect(details.categories.http.current_check).toBe("Secrets in JS-bundles");
+    expect(details.categories.http!.current_check).toBe("Secrets in JS-bundles");
   });
 
   it("kan in willekeurige volgorde voltooien zonder verlies (parallel)", () => {
@@ -90,8 +91,8 @@ describe("advanceProgressDetails (queue-modus)", () => {
     details = advanceProgressDetails(details, "secrets-in-bundles", NOW);
 
     expect(details.checks_done).toBe(5);
-    expect(details.categories.http.status).toBe("done");
-    expect(details.categories.seo.status).toBe("done");
+    expect(details.categories.http!.status).toBe("done");
+    expect(details.categories.seo!.status).toBe("done");
     expect(overallProgress(details)).toBe(100);
   });
 

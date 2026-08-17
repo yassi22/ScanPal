@@ -60,7 +60,7 @@ export function advanceProgressDetails(
   const done = cat.done + 1;
   const isDone = done >= cat.total;
 
-  const categories: Record<ScanCategory, CategoryProgress> = {
+  const categories: Record<ScanCategory, CategoryProgress | undefined> = {
     ...current.categories,
     [entry.category]: {
       status: isDone ? "done" : "running",

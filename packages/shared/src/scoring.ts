@@ -7,8 +7,18 @@ export const categoryScoresSchema = z.object({
   seo: z.number().int().min(0).max(100).nullable(),
   aeo: z.number().int().min(0).max(100).nullable(),
   github: z.number().int().min(0).max(100).nullable(),
+  // Plan 61: compliance-pijler. Default null zodat oude scans (zonder
+  // compliance-scores) blijven valideren; nieuwe scans bevatten de sleutel.
+  compliance: z.number().int().min(0).max(100).nullable().default(null),
 });
 export type CategoryScores = z.infer<typeof categoryScoresSchema>;
+
+/**
+ * Gewicht van de compliance-categorie in de overall-score (plan 61, besluit 5):
+ * compliance is een "pijler" naast http/seo/aeo/github en telt met een
+ * ondersteunend gewicht mee in het totaal.
+ */
+export const COMPLIANCE_WEIGHT = 0.1;
 
 /**
  * Pass-ratio per categorie: `info`-findings / totaal × 100 (zelfde logica als
@@ -36,12 +46,28 @@ export function categoryScoresFromFindings(findings: Finding[]): CategoryScores 
 
 /**
  * Overall-score = pass-ratio over alle niet-actieve findings (info-severity =
- * pass, zelfde logica als de inline probe). De aggregator (plan 27) schrijft
- * deze als `scans.score` naast de per-categorie-scores.
+ * pass, zelfde logica als de inline probe). Plan 61: compliance telt mee met
+ * een ondersteunend gewicht (`COMPLIANCE_WEIGHT`, 10%) naast de overige
+ * categorieën; zónder compliance-findings is de score ongewijzigd (rest-ratio).
+ * De aggregator (plan 27) schrijft deze als `scans.score`.
  */
 export function overallScoreFromFindings(findings: Finding[]): number {
   const relevant = findings.filter((item) => !item.active);
   if (relevant.length === 0) return 0;
-  const passed = relevant.filter((item) => item.severity === "info").length;
-  return Math.round((passed / relevant.length) * 100);
+  const compliance = relevant.filter((item) => item.category === "compliance");
+  const rest = relevant.filter((item) => item.category !== "compliance");
+
+  const restScore = passRatio(rest);
+  if (compliance.length === 0) return restScore;
+  const complianceScore = passRatio(compliance);
+  if (rest.length === 0) return complianceScore;
+  return Math.round(
+    restScore * (1 - COMPLIANCE_WEIGHT) + complianceScore * COMPLIANCE_WEIGHT,
+  );
+}
+
+function passRatio(items: Finding[]): number {
+  if (items.length === 0) return 0;
+  const passed = items.filter((item) => item.severity === "info").length;
+  return Math.round((passed / items.length) * 100);
 }

@@ -28,6 +28,7 @@ function makeReportData(overrides: Partial<ReportData> = {}): ReportData {
       seo: 67,
       aeo: null,
       github: null,
+      compliance: null,
     },
     summary: { critical: 1, high: 2, medium: 0, low: 0, info: 3 },
     findings: [
