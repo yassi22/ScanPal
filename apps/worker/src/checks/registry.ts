@@ -19,6 +19,10 @@ import { corsCheck } from "./http/cors";
 import { aeoEngineMatrixCheck } from "./http/aeo-engine-matrix";
 import { COMPLIANCE_CHECK_IDS, complianceCheck } from "./http/compliance";
 import { stackDetectionCheck } from "./http/stack-detection";
+import { redirectsMixedCheck } from "./http/redirects-mixed";
+import { subresourcesCheck } from "./http/subresources";
+import { structuredDataCheck } from "./http/structured-data";
+import { securityTxtCheck } from "./http/security-txt";
 
 /**
  * Geïmplementeerde check per queue (plan 27, besluit 8). `outputCheckIds`
@@ -65,6 +69,14 @@ export function buildRegistry(rateLimit: RateLimiter): Record<QueueName, Impleme
       toImplemented(complianceCheck, [...COMPLIANCE_CHECK_IDS]),
       // Plan 40: stackdetectie op de homepage (CMS/framework/server/CDN).
       toImplemented(stackDetectionCheck),
+      // Plan 32: redirects + mixed content (http:// op https-pagina).
+      toImplemented(redirectsMixedCheck),
+      // Plan 34: subresource-integriteit (SRI integrity-attrs).
+      toImplemented(subresourcesCheck),
+      // Plan 39: structured data (JSON-LD schema.org).
+      toImplemented(structuredDataCheck),
+      // Plan 37: security.txt (RFC 9116) + favicon + 404-page kwaliteit.
+      toImplemented(securityTxtCheck),
     ],
     // Features 41–43 vullen de browser-worker; feature 27 levert alleen de
     // pipeline (geen aeo-checks geïmplementeerd).

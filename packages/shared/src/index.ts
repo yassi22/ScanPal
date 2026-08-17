@@ -132,3 +132,7 @@ export * from "./fix-prompt";
 export * from "./compliance";
 export * from "./meta-tags";
 export * from "./stack-detection";
+export * from "./redirects-mixed";
+export * from "./subresources";
+export * from "./structured-data";
+export * from "./security-txt";

@@ -16,6 +16,22 @@ import {
   type StackDetectionEvidence,
 } from "./stack-detection";
 import {
+  redirectsMixedEvidenceSchema,
+  type RedirectsMixedEvidence,
+} from "./redirects-mixed";
+import {
+  subresourcesEvidenceSchema,
+  type SubresourcesEvidence,
+} from "./subresources";
+import {
+  structuredDataEvidenceSchema,
+  type StructuredDataEvidence,
+} from "./structured-data";
+import {
+  securityTxtEvidenceSchema,
+  type SecurityTxtEvidence,
+} from "./security-txt";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -58,6 +74,10 @@ export const findingSchema = z.object({
       complianceEvidenceSchema,
       metaTagsEvidenceSchema,
       stackDetectionEvidenceSchema,
+      redirectsMixedEvidenceSchema,
+      subresourcesEvidenceSchema,
+      structuredDataEvidenceSchema,
+      securityTxtEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -199,6 +219,10 @@ export type InlineCheckLike = {
     | ComplianceEvidence
     | MetaTagsEvidence
     | StackDetectionEvidence
+    | RedirectsMixedEvidence
+    | SubresourcesEvidence
+    | StructuredDataEvidence
+    | SecurityTxtEvidence
     | string
     | null;
 };
@@ -213,6 +237,10 @@ export function evidenceText(
     | ComplianceEvidence
     | MetaTagsEvidence
     | StackDetectionEvidence
+    | RedirectsMixedEvidence
+    | SubresourcesEvidence
+    | StructuredDataEvidence
+    | SecurityTxtEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -250,6 +278,18 @@ export function evidenceText(
       return evidence.detected
         .map((s) => `${s.name} (${s.category}) ${s.signals.join("; ")}`)
         .join(" | ");
+    }
+    if (evidence.kind === "redirects-mixed") {
+      return `redirected=${evidence.redirected} https_upgraded=${evidence.https_upgraded} final=${evidence.final_url} mixed=${evidence.mixed_content.length}`;
+    }
+    if (evidence.kind === "subresources") {
+      return `total=${evidence.total} with_integrity=${evidence.with_integrity} missing=${evidence.missing_integrity.length}`;
+    }
+    if (evidence.kind === "structured-data") {
+      return `total=${evidence.total} valid=${evidence.valid} invalid=${evidence.invalid} types=${evidence.types.join(",")}`;
+    }
+    if (evidence.kind === "security-txt") {
+      return `security_txt=${evidence.security_txt.present} favicon=${evidence.favicon.present} 404=${evidence.not_found_page.is_404}`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -364,6 +404,22 @@ const ISSUE_TITLES: Record<
     warn: "Geen CMS/framework herkend",
     fail: "Geen CMS/framework herkend",
   },
+  "redirects-mixed": {
+    warn: "Redirect of mixed content issue",
+    fail: "Mixed content op https-pagina of final URL is niet HTTPS",
+  },
+  "subresources": {
+    warn: "Externe subresources zonder SRI-integrity",
+    fail: "Externe subresources zonder SRI-integrity",
+  },
+  "structured-data": {
+    warn: "Structured data onvolledig of ongeldig",
+    fail: "Ongeldig JSON-LD structured data blok",
+  },
+  "security-txt": {
+    warn: "security.txt, favicon of 404-page onvolledig",
+    fail: "security.txt mist verplichte velden of is verlopen",
+  },
 };
 
 const REMEDIATION: Record<string, string> = {
@@ -419,6 +475,14 @@ const REMEDIATION: Record<string, string> = {
     "Voeg GDPR-signalen toe: een DSAR/data-verwijderingsverwijzing en een CMP/IAB-TCF-signaal zodat bezoekers hun rechten kunnen uitoefenen.",
   "stack-detection":
     "Informatief — geen actie vereist. Stacksignalen helpen bij het diagnosticeren van beveiligings- en SEO-problemen.",
+  "redirects-mixed":
+    "Forceer HTTPS met een 301-redirect van http:// naar https://, en vervang alle http://-resources (scripts, stylesheets, images, iframes) door https://-equivalenten om mixed content te voorkomen.",
+  "subresources":
+    "Voeg een `integrity`-attribuut (SRI) toe aan externe <script>/<link rel=stylesheet>-tags met een sha384-hash, plus `crossorigin` voor cross-origin resources, zodat manipulatie door een derde partij wordt tegengegaan.",
+  "structured-data":
+    "Voeg geldig JSON-LD toe (<script type=\"application/ld+json\">) met een @type uit schema.org (bijv. Organization, WebSite, BreadcrumbList, Article) en valideer via de Rich Results Test van Google.",
+  "security-txt":
+    "Publiceer een /.well-known/security.txt volgens RFC 9116 met verplichte velden `Contact:` en `Expires:` (in de toekomst), plus een favicon op /favicon.ico en een custom 404-pagina met h1, zoekfunctie en een link naar de homepage.",
 };
 
 /**

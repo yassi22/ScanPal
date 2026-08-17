@@ -13,8 +13,10 @@ describe("skeletonTotals (progress-skelet)", () => {
     // draait in de http-worker met categorie aeo → telt mee onder aeo.
     // compliance (plan 61) produceert 5 passieve checks onder categorie compliance.
     // stack-detection (plan 40) is category seo → telt mee onder seo.
-    expect(totals.http).toBe(19);
-    expect(totals.seo).toBe(2);
+    // redirects-mixed + subresources (plan 32/34) zijn category http.
+    // structured-data + security-txt (plan 39/37) zijn category seo.
+    expect(totals.http).toBe(21);
+    expect(totals.seo).toBe(4);
     expect(totals.aeo).toBe(1);
     expect(totals.compliance).toBe(5);
     // Categorieën zonder queue-owner krijgen geen key (initialProgressDetails
@@ -25,8 +27,8 @@ describe("skeletonTotals (progress-skelet)", () => {
   it("telt de actieve-test-checks mee met de flag aan", () => {
     const registry = buildRegistry(rateLimit);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
-    // 11 actieve-test-catalog-checks + 19 passieve http-checks.
-    expect(totals.http).toBe(30);
+    // 11 actieve-test-catalog-checks + 21 passieve http-checks.
+    expect(totals.http).toBe(32);
     expect(totals.compliance).toBe(5);
   });
 
