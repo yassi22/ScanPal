@@ -131,3 +131,4 @@ export * from "./diff";
 export * from "./fix-prompt";
 export * from "./compliance";
 export * from "./meta-tags";
+export * from "./stack-detection";

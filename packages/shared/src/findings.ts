@@ -12,6 +12,10 @@ import {
 import { complianceEvidenceSchema, type ComplianceEvidence } from "./compliance";
 import { metaTagsEvidenceSchema, type MetaTagsEvidence } from "./meta-tags";
 import {
+  stackDetectionEvidenceSchema,
+  type StackDetectionEvidence,
+} from "./stack-detection";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -53,6 +57,7 @@ export const findingSchema = z.object({
       engineMatrixEvidenceSchema,
       complianceEvidenceSchema,
       metaTagsEvidenceSchema,
+      stackDetectionEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -193,6 +198,7 @@ export type InlineCheckLike = {
     | EngineMatrixEvidence
     | ComplianceEvidence
     | MetaTagsEvidence
+    | StackDetectionEvidence
     | string
     | null;
 };
@@ -206,6 +212,7 @@ export function evidenceText(
     | EngineMatrixEvidence
     | ComplianceEvidence
     | MetaTagsEvidence
+    | StackDetectionEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -238,6 +245,11 @@ export function evidenceText(
     }
     if (evidence.kind === "meta-tags") {
       return `present: ${evidence.present.join(", ")}; missing: ${evidence.missing.join(", ")}`;
+    }
+    if (evidence.kind === "stack-detection") {
+      return evidence.detected
+        .map((s) => `${s.name} (${s.category}) ${s.signals.join("; ")}`)
+        .join(" | ");
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -348,6 +360,10 @@ const ISSUE_TITLES: Record<
     warn: "Geen GDPR-signalen gevonden",
     fail: "GDPR-signalen ontbreken",
   },
+  "stack-detection": {
+    warn: "Geen CMS/framework herkend",
+    fail: "Geen CMS/framework herkend",
+  },
 };
 
 const REMEDIATION: Record<string, string> = {
@@ -401,6 +417,8 @@ const REMEDIATION: Record<string, string> = {
     "Publiceer terms-of-service, imprint en een contactpagina en link ze vanuit de footer.",
   "gdpr-signals":
     "Voeg GDPR-signalen toe: een DSAR/data-verwijderingsverwijzing en een CMP/IAB-TCF-signaal zodat bezoekers hun rechten kunnen uitoefenen.",
+  "stack-detection":
+    "Informatief — geen actie vereist. Stacksignalen helpen bij het diagnosticeren van beveiligings- en SEO-problemen.",
 };
 
 /**

@@ -51,6 +51,9 @@ export const checkCatalog: CheckCatalogEntry[] = [
   { id: "security-txt", category: "seo", name: "security.txt, favicon, 404", active: false },
   { id: "mini-crawl", category: "seo", name: "Interne links & broken links", active: false },
   { id: "structured-data", category: "seo", name: "Structured data (JSON-LD)", active: false },
+  // Plan 40: stackdetectie herkent CMS/framework/server/CDN uit headers +
+  // HTML (Server, X-Powered-By, generator-meta, framework-markers).
+  { id: "stack-detection", category: "seo", name: "Stackdetectie (CMS/framework)", active: false },
   // Plan 55: AEO per-engine matrix draait in de http-worker (geen browser nodig)
   // — als eerste aeo-entry geplaatst zodat de progress-kaart de juiste check
   // markeert (enige aeo-check die vandaag draait).

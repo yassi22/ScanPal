@@ -12,8 +12,9 @@ describe("skeletonTotals (progress-skelet)", () => {
     // active-tests telt niet mee zonder flag. aeo-engine-matrix (plan 55)
     // draait in de http-worker met categorie aeo → telt mee onder aeo.
     // compliance (plan 61) produceert 5 passieve checks onder categorie compliance.
+    // stack-detection (plan 40) is category seo → telt mee onder seo.
     expect(totals.http).toBe(19);
-    expect(totals.seo).toBe(1);
+    expect(totals.seo).toBe(2);
     expect(totals.aeo).toBe(1);
     expect(totals.compliance).toBe(5);
     // Categorieën zonder queue-owner krijgen geen key (initialProgressDetails

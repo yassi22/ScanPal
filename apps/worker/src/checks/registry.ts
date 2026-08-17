@@ -18,6 +18,7 @@ import { createActiveTestsCheck } from "./http/active-tests";
 import { corsCheck } from "./http/cors";
 import { aeoEngineMatrixCheck } from "./http/aeo-engine-matrix";
 import { COMPLIANCE_CHECK_IDS, complianceCheck } from "./http/compliance";
+import { stackDetectionCheck } from "./http/stack-detection";
 
 /**
  * Geïmplementeerde check per queue (plan 27, besluit 8). `outputCheckIds`
@@ -62,6 +63,8 @@ export function buildRegistry(rateLimit: RateLimiter): Record<QueueName, Impleme
       // Plan 61: compliance-pijler (passief, homepage-only). Eén implementatie
       // produceert de vijf compliance-check-ids; categorie-compliance.
       toImplemented(complianceCheck, [...COMPLIANCE_CHECK_IDS]),
+      // Plan 40: stackdetectie op de homepage (CMS/framework/server/CDN).
+      toImplemented(stackDetectionCheck),
     ],
     // Features 41–43 vullen de browser-worker; feature 27 levert alleen de
     // pipeline (geen aeo-checks geïmplementeerd).
