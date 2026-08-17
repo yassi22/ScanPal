@@ -6,6 +6,7 @@ import {
   bundleProviderLabels,
   categoryLabels,
   COMPLIANCE_DISCLAIMER,
+  htmlSecretLocationLabels,
   severityOrder,
   type BundleSecretEvidence,
   type ComplianceEvidence,
@@ -15,6 +16,7 @@ import {
   type FindingStatus,
   type FixPrompt,
   type ScanCategory,
+  type SecretsInHtmlEvidence,
   type SeverityCounts,
 } from "@scanpal/shared";
 
@@ -117,6 +119,39 @@ function BundleSecretEvidenceView({ evidence }: { evidence: BundleSecretEvidence
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+function SecretsInHtmlEvidenceView({ evidence }: { evidence: SecretsInHtmlEvidence }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Gevonden in inline HTML ({evidence.matches.length})
+      </p>
+      <ul className="space-y-2">
+        {evidence.matches.map((match, index) => (
+          <li
+            key={`${match.location}:${match.match_preview}:${index}`}
+            className="rounded-lg border border-slate-800 bg-slate-900 p-3"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-semibold text-brand">
+                {bundleProviderLabels[match.provider] ?? match.provider}
+              </span>
+              <span className="text-xs font-semibold text-slate-200">
+                {bundleKeyTypeLabels[match.key_type] ?? match.key_type}
+              </span>
+              <span className="rounded-full bg-slate-700/40 px-2 py-0.5 text-[10px] font-medium text-slate-400">
+                {htmlSecretLocationLabels[match.location] ?? match.location}
+              </span>
+            </div>
+            <code className="mt-2 block font-mono text-sm text-amber-300">
+              {match.match_preview}
+            </code>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -653,8 +688,12 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                         <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-300">
                           {finding.evidence}
                         </pre>
-                      ) : "matches" in finding.evidence ? (
+                      ) : "kind" in finding.evidence &&
+                        finding.evidence.kind === "bundle-secrets" ? (
                         <BundleSecretEvidenceView evidence={finding.evidence} />
+                      ) : "kind" in finding.evidence &&
+                        finding.evidence.kind === "secrets-in-html" ? (
+                        <SecretsInHtmlEvidenceView evidence={finding.evidence} />
                       ) : "request" in finding.evidence ? (
                         <>
                           <div>
