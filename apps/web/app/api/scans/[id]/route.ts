@@ -1,27 +1,37 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getSessionUser } from "@/lib/supabase/server";
+import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
+import { summarizeFindings } from "@/lib/scan-progress";
 
 export const runtime = "nodejs";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getSessionUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireTeam(request);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.status === 429 ? "Te veel verzoeken" : "Unauthorized" },
+      {
+        status: auth.status,
+        headers:
+          auth.status === 429
+            ? { "Retry-After": String(auth.retryAfter) }
+            : undefined,
+      },
+    );
   }
+  const teamId = auth.ctx.teamId;
 
   const { id } = await params;
 
   const result = await pool.query(
-    `select s.* from scans s
+    `select s.*, st.url as site_url from scans s
      join sites st on st.id = s.site_id
-     join memberships m on m.team_id = st.team_id
-     where s.id = $1 and m.user_id = $2`,
-    [id, user.id],
+     where s.id = $1 and st.team_id = $2`,
+    [id, teamId],
   );
 
   if (result.rowCount === 0) {
@@ -29,13 +39,33 @@ export async function GET(
   }
 
   const row = result.rows[0];
+  const findings = (row.findings ?? {}) as Record<string, unknown>;
+
+  // Plan 54: ontdekte routes + denormaliseerde teller voor de resultatenpagina.
+  const routesResult = await pool.query(
+    `select url, source, http_status from scan_routes
+     where scan_id = $1 order by created_at asc`,
+    [id],
+  );
+
   return NextResponse.json({
     id: row.id,
     site_id: row.site_id,
+    site_url: row.site_url,
     status: row.status,
     progress: row.progress,
+    progress_details: row.progress_details ?? null,
     score: row.score,
-    findings: row.findings,
+    findings,
+    summary:
+      row.status === "completed" ? summarizeFindings(findings) : null,
+    error:
+      row.status === "failed" && typeof findings.error === "string"
+        ? findings.error
+        : null,
+    route_count: row.route_count ?? routesResult.rowCount ?? 0,
+    routes: routesResult.rows,
+    created_at: row.created_at,
     completed_at: row.completed_at,
   });
 }

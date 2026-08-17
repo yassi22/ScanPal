@@ -1,0 +1,29 @@
+{
+  "name": "@scanpal/scheduler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@scanpal/notify": "workspace:*",
+    "@scanpal/scan-core": "workspace:*",
+    "@scanpal/shared": "workspace:*",
+    "dotenv": "^17.0.0",
+    "pg": "^8.16.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/pg": "^8.15.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5",
+    "vitest": "^3.2.0"
+  },
+  "packageManager": "pnpm@10.27.0"
+}

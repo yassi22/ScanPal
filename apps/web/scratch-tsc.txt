@@ -1,0 +1,15 @@
+﻿lib/__tests__/api-keys-core.test.ts(73,24): error TS2339: Property 'key_hash' does not exist on type '{ id: string; name: string; prefix: string; last_used_at: string | null; revoked_at: string | null; created_at: string; }'.
+lib/__tests__/api-keys-route.test.ts(148,7): error TS2345: Argument of type 'Request' is not assignable to parameter of type 'NextRequest'.
+  Type 'Request' is missing the following properties from type 'NextRequest': cookies, nextUrl, page, ua
+lib/__tests__/api-keys-route.test.ts(160,7): error TS2345: Argument of type 'Request' is not assignable to parameter of type 'NextRequest'.
+  Type 'Request' is missing the following properties from type 'NextRequest': cookies, nextUrl, page, ua
+lib/__tests__/api-keys-route.test.ts(177,7): error TS2345: Argument of type 'Request' is not assignable to parameter of type 'NextRequest'.
+  Type 'Request' is missing the following properties from type 'NextRequest': cookies, nextUrl, page, ua
+lib/__tests__/scratch-test.ts(3,3): error TS2322: Type 'NextResponse<{ error: string; }> | NextResponse<{ summary: { site_id: string; url: string; label: string | null; uptime_state: "unknown" | "up" | "down"; uptime_state_changed_at: string | null; ... 5 more ...; sparkline: { ...; }[]; }; series: { ...; }[]; recent_events: { ...; }[]; last_incident: { ...; } | null; }>...' is not assignable to type 'Response'.
+  Type 'undefined' is not assignable to type 'Response'.
+lib/__tests__/uptime-site-route.test.ts(48,3): error TS2322: Type 'NextResponse<{ error: string; }> | NextResponse<{ summary: { site_id: string; url: string; label: string | null; uptime_state: "unknown" | "up" | "down"; uptime_state_changed_at: string | null; ... 5 more ...; sparkline: { ...; }[]; }; series: { ...; }[]; recent_events: { ...; }[]; last_incident: { ...; } | null; }>...' is not assignable to type 'Response'.
+  Type 'undefined' is not assignable to type 'Response'.
+lib/__tests__/uptime-site-route.test.ts(60,3): error TS2322: Type 'NextResponse<{ error: string; }> | NextResponse<{ enabled: boolean; }> | undefined' is not assignable to type 'Response'.
+  Type 'undefined' is not assignable to type 'Response'.
+undefined
+ÔÇëERR_PNPM_RECURSIVE_EXEC_FIRST_FAILÔÇë Command failed with exit code 1: tsc --noEmit --pretty false

@@ -7,10 +7,19 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(10),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(10).optional(),
   DATABASE_URL: z.string().min(10),
+  REDIS_URL: z.string().min(5).optional().default("redis://localhost:6379"),
   APP_URL: z.url().optional().default("http://localhost:3000"),
-  SCAN_MODE: z.enum(["inline", "queue"]).optional().default("inline"),
+  HONEYPOT_BASE_URL: z.url().optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
   RESEND_FROM: z.string().default("ScanPal <no-reply@scanpal.dev>"),
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_PRICE_PRO: z.string().min(1).optional(),
+  /** Jaarplan (plan 16): prijs-ID van het jaarlijkse Pro-abonnement. */
+  STRIPE_PRICE_PRO_ANNUAL: z.string().min(1).optional(),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  /** 32-byte base64 AES-GCM-sleutel voor outbound webhook-secrets (plan 15). */
+  WEBHOOK_SECRET_KEY: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -30,9 +39,16 @@ export const env = {
   supabaseAnonKey: raw.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   supabaseServiceRoleKey: raw.SUPABASE_SERVICE_ROLE_KEY,
   databaseUrl: raw.DATABASE_URL,
+  redisUrl: raw.REDIS_URL,
   appUrl: raw.APP_URL,
-  scanMode: raw.SCAN_MODE,
+  honeypotBaseUrl: raw.HONEYPOT_BASE_URL,
   resendApiKey: raw.RESEND_API_KEY,
   resendFrom: raw.RESEND_FROM,
+  stripeSecretKey: raw.STRIPE_SECRET_KEY,
+  stripeWebhookSecret: raw.STRIPE_WEBHOOK_SECRET,
+  stripePricePro: raw.STRIPE_PRICE_PRO,
+  stripePriceProAnnual: raw.STRIPE_PRICE_PRO_ANNUAL,
+  stripePublishableKey: raw.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  webhookSecretKey: raw.WEBHOOK_SECRET_KEY,
 };
 

@@ -11,16 +11,21 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.6.0",
     "@scanpal/db": "workspace:*",
+    "@scanpal/notify": "workspace:*",
+    "@scanpal/scan-core": "workspace:*",
     "@scanpal/shared": "workspace:*",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.55.0",
+    "ioredis": "^5.6.0",
     "next": "16.3.1",
     "pg": "^8.16.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "resend": "^5.0.0",
     "server-only": "^0.0.1",
+    "stripe": "^22.5.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {

@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { onboardingSiteInputSchema } from "@scanpal/shared";
+import { onboardingSiteInputSchema, canonicalizeSiteUrl } from "@scanpal/shared";
 import { getSessionUser } from "@/lib/supabase/server";
 import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
-import { normalizeUrl, runInlineProbe } from "@/lib/scan-runner";
-import { env } from "@/lib/env";
+import { setSiteScanState } from "@/lib/sites-core";
+import { enqueueScan } from "@/lib/scan-queue";
+import type { ScanRowWithMeta } from "@/lib/scans-core";
+import { spendCredit, CreditLimitError } from "@/lib/credits";
 
 export const runtime = "nodejs";
 
@@ -31,11 +33,17 @@ export async function POST(request: Request) {
     auth_provider: user.app_metadata?.provider ?? null,
   });
 
-  const url = normalizeUrl(parsed.data.url);
-  const client = await pool.connect();
+  const url = canonicalizeSiteUrl(parsed.data.url);
+  if (!url) {
+    return NextResponse.json(
+      { error: "Voer een geldige URL in, bijvoorbeeld https://voorbeeld.nl" },
+      { status: 400 },
+    );
+  }
 
+  const client = await pool.connect();
   let site;
-  let scan;
+  let scanRow: ScanRowWithMeta;
   try {
     await client.query("begin");
 
@@ -46,34 +54,59 @@ export async function POST(request: Request) {
       [team.id, url],
     );
 
-    scan = await client.query(
-      "insert into scans (site_id, status) values ($1, 'queued') returning *",
+    const inserted = await client.query(
+      `insert into scans (site_id, status)
+       values ($1, 'queued') returning *`,
       [site.rows[0].id],
     );
+    scanRow = inserted.rows[0] as ScanRowWithMeta;
 
-    if (env.scanMode === "inline") {
-      const result = await runInlineProbe(url);
-      scan = await client.query(
-        `update scans set status = 'completed', progress = 100, score = $1, findings = $2, completed_at = now()
-         where id = $3 returning *`,
-        [result.score, JSON.stringify(result.findings), scan.rows[0].id],
-      );
-    }
+    await setSiteScanState(client, site.rows[0].id, {
+      scanId: scanRow.id,
+      status: "queued",
+    });
+
+    await spendCredit(client, {
+      teamId: team.id,
+      reason: "scan",
+      scanId: scanRow.id,
+    });
 
     await client.query("commit");
   } catch (err) {
-    await client.query("rollback");
+    try {
+      await client.query("rollback");
+    } catch {
+      // transactie is mogelijk al beëindigd — negeren
+    }
+    client.release();
+    if (err instanceof CreditLimitError) {
+      return NextResponse.json(
+        {
+          error: "Scan-limiet bereikt. Upgrade naar Pro voor meer scans per maand.",
+          upsell: { plan: "pro" },
+          usage: {
+            creditsUsed: err.creditsUsed,
+            creditsLimit: err.creditsLimit,
+          },
+        },
+        { status: 402 },
+      );
+    }
     console.error("onboarding site mislukt", err);
     return NextResponse.json(
       { error: "Opslaan mislukt. Probeer het opnieuw." },
       { status: 500 },
     );
-  } finally {
-    client.release();
   }
+  client.release();
+
+  // Queue-modus (plan 27): de worker-pipeline voert de scan uit; de webapp
+  // antwoordt direct 202 en wacht nooit op het resultaat.
+  await enqueueScan(scanRow.id);
 
   return NextResponse.json(
-    { site: site.rows[0], scan: scan.rows[0] },
-    { status: scan.rows[0].status === "completed" ? 200 : 202 },
+    { site: site.rows[0], scan: scanRow },
+    { status: 202 },
   );
 }

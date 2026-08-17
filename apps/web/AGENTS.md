@@ -1,0 +1,104 @@
+# apps/web — AGENTS.md
+
+Next.js (App Router) webapp: **frontend + REST API routes in one app**. The
+webapp only creates scan jobs and reads results — it never runs scans inline.
+
+See the [root AGENTS.md](../AGENTS.md) for the overall architecture; this file
+covers the webapp layer only.
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│  BROWSER                                              │
+│  (auth) pages · (dashboard) pages · EventSource(SSE)  │
+└──────────────────────┬───────────────────────────────┘
+                       │ fetch / forms
+┌──────────────────────▼───────────────────────────────┐
+│  NEXT.JS (App Router, server components + routes)     │
+│  app/api/*            → REST routes (see table)       │
+│  app/(dashboard)/*    → pages                         │
+│  lib/                 → server-only helpers           │
+└──────┬────────────────────────────┬───────────────────┘
+       │ enqueue (BullMQ, 202)      │ read/write (pg pool)
+       ▼                            ▼
+  QUEUE (scan.*)              POSTGRES + REDIS
+```
+
+**Core rule (root)**: `POST /api/scans` → validate, create rows, enqueue
+`scan.dispatcher`, respond `202`. Never await a scan.
+
+## Key contracts
+
+- **Auth & teams**: sessions per plan 01; roles `owner`/`member` per plan 02.
+  Every site/scan query is scoped via the membership join — non-member → 404.
+- **API-auth (plan 14)**: alle data-routes (`sites*`, `scans*`, `findings`,
+  `uptime*`) accepteren óf een Supabase-sessie óf `Authorization: Bearer
+  sp_live_…` via `lib/api-auth.ts` → `requireTeam(request)` → `teamId`.
+  Keys zijn team-scoped; de DB slaat alleen `sha256(key)` op; revoked/expired
+  → 401. Rate limiting (Redis fixed-window, `lib/rate-limit.ts`) per key én
+  per team (plan-limiet `apiRatePerMinute`) → 429 + `Retry-After`;
+  usage-tracking in `api_key_usage` (last_used_at per request).
+  Uitgezonderd: `auth/*`, `webhooks/*`, `billing/checkout|portal` en de SSE
+  stream (GET-only zonder headers). `api/api-keys*` is sessie + owner-only.
+- **Credits**: plan 03 — spend credits atomically when creating a scan;
+  plan limits gate features (e.g. scheduled scans on Pro).
+- **Scan progress (plan 06)**: `GET /api/scans/[id]/stream` is DB-driven SSE
+  (2s poll of the scans row, heartbeat `:ping` every 15s, terminal event
+  closes the stream, ~5 min max). Client falls back to polling
+  `GET /api/scans/[id]` every 3s. Progress payloads come from
+  `packages/shared` (`scan-progress.ts`, `check-catalog.ts`).
+- **Progress writer**: `lib/scan-progress.ts` re-exports the shared math
+  (`packages/shared`) and the writers from `packages/scan-core`
+  (`updateScanProgress` + atomic `advanceCategoryProgress`) — one source of
+  truth for web and workers (plan 27, besluit 3/4).
+- **Enqueue (plan 27, besluit 7)**: `lib/scan-queue.ts` → `enqueueScan(scanId)`
+  adds `scan.dispatcher` with `jobId = scanId` (lazy Redis singleton). Routes
+  always respond `202`; no `SCAN_MODE` fallback, no inline probe.
+
+## Route map (feature refs point to docs/FEATURES.md)
+
+| Route | Feature | Notes |
+|---|---|---|
+| `api/auth/*` | 17 | sessions, oauth, magic link, roles |
+| `api/onboarding/sites` | 1, 4 | first scan in the onboarding flow |
+| `api/sites*` | 18 | CRUD, URL normalization, duplicate check, GitHub-repo detect |
+| `api/sites/[id]/schedule` | 5, 18 | daily/weekly schema (09:00 UTC, `next_scan_at`), Pro-gate → 403 + upsell |
+| `api/scans` + `api/scans/[id]` | 19 | create (202 + enqueue `scan.dispatcher`), get (progress/result), list, cancel |
+| `api/scans/[id]/stream` | 6 | SSE progress (contract in plan 06) |
+| `api/scans/[id]/findings` + `api/scans/[id]/findings/[findingId]` | 20 | GET: filter (severity/category/status/q, server-side) + counts; PATCH: status/note per finding (plan 09) |
+| `api/reports/[scanId]` + `api/reports` + `api/reports/[id]/content` | 9, 21 | export (plan 10): generate PDF (react-pdf) + Markdown per scan (`?format=md\|pdf`, alleen `completed` → anders 409 + status, `X-Report-Id`-header), historie-lijst (filter `site_id`, team-scoped, max 100), opgeslagen download (geen regeneratie); elke download legt een `reports`-rij vast; sessie óf API-key |
+| `api/billing*`, `api/webhooks/stripe` | 22 | checkout now; plan-sync after MVP |
+| `api/billing/invoices` + `api/billing/subscription` | 16 | facturen live uit de Stripe-API (geen lokale tabel); abonnement-view (DB + 1 live call), PATCH/DELETE owner-only (opzeggen = `cancel_at_period_end`), checkout-body `{ planId, interval }`; `invoice.payment_failed` → hub-notificatie `payment_failed` (dedup per invoice) |
+| `api/notifications` + `api/notifications/[id]/read` + `api/notifications/read-all` + `api/notifications/preferences` | 13, 23 | notificatiehub (plan 13): per-user lijst (unread/type-filters, paginated), read/read-all, voorkeuren-toggles; bel-badge in de dashboard-layout |
+| `api/uptime*` | 24 | status per site, metrics |
+| `h/[token]` | 12 | publieke honeypot-decoy: altijd 404 + no-index, hit-logging + inline analyse async (`after()`); bypass in `proxy.ts` |
+| `api/threats` + `api/threats/events` | 12 | Pro-gated: overzicht per site + gefilterde events (403 + upsell op Free) |
+| `api/sites/[id]/honeypot` | 12 | Pro-gated: honeypot aan/uit + token-rotatie, retourneert install-snippet |
+| `api/api-keys*` | 25 | bearer keys (`sp_live_`, plan 14): GET/POST lijst+create (full key 1×), DELETE soft-revoke; owner-only → 403 |
+| `api/webhooks` + `api/webhooks/[id]` + `[id]/secret` + `[id]/test` + `[id]/deliveries` | 15, 23 | outbound webhooks (plan 15): lijst/create (secret 1×), PATCH/DELETE, rotate (owner-only), test-delivery (event `test`), delivery-log; teamlid-sessie, géén bearer keys |
+
+## Rules & conventions
+
+- TypeScript strict; **zod validation on every API boundary** (schemas live in
+  `packages/shared`, not duplicated here).
+- RESTful routes under `app/api/`, status codes per plan/contract:
+  `202` for scan create, `401`/`404` for authz failures (do not leak
+  existence), `400` for validation.
+- `lib/` files are server-only (import `server-only`); never ship DB pools or
+  secrets to the client.
+- EventSource is GET-only — SSE routes must not require headers.
+- SSE headers: `Content-Type: text/event-stream`, `Cache-Control: no-cache,
+  no-transform`, `X-Accel-Buffering: no` (nginx on the VPS).
+- New endpoint = route + shared schema + authz + tests (vitest in this app).
+
+## Commands
+
+```bash
+pnpm --filter web dev      # http://localhost:3000
+pnpm --filter web lint
+pnpm --filter web test     # vitest
+pnpm --filter web typecheck
+```
+
+For tests a local user is available via `scripts/create-test-user.mjs`.

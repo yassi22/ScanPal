@@ -1,0 +1,244 @@
+import dns from "node:dns/promises";
+import net from "node:net";
+import tls from "node:tls";
+import { domainToASCII } from "node:url";
+import {
+  parseRdap,
+  parseWhoisExpiry,
+  normalizeNs,
+  registrableDomain,
+  type DomainMeasurement,
+  type RdapParsed,
+} from "@scanpal/shared";
+
+/**
+ * Domain Watchtower — netwerklaag (plan 56, stap 1/3). Woont in scan-core zodat
+ * zowel de http-worker (catalog-check) als de scheduler (dagelijkse watch) dezelfde
+ * meting draaien. Pure helpers (`parseRdap`, `diffDomainMeasurement`,
+ * `domainAlerts`) leven in `@scanpal/shared`; hier is alleen de netwerklaag.
+ */
+
+const RDAP_TIMEOUT_MS = 10_000;
+const WHOIS_TIMEOUT_MS = 10_000;
+const TLS_SOCKET_TIMEOUT_MS = 10_000;
+
+export type DomainDeps = {
+  fetchImpl?: typeof fetch;
+  dnsResolver?: typeof dns;
+  connectTcp?: (host: string, port: number, timeoutMs: number) => Promise<string>;
+};
+
+/** Punycode-conversie via `node:url` (plan 56, besluit 5). */
+export function toPunycode(host: string): string {
+  try {
+    return domainToASCII(host);
+  } catch {
+    return host;
+  }
+}
+
+/**
+ * RDAP over HTTPS via de rdap.org-bootstrap (redirect naar de juiste registrar-
+ * RDAP). Korte timeout — bij een time-out/fout retourneert `null` zodat de
+ * caller op whois terugvalt (plan 56, acceptatiecriteria: geen storing bij
+ * RDAP-timeouts).
+ */
+export async function fetchRdapDomain(
+  apexPunycode: string,
+  deps: DomainDeps = {},
+): Promise<RdapParsed | null> {
+  const fetchImpl = deps.fetchImpl ?? fetch;
+  const url = `https://rdap.org/domain/${apexPunycode}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), RDAP_TIMEOUT_MS);
+  try {
+    const response = await fetchImpl(url, {
+      headers: { Accept: "application/rdap+json" },
+      signal: controller.signal,
+      redirect: "follow",
+    });
+    if (!response.ok) return null;
+    const json = await response.json();
+    return parseRdap(json as Parameters<typeof parseRdap>[0]);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export type DnsRecords = {
+  nameservers: string[];
+  dnssec_enabled: boolean;
+  caa_records: string[];
+};
+
+/**
+ * DNS-queries via `node:dns` (plan 56, besluit 2): NS-set, DNSSEC (DS aanwezig
+ * → enabled) en CAA. Failure-resistent: een falende query levert een lege set /
+ * `false` (geen crash bij een domein zonder DS/CAA).
+ */
+export async function queryDnsRecords(
+  apexPunycode: string,
+  deps: DomainDeps = {},
+): Promise<DnsRecords> {
+  const resolver = deps.dnsResolver ?? dns;
+  const nameservers = await resolver.resolveNs(apexPunycode).then(
+    (ns) => normalizeNs(ns),
+    () => [],
+  );
+  // DNSSEC: een DS-record aanwezig bij de parent → ondertekende zone. Deze
+  // @types/node-versie kent geen `resolveDs`, dus via de generieke `resolve`
+  // met rrtype "DS" (array-check; de union-return dekt ook non-array gevallen).
+  const dnssec_enabled = await resolver.resolve(apexPunycode, "DS").then(
+    (ds: unknown) => Array.isArray(ds) && ds.length > 0,
+    () => false,
+  );
+  const caa_records = await resolver.resolveCaa(apexPunycode).then(
+    (caa) => caa.map((c) => formatCaa(c)).sort(),
+    () => [],
+  );
+  return { nameservers, dnssec_enabled, caa_records };
+}
+
+function formatCaa(c: {
+  critical: number;
+  issue?: string;
+  issuewild?: string;
+  iodef?: string;
+}): string {
+  if (typeof c.issue === "string") return `${c.critical} issue "${c.issue}"`;
+  if (typeof c.issuewild === "string") return `${c.critical} issuewild "${c.issuewild}"`;
+  if (typeof c.iodef === "string") return `${c.critical} iodef "${c.iodef}"`;
+  return `${c.critical} caa`;
+}
+
+/**
+ * Whois-fallback over TCP poort 43 (plan 56, besluit 2). Verbindt met de IANA-
+ * whois-redirector, leest de tekst-response en parsed de expiry.
+ */
+export async function whoisExpiry(
+  apexPunycode: string,
+  deps: DomainDeps = {},
+): Promise<string | null> {
+  const connect = deps.connectTcp ?? defaultWhoisConnect;
+  try {
+    const text = await connect(apexPunycode, 43, WHOIS_TIMEOUT_MS);
+    return parseWhoisExpiry(text);
+  } catch {
+    return null;
+  }
+}
+
+async function defaultWhoisConnect(
+  host: string,
+  port: number,
+  timeoutMs: number,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    const socket = net.createConnection({ host: "whois.iana.org", port }, () => {
+      socket.write(`${host}\r\n`);
+    });
+    const timer = setTimeout(() => {
+      socket.destroy();
+      reject(new Error("whois timeout"));
+    }, timeoutMs);
+    socket.on("data", (chunk: Buffer) => chunks.push(chunk));
+    socket.on("end", () => {
+      clearTimeout(timer);
+      resolve(Buffer.concat(chunks).toString("utf8"));
+    });
+    socket.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Leest `notAfter` van het TLS-certificaat via een eigen `node:tls`-handshake
+ * (SNI = host). Hergebruikt de meet-methode uit plan 67; retourneert `null` bij
+ * een time-out/fout (de tls-cert-check rapporteert de detail-finding).
+ */
+export async function measureTlsExpiry(
+  host: string,
+  port = 443,
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const socket = tls.connect({
+      host,
+      port,
+      servername: host,
+      timeout: TLS_SOCKET_TIMEOUT_MS,
+    });
+
+    const finish = (value: string | null) => {
+      if (settled) return;
+      settled = true;
+      try {
+        socket.destroy();
+      } catch {
+        // negeren
+      }
+      resolve(value);
+    };
+
+    socket.once("secureConnect", () => {
+      const cert = socket.getPeerCertificate() as { valid_to?: string } | null;
+      finish(cert?.valid_to ? new Date(cert.valid_to).toISOString() : null);
+    });
+
+    socket.once("error", () => finish(null));
+    socket.once("timeout", () => finish(null));
+  });
+}
+
+export type MeasureResult = {
+  measurement: DomainMeasurement;
+  rdap_ok: boolean;
+};
+
+/**
+ * Combineert RDAP (+ whois-fallback) + DNS + TLS-expiry tot één meting. Wordt
+ * zowel door de catalog-check (http-worker) als de dagelijkse watch (scheduler)
+ * aangeroepen — één bron, zodat scan en watch dezelfde domein-status leveren
+ * (plan 56, acceptatiecriteria). TLS-expiry wordt hier zelf gemeten via
+ * `measureTlsExpiry` (zelfde methode als de tls-cert-check, plan 67).
+ */
+export async function measureDomain(
+  host: string,
+  deps: DomainDeps = {},
+): Promise<MeasureResult> {
+  const apex = registrableDomain(host) ?? host;
+  const apexPunycode = toPunycode(apex);
+
+  const [rdap, dnsRecords, tlsIso] = await Promise.all([
+    fetchRdapDomain(apexPunycode, deps),
+    queryDnsRecords(apexPunycode, deps),
+    measureTlsExpiry(host),
+  ]);
+
+  let domain_expiry = rdap?.domain_expiry ?? null;
+  let rdap_ok = rdap !== null;
+  if (!domain_expiry) {
+    const whois = await whoisExpiry(apexPunycode, deps);
+    if (whois) {
+      domain_expiry = whois;
+      rdap_ok = true;
+    }
+  }
+
+  const measurement: DomainMeasurement = {
+    domain_expiry,
+    domain_registrar: rdap?.domain_registrar ?? null,
+    dnssec_enabled: dnsRecords.dnssec_enabled,
+    caa_present: dnsRecords.caa_records.length > 0,
+    tls_expiry: tlsIso,
+    nameservers: dnsRecords.nameservers,
+    caa_records: dnsRecords.caa_records,
+  };
+
+  return { measurement, rdap_ok };
+}

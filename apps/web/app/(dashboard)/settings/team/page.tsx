@@ -3,6 +3,7 @@ import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { listMembers, listPendingInvitations } from "@/lib/invites-core";
 import { TeamSettings } from "@/components/team-settings";
+import { SettingsNav } from "@/components/settings-nav";
 
 export default async function SettingsTeamPage() {
   const supabase = await createClient();
@@ -29,6 +30,8 @@ export default async function SettingsTeamPage() {
       <p className="mt-1 text-sm text-slate-400">
         Beheer leden en uitnodigingen voor {result.team.name}.
       </p>
+
+      <SettingsNav />
 
       <TeamSettings
         teamId={result.team.id}

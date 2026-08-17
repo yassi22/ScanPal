@@ -52,6 +52,9 @@ function fakePool() {
     { team_id: "team-1", user_id: "u-member", role: "member", status: "accepted", invited_by: null },
   ];
   const invitations: FakeInvitation[] = [];
+  const subscriptions: { team_id: string; plan: string }[] = [
+    { team_id: "team-1", plan: "free" },
+  ];
 
   let inviteSeq = 0;
 
@@ -177,12 +180,39 @@ function fakePool() {
       return row ? { rowCount: 1, rows: [{ role: row.role }] } : { rowCount: 0, rows: [] };
     }
 
+    if (text.startsWith("select plan from subscriptions")) {
+      const [teamId] = params as [string];
+      const rows = subscriptions
+        .filter((s) => s.team_id === teamId)
+        .map((s) => ({ ...s }));
+      return { rowCount: rows.length, rows };
+    }
+
     if (text.startsWith("select count(*)::int as n")) {
       const [teamId] = params as [string];
-      const n = memberships.filter(
-        (m) => m.team_id === teamId && m.role === "owner" && m.status === "accepted",
-      ).length;
+      let n: number;
+      if (text.includes("from invitations")) {
+        n = invitations.filter(
+          (i) => i.team_id === teamId && i.accepted_at === null,
+        ).length;
+      } else if (text.includes("role = 'owner'")) {
+        n = memberships.filter(
+          (m) => m.team_id === teamId && m.role === "owner" && m.status === "accepted",
+        ).length;
+      } else {
+        n = memberships.filter(
+          (m) => m.team_id === teamId && m.status === "accepted",
+        ).length;
+      }
       return { rowCount: 1, rows: [{ n }] };
+    }
+
+    if (text.startsWith("select 1 from memberships where team_id")) {
+      const [teamId, userId] = params as [string, string];
+      const exists = memberships.some(
+        (m) => m.team_id === teamId && m.user_id === userId && m.status === "accepted",
+      );
+      return { rowCount: exists ? 1 : 0, rows: [] };
     }
 
     if (text.startsWith("update memberships set role")) {
@@ -213,7 +243,7 @@ function fakePool() {
     query: async (sql: string, params: unknown[] = []) => handle(sql, params),
   } as unknown as Pool;
 
-  return { db, teams, users, memberships, invitations, handle };
+  return { db, teams, users, memberships, invitations, subscriptions, handle };
 }
 
 const inviteInput = { teamId: "team-1", email: "carol@example.com", invitedBy: "u-owner" };
@@ -261,6 +291,24 @@ describe("createInvitation", () => {
     await expect(
       createInvitation(state.db, { ...inviteInput, email: "bob@example.com", role: "member" }),
     ).rejects.toMatchObject({ code: "already_member" });
+  });
+
+  it("blokkeert uitnodigen wanneer de ledenlimiet van het plan is bereikt", async () => {
+    await createInvitation(state.db, { ...inviteInput, email: "carol@example.com", role: "member" });
+
+    await expect(
+      createInvitation(state.db, { ...inviteInput, email: "dave@example.com", role: "member" }),
+    ).rejects.toMatchObject({ code: "member_limit" });
+  });
+
+  it("staat meer leden toe op het Pro-plan", async () => {
+    state.subscriptions[0].plan = "pro";
+
+    await createInvitation(state.db, { ...inviteInput, email: "carol@example.com", role: "member" });
+    await createInvitation(state.db, { ...inviteInput, email: "dave@example.com", role: "member" });
+    await createInvitation(state.db, { ...inviteInput, email: "erin@example.com", role: "member" });
+
+    expect(state.invitations).toHaveLength(3);
   });
 
   it("generates tokens die uniek zijn", () => {
@@ -332,6 +380,20 @@ describe("acceptInvitation", () => {
     ).rejects.toMatchObject({ code: "not_found" });
   });
 
+  it("blokkeert accept wanneer de ledenlimiet van het plan is bereikt", async () => {
+    state.memberships.push({
+      team_id: "team-1",
+      user_id: "u-extra",
+      role: "member",
+      status: "accepted",
+      invited_by: null,
+    });
+
+    await expect(
+      acceptInvitation(state.db, { token, userId: "u-carol", email: "carol@example.com" }),
+    ).rejects.toMatchObject({ code: "member_limit" });
+  });
+
   it("werkt ook als de gebruiker al lid is (on conflict do nothing)", async () => {
     state.memberships.push({
       team_id: "team-1",
@@ -376,6 +438,7 @@ describe("getInvitation / listPendingInvitations / deleteInvitation", () => {
   });
 
   it("toont openstaande uitnodigingen en verbergt geaccepteerde", async () => {
+    state.subscriptions[0].plan = "pro";
     await acceptInvitation(state.db, { token, userId: "u-carol", email: "carol@example.com" });
     const pending = await listPendingInvitations(state.db, "team-1");
     expect(pending).toHaveLength(0);

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { detectGithubRepoFromUrl } from "./sites";
 
 export const userRoleSchema = z.enum(["owner", "member"]);
 export type UserRole = z.infer<typeof userRoleSchema>;
@@ -42,38 +43,26 @@ export const meResponseSchema = z.object({
 });
 export type MeResponse = z.infer<typeof meResponseSchema>;
 
-export const siteSchema = z.object({
-  id: z.uuid(),
-  team_id: z.uuid(),
-  url: z.url(),
-  created_at: z.string().datetime(),
-});
-export type Site = z.infer<typeof siteSchema>;
-
-export const scanStatusSchema = z.enum(["queued", "running", "completed", "failed"]);
-export type ScanStatus = z.infer<typeof scanStatusSchema>;
-
-export const scanSchema = z.object({
-  id: z.string().uuid(),
-  site_id: z.string().uuid(),
-  status: scanStatusSchema,
-  progress: z.number().int().min(0).max(100),
-  score: z.number().int().min(0).max(100).nullable(),
-  findings: z.record(z.string(), z.unknown()).default({}),
-  created_at: z.string().datetime(),
-  completed_at: z.string().datetime().nullable(),
-});
-export type Scan = z.infer<typeof scanSchema>;
-
-export const onboardingSiteInputSchema = z.object({
-  url: z
-    .string()
-    .trim()
-    .min(1, "URL is verplicht")
-    .refine((v) => /^https?:\/\//i.test(v) || /^[a-z0-9.-]+\.[a-z]{2,}/i.test(v), {
-      message: "Voer een geldige URL in, bijvoorbeeld https://voorbeeld.nl",
-    }),
-});
+export const onboardingSiteInputSchema = z
+  .object({
+    url: z
+      .string()
+      .trim()
+      .min(1, "URL is verplicht")
+      .refine((v) => /^https?:\/\//i.test(v) || /^[a-z0-9.-]+\.[a-z]{2,}/i.test(v), {
+        message: "Voer een geldige URL in, bijvoorbeeld https://voorbeeld.nl",
+      }),
+  })
+  .superRefine((value, ctx) => {
+    const detected = detectGithubRepoFromUrl(value.url);
+    if (detected) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["url"],
+        message: `GitHub-repo herkend als ${detected} — vul ook een website-URL in`,
+      });
+    }
+  });
 export type OnboardingSiteInput = z.infer<typeof onboardingSiteInputSchema>;
 
 export const magicLinkInputSchema = z.object({
@@ -113,3 +102,26 @@ export const roleChangeSchema = z.object({
   role: userRoleSchema,
 });
 export type RoleChange = z.infer<typeof roleChangeSchema>;
+
+export * from "./plans";
+export * from "./api-keys";
+export * from "./active-tests";
+export * from "./bundle-secrets";
+export * from "./severity";
+export * from "./sites";
+export * from "./scans";
+export * from "./schedule";
+export * from "./scan-progress";
+export * from "./scan-progress-math";
+export * from "./check-catalog";
+export * from "./findings";
+export * from "./uptime";
+export * from "./threats";
+export * from "./notifications";
+export * from "./webhooks";
+export * from "./billing";
+export * from "./scoring";
+export * from "./report";
+export * from "./routes";
+export * from "./aeo-engine-matrix";
+export * from "./domain";

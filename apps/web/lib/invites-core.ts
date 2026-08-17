@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
-import type { Pool } from "pg";
-import type { UserRole } from "@scanpal/shared";
+import type { Pool, PoolClient } from "pg";
+import { plans, type UserRole } from "@scanpal/shared";
 
 export const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -11,7 +11,8 @@ export type InviteErrorCode =
   | "already_member"
   | "pending_exists"
   | "last_owner"
-  | "email_mismatch";
+  | "email_mismatch"
+  | "member_limit";
 
 export class InviteError extends Error {
   constructor(
@@ -59,6 +60,33 @@ export function generateToken(): string {
   return randomBytes(32).toString("hex");
 }
 
+async function maxMembersForTeam(
+  db: Pool | PoolClient,
+  teamId: string,
+): Promise<number> {
+  const result = await db.query(
+    "select plan from subscriptions where team_id = $1",
+    [teamId],
+  );
+  const planId = (result.rows[0]?.plan as string | undefined) ?? "free";
+  return plans[planId as keyof typeof plans].maxMembers;
+}
+
+async function assertSeatAvailable(
+  db: Pool | PoolClient,
+  teamId: string,
+  countSeats: () => Promise<number>,
+): Promise<void> {
+  const maxMembers = await maxMembersForTeam(db, teamId);
+  const seats = await countSeats();
+  if (seats >= maxMembers) {
+    throw new InviteError(
+      "member_limit",
+      `De ledenlimiet van dit plan (${maxMembers}) is bereikt. Upgrade naar Pro voor meer leden.`,
+    );
+  }
+}
+
 export async function createInvitation(
   db: Pool,
   input: { teamId: string; email: string; role: UserRole; invitedBy: string },
@@ -86,6 +114,20 @@ export async function createInvitation(
     if (pending.rowCount && pending.rowCount > 0) {
       throw new InviteError("pending_exists", "Er staat al een uitnodiging open voor dit e-mailadres");
     }
+
+    await assertSeatAvailable(client, input.teamId, async () => {
+      const members = await client.query(
+        `select count(*)::int as n from memberships
+         where team_id = $1 and status = 'accepted'`,
+        [input.teamId],
+      );
+      const pendingCount = await client.query(
+        `select count(*)::int as n from invitations
+         where team_id = $1 and accepted_at is null and expires_at > now()`,
+        [input.teamId],
+      );
+      return (members.rows[0].n as number) + (pendingCount.rows[0].n as number);
+    });
 
     const token = generateToken();
     const expiresAt = new Date(Date.now() + INVITATION_TTL_MS);
@@ -146,6 +188,22 @@ export async function acceptInvitation(
   const client = await db.connect();
   try {
     await client.query("begin");
+
+    const alreadyMember = await client.query(
+      `select 1 from memberships
+       where team_id = $1 and user_id = $2 and status = 'accepted'`,
+      [invitation.team_id, input.userId],
+    );
+    if (alreadyMember.rowCount === 0) {
+      await assertSeatAvailable(client, invitation.team_id, async () => {
+        const members = await client.query(
+          `select count(*)::int as n from memberships
+           where team_id = $1 and status = 'accepted'`,
+          [invitation.team_id],
+        );
+        return members.rows[0].n as number;
+      });
+    }
 
     await client.query(
       `insert into memberships (team_id, user_id, role, status, invited_by)

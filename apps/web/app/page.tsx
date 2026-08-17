@@ -37,6 +37,12 @@ export default async function Home() {
           >
             Inloggen
           </Link>
+          <Link
+            href="/pricing"
+            className="rounded-lg border border-slate-700 px-6 py-3 font-semibold text-slate-200 transition hover:border-slate-500"
+          >
+            Pricing
+          </Link>
         </div>
       </div>
     </div>

@@ -12,7 +12,13 @@
     "test": "pnpm --filter web test",
     "db:migrate": "pnpm --filter db migrate",
     "db:up": "docker compose up -d postgres redis",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "scheduler:dev": "pnpm --filter scheduler dev",
+    "scheduler:start": "pnpm --filter scheduler start",
+    "worker:dev": "pnpm --filter worker dev",
+    "worker:start": "pnpm --filter worker start",
+    "uptime:dev": "pnpm --filter worker uptime:start",
+    "uptime:start": "pnpm --filter worker uptime:start"
   },
   "engines": {
     "node": ">=20"

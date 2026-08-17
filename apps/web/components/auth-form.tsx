@@ -7,9 +7,12 @@ import { createClient } from "@/lib/supabase/client";
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/dashboard";
+  const oauthError = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    oauthError === "auth" ? "Inloggen is mislukt. Probeer het opnieuw." : null,
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

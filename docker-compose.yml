@@ -24,6 +24,54 @@ services:
     volumes:
       - redis-data:/data
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: apps/scheduler/Dockerfile
+    container_name: scanpal-scheduler
+    restart: unless-stopped
+    env_file:
+      - ./apps/web/.env
+    environment:
+      DATABASE_URL: postgres://scanpal:scanpal@postgres:5432/scanpal
+      POLL_INTERVAL_MS: 60000
+    depends_on:
+      - postgres
+      - redis
+
+  uptime-poller:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: scanpal-uptime-poller
+    restart: unless-stopped
+    env_file:
+      - ./apps/web/.env
+    environment:
+      DATABASE_URL: postgres://scanpal:scanpal@postgres:5432/scanpal
+      REDIS_URL: redis://redis:6379
+      POLL_INTERVAL_MS: 60000
+      MAINTENANCE_INTERVAL_MS: 21600000
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: scanpal-worker
+    restart: unless-stopped
+    command: ["pnpm", "--filter", "worker", "start"]
+    env_file:
+      - ./apps/web/.env
+    environment:
+      DATABASE_URL: postgres://scanpal:scanpal@postgres:5432/scanpal
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+
 volumes:
   postgres-data:
   redis-data:

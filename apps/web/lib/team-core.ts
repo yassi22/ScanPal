@@ -55,6 +55,12 @@ export async function ensureUserTeam(
         "insert into memberships (team_id, user_id, role, status) values ($1, $2, 'owner', 'accepted')",
         [teamId, user.id],
       );
+      await client.query(
+        `insert into subscriptions (team_id, plan, status, current_period_end, updated_at)
+         values ($1, 'free', 'active', now() + interval '30 days', now())
+         on conflict (team_id) do nothing`,
+        [teamId],
+      );
     } else {
       teamId = existing.rows[0].team_id as string;
       role = existing.rows[0].role as string;

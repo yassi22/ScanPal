@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
+import { getPlanForTeam } from "@/lib/credits";
 
 export default async function DashboardHomePage() {
   const supabase = await createClient();
@@ -18,6 +19,8 @@ export default async function DashboardHomePage() {
         auth_provider: user.app_metadata?.provider ?? null,
       })
     : null;
+
+  const plan = result ? await getPlanForTeam(pool, result.team.id) : null;
 
   return (
     <div>
@@ -41,10 +44,51 @@ export default async function DashboardHomePage() {
           </Link>
         </div>
         <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-          <h2 className="font-semibold">Uptime monitoring</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">Uptime monitoring</h2>
+            {!plan?.features.uptime && (
+              <span className="rounded-full border border-brand/40 bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">
+                Pro
+              </span>
+            )}
+          </div>
           <p className="mt-2 text-sm text-slate-400">
-            Binnenkort beschikbaar: controleer of je sites online blijven.
+            {plan?.features.uptime
+              ? "Controleer of je sites online blijven."
+              : "Beschikbaar op Pro: controleer of je sites online blijven."}
           </p>
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">GitHub-scans</h2>
+            {!plan?.features.github && (
+              <span className="rounded-full border border-brand/40 bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">
+                Pro
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-sm text-slate-400">
+            {plan?.features.github
+              ? "Scan repositories op geheimen, SAST-issues en kwetsbare dependencies."
+              : "Beschikbaar op Pro: scan repositories op geheimen en kwetsbaarheden."}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">Plan</h2>
+            <span className="rounded-full border border-brand/40 bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">
+              {plan?.name ?? "Free"}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-slate-400">
+            Bekijk je verbruik en beheer je abonnement.
+          </p>
+          <Link
+            href="/billing"
+            className="mt-4 inline-block rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold transition hover:border-slate-500"
+          >
+            Naar billing
+          </Link>
         </div>
       </div>
     </div>

@@ -1,0 +1,181 @@
+import type { Pool, PoolClient } from "pg";
+import {
+  canonicalizeGithubRepo,
+  canonicalizeSiteUrl,
+  detectGithubRepoFromUrl,
+} from "@scanpal/shared";
+import { setSiteScanState } from "@scanpal/scan-core";
+
+export type SiteRowWithStatus = {
+  id: string;
+  team_id: string;
+  url: string;
+  github_repo: string | null;
+  label: string | null;
+  last_scan_id: string | null;
+  last_scan_status: "queued" | "running" | "completed" | "failed" | null;
+  last_scan_score: number | null;
+  last_scanned_at: Date | null;
+  uptime_state: "up" | "down" | "unknown";
+  scan_frequency: "none" | "daily" | "weekly";
+  next_scan_at: Date | null;
+  created_at: Date;
+};
+
+export type SiteErrorCode = "duplicate" | "not_found";
+
+export class SiteError extends Error {
+  constructor(
+    public code: SiteErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "SiteError";
+  }
+}
+
+export { setSiteScanState };
+
+const SITE_COLUMNS = `id, team_id, url, github_repo, label,
+  last_scan_id, last_scan_status, last_scan_score, last_scanned_at,
+  uptime_state, scan_frequency, next_scan_at, created_at`;
+
+export async function listSitesWithStatus(
+  db: Pool,
+  teamId: string,
+): Promise<SiteRowWithStatus[]> {
+  const result = await db.query(
+    `select ${SITE_COLUMNS} from sites
+     where team_id = $1
+     order by last_scanned_at desc nulls last, created_at desc`,
+    [teamId],
+  );
+  return result.rows as SiteRowWithStatus[];
+}
+
+async function findSite(
+  db: Pool | PoolClient,
+  input: { teamId: string; canonicalUrl: string },
+): Promise<SiteRowWithStatus | null> {
+  const result = await db.query(
+    `select ${SITE_COLUMNS} from sites where team_id = $1`,
+    [input.teamId],
+  );
+  const row = (result.rows as SiteRowWithStatus[]).find(
+    (r) => canonicalizeSiteUrl(r.url) === input.canonicalUrl,
+  );
+  return row ?? null;
+}
+
+export async function createSite(
+  db: Pool,
+  input: {
+    teamId: string;
+    url: string;
+    githubRepo?: string | null;
+    label?: string | null;
+    reuse?: boolean;
+  },
+): Promise<{ site: SiteRowWithStatus; created: boolean }> {
+  const canonicalUrl = canonicalizeSiteUrl(input.url);
+  if (!canonicalUrl) {
+    throw new SiteError("duplicate", "Ongeldige URL");
+  }
+
+  const client = await db.connect();
+  try {
+    await client.query("begin");
+
+    const existing = await findSite(client, { teamId: input.teamId, canonicalUrl });
+    if (existing) {
+      if (input.reuse) {
+        await client.query("commit");
+        return { site: existing, created: false };
+      }
+      throw new SiteError("duplicate", "Deze site staat al op je lijst");
+    }
+
+    const githubRepo = input.githubRepo?.trim()
+      ? canonicalizeGithubRepo(input.githubRepo.trim())
+      : detectGithubRepoFromUrl(input.url);
+    const label = input.label?.trim() || null;
+
+    const inserted = await client.query(
+      `insert into sites (team_id, url, github_repo, label)
+       values ($1, $2, $3, $4)
+       returning ${SITE_COLUMNS}`,
+      [input.teamId, canonicalUrl, githubRepo, label],
+    );
+
+    await client.query("commit");
+    return { site: inserted.rows[0] as SiteRowWithStatus, created: true };
+  } catch (err) {
+    await client.query("rollback");
+    if (err instanceof SiteError) throw err;
+    if ((err as { code?: string }).code === "23505") {
+      throw new SiteError("duplicate", "Deze site staat al op je lijst");
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateSite(
+  db: Pool,
+  input: {
+    teamId: string;
+    siteId: string;
+    label?: string | null;
+    githubRepo?: string | null;
+  },
+): Promise<SiteRowWithStatus> {
+  const patches: string[] = [];
+  const params: unknown[] = [];
+
+  if (input.label !== undefined) {
+    params.push(input.label?.trim() || null);
+    patches.push(`label = $${params.length}`);
+  }
+  if (input.githubRepo !== undefined) {
+    params.push(
+      input.githubRepo ? canonicalizeGithubRepo(input.githubRepo) : null,
+    );
+    patches.push(`github_repo = $${params.length}`);
+  }
+
+  params.push(input.siteId, input.teamId);
+  const result = await db.query(
+    `update sites set ${patches.join(", ")}
+     where id = $${params.length - 1} and team_id = $${params.length}
+     returning ${SITE_COLUMNS}`,
+    params,
+  );
+
+  if (result.rowCount === 0) {
+    throw new SiteError("not_found", "Site niet gevonden");
+  }
+  return result.rows[0] as SiteRowWithStatus;
+}
+
+export async function deleteSite(
+  db: Pool,
+  input: { teamId: string; siteId: string },
+): Promise<boolean> {
+  const result = await db.query(
+    "delete from sites where id = $1 and team_id = $2",
+    [input.siteId, input.teamId],
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
+export function toSiteJson(site: SiteRowWithStatus) {
+  return {
+    ...site,
+    created_at: site.created_at.toISOString(),
+    last_scanned_at: site.last_scanned_at
+      ? site.last_scanned_at.toISOString()
+      : null,
+    next_scan_at: site.next_scan_at ? site.next_scan_at.toISOString() : null,
+  };
+}

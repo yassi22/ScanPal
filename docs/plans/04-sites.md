@@ -2,16 +2,26 @@
 
 **Doel**: Sites-pagina waar een team een website kan toevoegen (URL + optioneel GitHub-repo), met validatie, en een lijst met per site de actuele status (laatste scan + uptime).
 
-**Status**: Nog niet gestart.
+**Status**: In uitvoering (🚧).
+
+## Besluiten (bevestigd 2026-08-15)
+
+1. **Canonieke URL**: protocol + www worden weggestript (`canonicalizeSiteUrl` in `packages/shared`), zodat `http(s)://www.voorbeeld.nl` en `voorbeeld.nl` één `sites.url` per team zijn; de canonieke vorm wordt opgeslagen (ook in de onboarding-route)
+2. **Dedupe in code**: bestaande rijen (oud formaat met protocol) worden gecanonicaliseerd vergeleken; `unique(team_id, url)` blijft de DB-backstop (23505 → 409)
+3. **Migratie-nummer**: `006_sites.sql` — `002` is bezet (invites) en plan 05/06 claimden `004`/`005`
+4. **GitHub Pro-gating**: `POST`/`PATCH` met `github_repo` → `assertPlanFeature(..., "github")` → 403 + upsell-payload op Free
+5. **Scan-knop**: koppelt nu aan `POST /api/onboarding/sites` (upsert + credit + scan); `POST /api/scans` is bewust van plan 05
+6. **`last_scan_*`-cache**: `setSiteScanState` (lib/sites-core) werkt de kolommen idempotent bij — nu vanuit de onboarding-route (inline-modus), straks vanuit de dispatcher/aggregator (Fase 3)
+7. **Reachability-probe**: niet bij toevoegen; de scan zelf bepaalt de bereikbaarheid
 
 ## Uitgangssituatie (code vandaag)
 
 - `sites`-tabel bestaat (team_id, url, unique(team_id, url)); site-aanmaak gebeurt nu alleen via `POST /api/onboarding/sites` (inline modus)
 - Er is nog geen `GET /api/sites`, geen sites-pagina, geen GitHub-repo-veld
 - Feature 3 (billing) legt `features.github`-gating klaar; GitHub-scans zijn Pro-only
-- `normalizeUrl` bestaat in `apps/web/lib/scan-runner.ts` (herbruikbaar)
+- `normalizeUrl` bestaat in `apps/web/lib/scan-runner.ts` (refactored naar `canonicalizeSiteUrl` uit `packages/shared`)
 
-## DB (migratie `002_sites.sql` in `packages/db`)
+## DB (migratie `006_sites.sql` in `packages/db`)
 
 Uitbreiden van `sites`:
 
@@ -34,11 +44,11 @@ Twee keuzes voor "status van een site": (a) elke keer `GET /api/sites` een later
 | `/api/sites/[id]` | PATCH | ingelogd | `github_repo`/`label` wijzigen, revalidatie |
 | `/api/sites/[id]` | DELETE | ingelogd | Site + scans verwijderen (cascade) |
 
-## Validatie (`packages/shared`, `lib/site-validation.ts` nieuw)
+## Validatie (`packages/shared` + `lib/site-validation.ts`)
 
-- `addSiteInputSchema`: `url` (hergebruik bestaande URL-refine, strenger: hostname vereist + `.` in TLD), `github_repo` (optioneel: `owner/repo` formaat OF losse `github.com/owner/repo` URL die genormaliseerd wordt), `label` (optioneel, max 100 chars)
-- **Canonieke dedupe**: `normalizeUrl` + protocol/www-strippen → één `sites.url` per team. `github_repo` lowercase + alleen `[a-z0-9-_.]/[a-z0-9-_.]`; GitHub-URL's buiten `github.com` afwijzen
-- **Reachable-check (optioneel)**: bij POST een 5s HEAD/GET-probe (bestaande `runInlineProbe`-logica, alleen reachability) → vroege `4xx`/timeout-melding. Geen scan-uitvoering — dat blijft de worker. Als de probe traag is wordt dit een client-side "valideer eerst"-stap (zie Open vragen)
+- `addSiteInputSchema`: `url` (refine op `canonicalizeSiteUrl`: hostname vereist + `.` in TLD), `github_repo` (optioneel: `owner/repo` formaat OF losse `github.com/owner/repo` URL die genormaliseerd wordt), `label` (optioneel, max 100 chars)
+- **Canonieke dedupe**: `canonicalizeSiteUrl` (protocol + www-strippen) + `canonicalizeGithubRepo` (lowercase, alleen `[a-z0-9-_.]/[a-z0-9-_.]`, github.com-URL's daarbuiten afwijzen) in `packages/shared` — single source of truth, ook door de zod-schema's gebruikt
+- **Reachable-check (optioneel)**: ~~bij POST een 5s HEAD/GET-probe~~ → vervallen, zie Besluiten 7
 - `POST /api/sites` retourneert `409` bij duplicaat (bestaat al in dit team) i.p.v. stille upsert, tenzij `reuse: true` wordt meegegeven → dan bestaande site retourneren
 
 ## Status per site (lijst)
@@ -86,10 +96,10 @@ UI-statusberekening:
 
 ## Open vragen
 
-- Reachability-probe bij toevoegen: wel of niet (extra latency/rate-limit) — of als optionele client-side stap?
-- GitHub-repo zonder URL, of alleen als aanvulling op een website-URL? (Geldt een "site" dan als repo-scan?)
-- Wordt `POST /api/scans` onderdeel van dit plan of een eigen plan (Feature 5+)?
-- Max aantal sites per plan (Feature 3 limiet) — nu nog geen cap?
+- ~~Reachability-probe bij toevoegen: wel of niet (extra latency/rate-limit) — of als optionele client-side stap?~~ → opgelost: niet; de scan zelf bepaalt bereikbaarheid
+- ~~GitHub-repo zonder URL, of alleen als aanvulling op een website-URL? (Geldt een "site" dan als repo-scan?)~~ → opgelost: alleen als aanvulling op een website-URL
+- ~~Wordt `POST /api/scans` onderdeel van dit plan of een eigen plan (Feature 5+)?~~ → opgelost: eigen plan (05); de "Scannen"-knop koppelt nu aan `POST /api/onboarding/sites`
+- ~~Max aantal sites per plan (Feature 3 limiet) — nu nog geen cap?~~ → opgelost: nu geen cap; credits (Feature 3) limiteren het aantal scans
 
 ## Acceptatiecriteria
 

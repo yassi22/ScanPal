@@ -47,6 +47,10 @@ function fakePool() {
       return { rowCount: 1, rows: [] };
     }
 
+    if (text.startsWith("insert into subscriptions")) {
+      return { rowCount: 1, rows: [] };
+    }
+
     if (text.startsWith("select id, name from teams")) {
       const [id] = params;
       const rows = teams.filter((t) => t.id === id).map((t) => ({ ...t }));

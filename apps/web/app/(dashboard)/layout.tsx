@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { LogoutButton } from "@/components/logout-button";
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { countUnreadNotifications } from "@/lib/notifications-core";
 
 export default async function DashboardLayout({
   children,
@@ -24,6 +26,7 @@ export default async function DashboardLayout({
   });
 
   const needsOnboarding = result.user.onboarding_completed_at === null;
+  const initialUnread = await countUnreadNotifications(pool, user.id);
 
   return (
     <div className="min-h-screen">
@@ -43,12 +46,53 @@ export default async function DashboardLayout({
             )}
             {!needsOnboarding && (
               <Link
+                href="/sites"
+                className="transition hover:text-slate-200"
+              >
+                Sites
+              </Link>
+            )}
+            {!needsOnboarding && (
+              <Link
+                href="/reports"
+                className="transition hover:text-slate-200"
+              >
+                Rapporten
+              </Link>
+            )}
+            {!needsOnboarding && (
+              <Link
+                href="/uptime"
+                className="transition hover:text-slate-200"
+              >
+                Uptime
+              </Link>
+            )}
+            {!needsOnboarding && (
+              <Link
+                href="/threats"
+                className="transition hover:text-slate-200"
+              >
+                Threats
+              </Link>
+            )}
+            {!needsOnboarding && (
+              <Link
                 href="/settings/team"
                 className="transition hover:text-slate-200"
               >
                 Team
               </Link>
             )}
+            {!needsOnboarding && (
+              <Link
+                href="/billing"
+                className="transition hover:text-slate-200"
+              >
+                Billing
+              </Link>
+            )}
+            {!needsOnboarding && <NotificationBell initialUnread={initialUnread} />}
             <span className="hidden text-slate-600 sm:inline">{result.team.name}</span>
             <LogoutButton />
           </nav>
