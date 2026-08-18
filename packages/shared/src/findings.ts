@@ -32,6 +32,10 @@ import {
   type SecurityTxtEvidence,
 } from "./security-txt";
 import {
+  robotsSitemapEvidenceSchema,
+  type RobotsSitemapEvidence,
+} from "./robots-sitemap";
+import {
   secretsInHtmlEvidenceSchema,
   type SecretsInHtmlEvidence,
 } from "./secrets-in-html";
@@ -123,6 +127,7 @@ export const findingSchema = z.object({
       subresourcesEvidenceSchema,
       structuredDataEvidenceSchema,
       securityTxtEvidenceSchema,
+      robotsSitemapEvidenceSchema,
       secretsInHtmlEvidenceSchema,
       miniCrawlEvidenceSchema,
       repoHealthEvidenceSchema,
@@ -281,6 +286,7 @@ export type InlineCheckLike = {
     | SubresourcesEvidence
     | StructuredDataEvidence
     | SecurityTxtEvidence
+    | RobotsSitemapEvidence
     | SecretsInHtmlEvidence
     | MiniCrawlEvidence
     | RepoHealthEvidence
@@ -312,6 +318,7 @@ export function evidenceText(
     | SubresourcesEvidence
     | StructuredDataEvidence
     | SecurityTxtEvidence
+    | RobotsSitemapEvidence
     | SecretsInHtmlEvidence
     | MiniCrawlEvidence
     | RepoHealthEvidence
@@ -386,6 +393,11 @@ export function evidenceText(
     }
     if (evidence.kind === "security-txt") {
       return `security_txt=${evidence.security_txt.present} favicon=${evidence.favicon.present} 404=${evidence.not_found_page.is_404}`;
+    }
+    if (evidence.kind === "robots-sitemap") {
+      const robots = evidence.robots_txt;
+      const sitemap = evidence.sitemap;
+      return `robots=${robots.present ? "aanwezig" : "afwezig"} user_agents=${robots.user_agents.join(",")} sitemap=${sitemap.present ? `aanwezig (${sitemap.url_count} locs)` : "afwezig"} error=${sitemap.error ?? "geen"}`;
     }
     if (evidence.kind === "secrets-in-html") {
       return evidence.matches
@@ -611,6 +623,10 @@ const ISSUE_TITLES: Record<
     warn: "security.txt, favicon of 404-page onvolledig",
     fail: "security.txt mist verplichte velden of is verlopen",
   },
+  "robots-sitemap": {
+    warn: "robots.txt of sitemap is onvolledig",
+    fail: "robots.txt of sitemap ontbreekt of is ongeldig",
+  },
 };
 
 const REMEDIATION: Record<string, string> = {
@@ -674,6 +690,8 @@ const REMEDIATION: Record<string, string> = {
     "Voeg geldig JSON-LD toe (<script type=\"application/ld+json\">) met een @type uit schema.org (bijv. Organization, WebSite, BreadcrumbList, Article) en valideer via de Rich Results Test van Google.",
   "security-txt":
     "Publiceer een /.well-known/security.txt volgens RFC 9116 met verplichte velden `Contact:` en `Expires:` (in de toekomst), plus een favicon op /favicon.ico en een custom 404-pagina met h1, zoekfunctie en een link naar de homepage.",
+  "robots-sitemap":
+    "Publiceer een /robots.txt met een `User-agent: *`-groep en geldige Disallow/Allow-regels, en verwijs via een `Sitemap:`-directive naar je sitemap. Publiceer een geldige sitemap.xml (urlset of sitemapindex) met alleen absolute http(s)-URL's naar bestaande pagina's, en houd de URL's in robots.txt en sitemap gesynchroniseerd met de daadwerkelijke site.",
   "secrets-in-html":
     "Verwijder het geheim uit de inline HTML/JS en roteer het direct (behandel het als gelekt). Plaats secrets server-side in omgevingsvariabelen of een secrets-manager en lever ze via een beveiligde API-endpoint, nooit inline in het HTML-document of in inline <script>-blokken.",
   "mini-crawl":

@@ -24,13 +24,14 @@ describe("skeletonTotals (progress-skelet)", () => {
     // onder categorie compliance. stack-detection (plan 40) is category seo →
     // telt mee onder seo. redirects-mixed + subresources (plan 32/34) zijn
     // category http. structured-data + security-txt (plan 39/37) zijn category seo.
+    // Feature 36: robots-sitemap draait in de http-worker (seo) → seo 5->6.
     // Feature 41: core-web-vitals draait in de browser-worker (aeo) → aeo 1->2;
     // feature 42 voegt accessibility toe (aeo 2->3).
     // Feature 44 (console-errors) + 45 (mobile-responsive) → aeo 3->5;
     // feature 43 (aeo-scan render-vergelijking) → aeo 5->6.
     // Plan 62: crux-field-data draait in de http-worker (aeo) → aeo 6->7.
     expect(totals.http).toBe(22);
-    expect(totals.seo).toBe(5);
+    expect(totals.seo).toBe(6);
     expect(totals.aeo).toBe(7);
     expect(totals.compliance).toBe(5);
     // Categorieën zonder queue-owner krijgen geen key (initialProgressDetails

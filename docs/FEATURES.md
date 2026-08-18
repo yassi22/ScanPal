@@ -72,7 +72,7 @@ Volledige feature-lijst met MVP-afbakening en plan-koppeling. Legenda:
 | 30 | CORS-misconfiguratie detectie (origin-reflectie, null, `*`+credentials) | ✅ | 66-cors-misconfig | ✅ |
 | 31 | TLS/SSL-certificaat (geldigheid, SAN/CN, self-signed, expiry-runway) | ✅ | 67-tls-cert | ✅ |
 | 32–34 | HTTP-worker security (rest): redirects + mixed content, secrets-in-HTML, subresources | ✅ | nieuw (32–34) | ✅ (32 `redirects-mixed` · 33 `secrets-in-html` · 34 `subresources` — allen geregistreerd in `registry.ts`) |
-| 35–39 | HTTP-worker SEO: meta/OG/canonical/hreflang, robots+sitemap, security.txt/favicon/404, mini-crawler, structured data | ✅ | nieuw (35–39) | 🚧 (35 `meta-tags` ✅ · 37 `security-txt` ✅ · 38 `mini-crawl` ✅ · 39 `structured-data` ✅ — allen geregistreerd; **36 `robots-sitemap` niet geïmplementeerd**: catalog-entry in `check-catalog.ts:50` maar geen implementatie en niet geregistreerd) |
+| 35–39 | HTTP-worker SEO: meta/OG/canonical/hreflang, robots+sitemap, security.txt/favicon/404, mini-crawler, structured data | ✅ | nieuw (35–39) | ✅ (35 `meta-tags` ✅ · 36 `robots-sitemap` ✅ · 37 `security-txt` ✅ · 38 `mini-crawl` ✅ · 39 `structured-data` ✅ — allen geregistreerd in `registry.ts`) |
 | 40 | Stackdetectie (CMS/framework uit headers + HTML) | 🔶 | — | ✅ (`stack-detection` geregistreerd in `registry.ts`) |
 | 41–43 | Browser-worker: Core Web Vitals, accessibility (axe-core), AEO-scan (JS-render, LLM-parsability) | ✅ | nieuw (41–43) | ✅ (41 `core-web-vitals` · 42 `accessibility` · 43 `aeo-render` — allen geregistreerd; plus `aeo-engine-matrix` in http-queue) |
 | 44 | Console-errors + netwerk-failures vangen | 🔶 | — | ✅ (`console-errors` geregistreerd) |
@@ -81,8 +81,8 @@ Volledige feature-lijst met MVP-afbakening en plan-koppeling. Legenda:
 | 50 | Uptime-worker: HTTP-probe elke 60s, latency-metrics, 2-failure = alert | ✅ | 11-uptime-dashboard | ✅ |
 | 52 | Actieve vulnerability-tests (SQLi, XSS, CSRF, open redirect, IDOR, tenant-isolatie, GraphQL, JWT, webhook-signature) — opt-in + Pro | 🔶 | 52-active-vulnerability-tests | ✅ |
 | 53 | JS-bundle inspectie: sourcemap-aware secrets-extractie uit client-bundles | 🔶 | 53-js-bundle-inspection | ✅ |
-| 54 | Route-discovery + per-route checks: SPA-aware crawl (sitemap/links/chunks), plan-limiet routes | 🔶 | 54-route-discovery-crawl | 📝 |
-| 55 | AEO per-engine matrix: GPTBot/ClaudeBot/PerplexityBot/Copilot/Meta/Mistral-toegang + llms.txt | 🔶 | 55-aeo-engine-matrix | 📝 |
+| 54 | Route-discovery + per-route checks: SPA-aware crawl (sitemap/links/chunks), plan-limiet routes | 🔶 | 54-route-discovery-crawl | ✅ (`route-discovery` als info-finding in `queues/crawl.ts` + helpers in `scan-core/routes.ts`) |
+| 55 | AEO per-engine matrix: GPTBot/ClaudeBot/PerplexityBot/Copilot/Meta/Mistral-toegang + llms.txt | 🔶 | 55-aeo-engine-matrix | ✅ (`aeo-engine-matrix` in http-worker, geregistreerd in `registry.ts`) |
 | 61 | Compliance-pijler: cookie-banner/CMP, privacy-policy, legal-pagina's, GDPR-signalen (nieuwe score-categorie) | 🔶 | 61-compliance-pillar | ✅ |
 | 62 | CrUX field data: p75 + fracties naast lab-CWV, lab/field-divergentie-flag | 🔶 | 62-crux-field-data | ✅ |
 
@@ -104,7 +104,7 @@ Volledige feature-lijst met MVP-afbakening en plan-koppeling. Legenda:
 
 **Na MVP / v2**: 11 (dashboard-uitbreidingen), 12, 13 (hub), 14, 15, 16, 22, 23, 25, 26, 40, 44, 45, 52–64.
 
-> **Status-synchronisatie 2026-08-17 (geverifieerd tegen code)**: MVP-features 1–10, 17–21, 27–35, 37–50 + 51 zijn volledig gebouwd (alleen feature 36 `robots-sitemap` ontbreekt — catalog-entry in `check-catalog.ts:50`, geen implementatie en niet geregistreerd in `registry.ts`). Hoewel 40/44/45 oorspronkelijk na-MVP (🔶) waren ingeschaald, zijn de implementaties al opgeleverd en geregistreerd. De MVP-check-catalog telt 67 entries waarvan er 66 een geregistreerde worker-implementatie hebben; MCP-server levert 6 tools (5 + bonus `generate_fix_prompt`). Enige open MVP-werk: feature 36 implementeren.
+> **Status-synchronisatie 2026-08-18 (geverifieerd tegen code)**: MVP-features 1–10, 17–21, 27–39, 41–43, 46–50 + 51 zijn volledig gebouwd — feature 36 `robots-sitemap` is opgeleverd (implementatie in `apps/worker/src/checks/http/robots-sitemap.ts`, pure helpers in `packages/shared/src/robots-sitemap.ts`, geregistreerd in `registry.ts`; produceert findings over de geldigheid/kwaliteit van robots.txt en sitemap.xml zelf, los van de route-discovery-parse in plan 54). Ook de na-MVP-features 54 (route-discovery: `queues/crawl.ts` + `scan-core/routes.ts`) en 55 (aeo-engine-matrix: http-worker, geregistreerd) zijn opgeleverd; 40/44/45 waren oorspronkelijk na-MVP (🔶) maar zijn evengoed al opgeleverd en geregistreerd. De MVP-check-catalog telt 67 entries die allemaal een geregistreerde worker-implementatie hebben; MCP-server levert 6 tools (5 + bonus `generate_fix_prompt`). Geen open MVP-werk meer.
 
 ## CheckVibe-vergelijking (2026-08-16)
 

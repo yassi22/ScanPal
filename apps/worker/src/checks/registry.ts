@@ -27,6 +27,7 @@ import { redirectsMixedCheck } from "./http/redirects-mixed";
 import { subresourcesCheck } from "./http/subresources";
 import { structuredDataCheck } from "./http/structured-data";
 import { securityTxtCheck } from "./http/security-txt";
+import { robotsSitemapCheck } from "./http/robots-sitemap";
 import { miniCrawlCheck } from "./http/mini-crawl";
 import { repoHealthCheck } from "./github/repo-health";
 import { semgrepCheck } from "./github/semgrep";
@@ -101,6 +102,8 @@ export function buildRegistry(
       toImplemented(structuredDataCheck),
       // Plan 37: security.txt (RFC 9116) + favicon + 404-page kwaliteit.
       toImplemented(securityTxtCheck),
+      // Feature 36: robots.txt & sitemap geldigheid/kwaliteit.
+      toImplemented(robotsSitemapCheck),
       // Feature 38: mini-crawl — image-alt audit + orphan-page detectie.
       toImplemented(miniCrawlCheck),
     ],
