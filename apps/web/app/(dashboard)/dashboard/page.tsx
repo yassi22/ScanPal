@@ -21,6 +21,7 @@ export default async function DashboardHomePage() {
     : null;
 
   const plan = result ? await getPlanForTeam(pool, result.team.id) : null;
+  const needsOnboarding = result?.user.onboarding_completed_at === null;
 
   return (
     <div>
@@ -37,7 +38,7 @@ export default async function DashboardHomePage() {
             Voer een URL in en laat ScanPal 100+ checks uitvoeren.
           </p>
           <Link
-            href="/onboarding"
+            href={needsOnboarding ? "/onboarding" : "/sites"}
             className="mt-4 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-brand/90"
           >
             Scan een website
