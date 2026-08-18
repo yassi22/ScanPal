@@ -45,6 +45,16 @@ describe("detectCmp (bekende CMP's)", () => {
       expect.arrayContaining(["cmp:cookiebot", "cmp:usercentrics"]),
     );
   });
+
+  it("matcht 'trusted'/'trustee'-proza niet als TrustArc (false positive fix)", () => {
+    const signals = detectCmp("This is a trusted site. Trustee of the estate.");
+    expect(signals.some((s) => s.signal === "cmp:trustarc")).toBe(false);
+  });
+
+  it("herkent Consentmanager als eigen provider", () => {
+    const signals = detectCmp('<script src="https://cdn.consentmanager.net/x.js"></script>');
+    expect(signals.map((s) => s.signal)).toContain("cmp:consentmanager");
+  });
 });
 
 describe("detectBannerElement (generiek)", () => {
@@ -72,6 +82,16 @@ describe("detectConsentApi", () => {
 
   it("geeft niets terug zonder consent-API", () => {
     expect(detectConsentApi("<html></html>")).toEqual([]);
+  });
+
+  it("matcht generieke 'cmp.'-proza niet als consent-API (false positive fix)", () => {
+    expect(
+      detectConsentApi("We compare prices across shops. The lamp. is broken."),
+    ).toEqual([]);
+  });
+
+  it("herkent een echte CMP-global (window.__cmp)", () => {
+    expect(detectConsentApi("window.__cmp = function(cmd){}")).not.toEqual([]);
   });
 });
 

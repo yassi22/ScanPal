@@ -57,4 +57,14 @@ describe("subresources", () => {
     expect(ev.with_integrity).toBe(0);
     expect(ev.missing_integrity.length).toBe(1);
   });
+
+  it("same-origin script zonder integrity is geen SRI-missing (geen false positive)", () => {
+    const items = extractSubresources(
+      `<script src="https://site.example/app.js"></script>`,
+      "https://site.example/",
+    );
+    expect(items[0]?.crossOrigin).toBe(false);
+    expect(evaluateSubresources(items).status).toBe("pass");
+    expect(subresourcesEvidence(items).missing_integrity.length).toBe(0);
+  });
 });

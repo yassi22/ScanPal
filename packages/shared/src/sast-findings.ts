@@ -16,9 +16,10 @@ import { z } from "zod";
 
 /* ---------------------------- masking ---------------------------- */
 
-/** Maskeert een secret-match: max 4 prefix + 4 suffix zichtbaar. */
+/** Maskeert een secret-match: nooit de volledige waarde; lange waarden → max 4+4 zichtbaar, korte (≤8) → eerste teken als type-hint. */
 export function maskMatch(secret: string): string {
-  if (secret.length <= 8) return secret;
+  if (secret.length === 0) return "";
+  if (secret.length <= 8) return `${secret[0]}…`;
   return `${secret.slice(0, 4)}…${secret.slice(-4)}`;
 }
 

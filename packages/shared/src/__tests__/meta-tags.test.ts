@@ -62,6 +62,15 @@ describe("extractMetaTags", () => {
     expect(result.values.title).toBe("Tom & Jerry <3");
   });
 
+  it("telt RSS/atom-feed-links niet als hreflang (geen hreflang-attr)", () => {
+    const html = fullHtml(`
+      <link rel="alternate" type="application/rss+xml" href="/feed.xml">
+      <link rel="alternate" hreflang="en" href="https://example.com/en">
+    `);
+    const result = extractMetaTags(html);
+    expect(result.values.hreflang).toBe("1 alternate-link(s)");
+  });
+
   it("negeert lege title-tag", () => {
     const html = fullHtml(`<title>   </title>`);
     const result = extractMetaTags(html);

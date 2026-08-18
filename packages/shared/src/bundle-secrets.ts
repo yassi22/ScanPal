@@ -120,9 +120,14 @@ export function severityForBundleKeyType(keyType: BundleKeyType): FindingSeverit
   }
 }
 
-/** Masker-helper (besluit 6): nooit meer dan 4+4 tekens zichtbaar. */
+/**
+ * Masker-helper (besluit 6): nooit de volledige waarde zichtbaar. Lange
+ * waarden → max 4+4 tekens; korte waarden (≤8) → alleen het eerste teken als
+ * type-hint, zodat PIN's/tokens niet volledig in evidence/logs/UI lekken.
+ */
 export function maskSecret(value: string): string {
-  if (value.length <= 8) return value;
+  if (value.length === 0) return "";
+  if (value.length <= 8) return `${value[0]}…`;
   return `${value.slice(0, 4)}…${value.slice(-4)}`;
 }
 

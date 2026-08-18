@@ -58,6 +58,9 @@ export function canonicalizeGithubRepo(raw: string): string | null {
 
   value = value.replace(/\/+$/, "").replace(/\.git$/i, "");
   if (!/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/i.test(value)) return null;
+  // Geen pad-traversal: `..`-segmenten zouden de URL buiten de repo laten
+  // ontsnappen (bijv. `/repos/../user` → `/user` op de GitHub-API).
+  if (/(^|\/)\.\.(\/|$)/.test(value)) return null;
 
   return value.toLowerCase();
 }

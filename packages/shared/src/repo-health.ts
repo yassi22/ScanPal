@@ -51,10 +51,14 @@ export const repoHealthEvidenceSchema = z.object({
 });
 export type RepoHealthEvidence = z.infer<typeof repoHealthEvidenceSchema>;
 
+/** Valideer een owner/repo-segment: alleen alfanumeriek/`-`/`_`/`.` en géén pad-traversal (`..`). */
+const REPO_SEGMENT = /^[a-zA-Z0-9_.-]+$/;
+
 /**
  * Parseert een GitHub-repo-URL of `owner/repo`-slug naar `{owner, repo}`.
  * Accepteert `https://github.com/owner/repo[.git][/...]`, `git@github.com:owner/repo.git`
- * en `owner/repo`. Returnt `null` bij een ongeldig formaat.
+ * en `owner/repo`. Returnt `null` bij een ongeldig formaat (incl. `..`-segmenten —
+ * die zouden de GitHub-API-URL buiten de repo laten ontsnappen).
  */
 export function parseRepoSlug(input: string): { owner: string; repo: string } | null {
   if (!input || !input.trim()) return null;
@@ -62,7 +66,14 @@ export function parseRepoSlug(input: string): { owner: string; repo: string } | 
 
   // SSH-form: git@github.com:owner/repo.git
   const ssh = s.match(/^[\w.-]+@[\w.-]+:([^/]+)\/([^/]+?)(?:\.git)?$/);
-  if (ssh) return { owner: ssh[1], repo: ssh[2] };
+  if (ssh) {
+    const owner = ssh[1];
+    const repo = ssh[2];
+    if (!REPO_SEGMENT.test(owner) || !REPO_SEGMENT.test(repo) || owner === ".." || repo === ".." || owner === "." || repo === ".") {
+      return null;
+    }
+    return { owner, repo };
+  }
 
   // Strip protocol + host
   s = s.replace(/^https?:\/\/([^/]+)\//, "");
@@ -74,6 +85,8 @@ export function parseRepoSlug(input: string): { owner: string; repo: string } | 
   const owner = parts[0];
   const repo = parts[1];
   if (!owner || !repo) return null;
+  if (!REPO_SEGMENT.test(owner) || !REPO_SEGMENT.test(repo)) return null;
+  if (owner === ".." || repo === ".." || owner === "." || repo === ".") return null;
   return { owner, repo };
 }
 

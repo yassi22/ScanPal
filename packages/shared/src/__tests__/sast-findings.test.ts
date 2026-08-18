@@ -21,8 +21,10 @@ describe("sast-findings (features 46-48)", () => {
     it("maskeert langer dan 8 tekens naar 4+4", () => {
       expect(maskMatch("AKIAIOSFODNN7EXAMPLE")).toBe("AKIA…MPLE");
     });
-    it("laat korte strings ongemoeid", () => {
-      expect(maskMatch("kort")).toBe("kort");
+    it("maskeert korte strings (geen volledige secrets in evidence)", () => {
+      expect(maskMatch("kort")).toBe("k…");
+      expect(maskMatch("12345678")).toBe("1…");
+      expect(maskMatch("")).toBe("");
     });
   });
 

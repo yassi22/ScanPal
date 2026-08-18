@@ -51,6 +51,22 @@ describe("detectStack", () => {
     expect(matches.some((m) => m.id === "django")).toBe(true);
   });
 
+  it("detecteert Django NIET op alleen een X-Frame-Options-header (false positive fix)", () => {
+    const matches = detectStack(
+      headersFrom({ "x-frame-options": "DENY" }),
+      "<html></html>",
+    );
+    expect(matches.some((m) => m.id === "django")).toBe(false);
+  });
+
+  it("herkent Django uit het csrfmiddlewaretoken-formulierveld", () => {
+    const matches = detectStack(
+      headersFrom({}),
+      '<form><input type="hidden" name="csrfmiddlewaretoken" value="abc"></form>',
+    );
+    expect(matches.some((m) => m.id === "django")).toBe(true);
+  });
+
   it("geeft info bij geen herkende stack", () => {
     const matches = detectStack(headersFrom({}), "<html></html>");
     expect(matches).toEqual([]);

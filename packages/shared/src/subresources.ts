@@ -27,6 +27,8 @@ export type Subresource = {
   url: string;
   integrity: boolean;
   crossorigin: boolean;
+  /** Echt cross-origin t.o.v. de pagina (same-origin resources hoeven geen SRI). */
+  crossOrigin: boolean;
 };
 
 const SUBRESOURCE_PATTERNS = [
@@ -62,8 +64,8 @@ export function extractSubresources(html: string, pageUrl: string): Subresource[
         url: url.slice(0, 300),
         integrity,
         crossorigin,
+        crossOrigin: isCrossOrigin(url, pageUrl),
       });
-      void isCrossOrigin(url, pageUrl);
     }
   }
   return out;
@@ -71,7 +73,7 @@ export function extractSubresources(html: string, pageUrl: string): Subresource[
 
 export function subresourcesEvidence(resources: Subresource[]): SubresourcesEvidence {
   const missingIntegrity = resources
-    .filter((r) => !r.integrity && isCrossOriginSafe(r))
+    .filter((r) => !r.integrity && r.crossOrigin)
     .map((r) => ({
       tag: r.tag,
       attr: r.attr,
@@ -86,29 +88,23 @@ export function subresourcesEvidence(resources: Subresource[]): SubresourcesEvid
   };
 }
 
-function isCrossOriginSafe(r: Subresource): boolean {
-  // We report all external resources without integrity; cross-origin flag
-  // is informational (CORS requirement for SRI enforcement).
-  void r;
-  return true;
-}
-
 export function evaluateSubresources(resources: Subresource[]): {
   status: "pass" | "warn" | "fail";
   detail: string;
 } {
-  if (resources.length === 0) {
-    return { status: "pass", detail: "Geen externe js/css-subresources gevonden" };
+  const crossOrigin = resources.filter((r) => r.crossOrigin);
+  if (crossOrigin.length === 0) {
+    return { status: "pass", detail: "Geen cross-origin js/css-subresources gevonden" };
   }
-  const missing = resources.filter((r) => !r.integrity);
+  const missing = crossOrigin.filter((r) => !r.integrity);
   if (missing.length === 0) {
     return {
       status: "pass",
-      detail: `${resources.length} externe subresource(s), alle met integrity-attr`,
+      detail: `${crossOrigin.length} cross-origin subresource(s), alle met integrity-attr (SRI)`,
     };
   }
   return {
     status: "warn",
-    detail: `${missing.length} van ${resources.length} externe subresource(s) mist integrity-attr (SRI)`,
+    detail: `${missing.length} van ${crossOrigin.length} cross-origin subresource(s) mist integrity-attr (SRI)`,
   };
 }

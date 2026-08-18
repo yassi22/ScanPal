@@ -55,7 +55,8 @@ export const CMP_PROVIDERS: CmpProvider[] = [
   { id: "didomi", name: "Didomi", patterns: ["didomi", "didomi-popup", "didomi-host"] },
   { id: "quantcast", name: "Quantcast Choice", patterns: ["quantcast", "qc-cmp2", "choice-privacy"] },
   { id: "sourcepoint", name: "Sourcepoint", patterns: ["sourcepoint", "ccpa-cmp", "unified-id", "sp-message-delivery"] },
-  { id: "trustarc", name: "TrustArc", patterns: ["trustarc", "truste", "consentmanager"] },
+  { id: "trustarc", name: "TrustArc", patterns: ["trustarc"] },
+  { id: "consentmanager", name: "Consentmanager", patterns: ["consentmanager", "consentmanager.net"] },
   { id: "iubenda", name: "iubenda", patterns: ["iubenda", "iubenda_cs", "iubenda-consent"] },
   { id: "complianz", name: "Complianz", patterns: ["complianz", "cmplz-cookiebanner", "complianz-gdpr"] },
   { id: "ketch", name: "Ketch", patterns: ["ketch", "ketch.io", "ketch-cmp"] },
@@ -93,7 +94,6 @@ const BANNER_MARKERS = [
   "cookie__wrapper",
   "cookieconsent",
   "accepteer cookies",
-  "accepteren",
   "accept cookies",
   "alle cookies",
 ];
@@ -126,7 +126,7 @@ const CONSENT_API_MARKERS: { id: string; name: string; markers: string[] }[] = [
   {
     id: "generic-cmp",
     name: "Generieke CMP-global",
-    markers: ["window.__cmp", "__cmp(", "cmp.", "consentmanager", "getconsent"],
+    markers: ["window.__cmp", "__cmp(", "__cmpframe", "getconsent"],
   },
 ];
 

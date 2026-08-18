@@ -33,7 +33,7 @@ export function isBlockedIp(ip: string): boolean {
       // IPv4-mapped (::ffff:127.0.0.1) — de IPv4 kant checken
       return isBlockedIp(last);
     }
-    if (groups.every((g) => g === "0000") && last === "0001") return true; // ::1
+    if (groups.every((g) => g === "0000" || g === last) && last === "0001") return true; // ::1
     if (first === "fd00") return true; // fd00::/8
     return false;
   }

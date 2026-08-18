@@ -47,7 +47,7 @@ function decodeEntities(text: string): string {
 }
 
 function attrValue(tag: string, name: string): string | null {
-  const re = new RegExp(`${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, "i");
+  const re = new RegExp(`\\b${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, "i");
   const m = tag.match(re);
   if (!m) return null;
   return decodeEntities(m[2] ?? m[3] ?? m[4] ?? "");
@@ -128,21 +128,36 @@ function findMetaByProperty(html: string, property: string): string | null {
 }
 
 function findLinkRel(html: string, rel: string): string | null {
-  const re = new RegExp(
-    `<link[^>]+rel\\s*=\\s*["']${escapeRegex(rel)}["'][^>]*>`,
-    "i",
-  );
-  const tag = html.match(re)?.[0];
-  if (!tag) return null;
-  return attrValue(tag, "href");
+  const re = new RegExp(`<link\\b[^>]*>`, "gi");
+  for (const m of html.matchAll(re)) {
+    const tag = m[0];
+    if (!/\brel\s*=\s*/.test(tag)) continue;
+    const relValue = attrValue(tag, "rel");
+    if (relValue && relValue.toLowerCase().split(/\s+/).includes(rel)) {
+      return attrValue(tag, "href");
+    }
+  }
+  return null;
 }
 
+/**
+ * Telt `<link rel="alternate">`-tags mét een `hreflang`-attribuut. RSS/atom-
+ * feed-links gebruiken `rel="alternate"` zonder hreflang en mogen niet als
+ * hreflang-annotatie tellen (false positive).
+ */
 function countLinkRel(html: string, rel: string): number {
-  const re = new RegExp(
-    `<link[^>]+rel\\s*=\\s*["']${escapeRegex(rel)}["'][^>]*>`,
-    "gi",
-  );
-  return html.match(re)?.length ?? 0;
+  const re = new RegExp(`<link\\b[^>]*>`, "gi");
+  let count = 0;
+  for (const m of html.matchAll(re)) {
+    const tag = m[0];
+    if (/\bhreflang\s*=/i.test(tag) && /\brel\s*=/i.test(tag)) {
+      const relValue = attrValue(tag, "rel");
+      if (relValue && relValue.toLowerCase().split(/\s+/).includes(rel)) {
+        count++;
+      }
+    }
+  }
+  return count;
 }
 
 function escapeRegex(s: string): string {

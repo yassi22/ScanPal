@@ -163,6 +163,22 @@ function singleLine(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Sanitize attacker-beïnvloede prompt-inhoud (evidence, descriptions):
+ * control-chars/NUL eruit, en een code-fence kiezen die langer is dan elke
+ * backtick-run in de inhoud, zodat ```-fences in de evidence de prompt niet
+ * kunnen breken (prompt-injection via gefence-de uitbraak, plan 60).
+ */
+export function sanitizePromptText(text: string): string {
+  return text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+}
+
+export function fenceFor(text: string): string {
+  const runs = sanitizePromptText(text).match(/`+/g)?.map((m) => m.length) ?? [];
+  const max = runs.length > 0 ? Math.max(...runs) : 0;
+  return "`".repeat(Math.max(3, max + 1));
+}
+
 const FILE_EXT = "(?:ts|tsx|js|jsx|mjs|cjs|py|go|rb|php|java|kt|kts|cs|c|cpp|cc|h|hpp|json|ya?ml|toml|ini|cfg|conf|config|env|properties|xml|html|htm|css|scss|sass|less|sql|md|sh|bash|ps1|tf|gradle|lock)";
 
 /**
@@ -261,10 +277,11 @@ export function buildFindingFixPrompt(
   lines.push("## Role & goal", "", template, "");
   lines.push("## Problem", "", `${finding.title} — ${SEVERITY_LABEL[finding.severity]}`, "");
   lines.push("## Location", "", findingLocation(finding, scope), "");
-  lines.push("## Description", "", finding.description, "");
-  lines.push("## Remediation", "", finding.remediation, "");
+  lines.push("## Description", "", sanitizePromptText(finding.description), "");
+  lines.push("## Remediation", "", sanitizePromptText(finding.remediation), "");
   if (evidence) {
-    lines.push("## Evidence", "", "```", evidence, "```", "");
+    const fence = fenceFor(evidence);
+    lines.push("## Evidence", "", fence, sanitizePromptText(evidence), fence, "");
   }
   lines.push(...REQUIREMENTS);
   return lines.join("\n");
@@ -299,13 +316,15 @@ export function buildScanFixPrompt(
     }
     block.push(`#### ${finding.title} (${SEVERITY_LABEL[finding.severity]})`);
     block.push(`- **Check:** ${checkNameOf(finding.check_id)}`);
-    block.push(`- **Description:** ${singleLine(finding.description)}`);
-    block.push(`- **Remediation:** ${singleLine(finding.remediation)}`);
+    block.push(`- **Description:** ${singleLine(sanitizePromptText(finding.description))}`);
+    block.push(`- **Remediation:** ${singleLine(sanitizePromptText(finding.remediation))}`);
     const evidence = trimToChars(
       evidenceText(finding.evidence),
       FIX_PROMPT_GROUPED_EVIDENCE_MAX,
     );
-    if (evidence) block.push(`- **Evidence:** ${singleLine(evidence)}`);
+    if (evidence) {
+      block.push(`- **Evidence:** ${singleLine(sanitizePromptText(evidence))}`);
+    }
     block.push("");
     blocks.push(block.join("\n"));
   }

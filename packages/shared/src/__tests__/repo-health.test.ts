@@ -66,6 +66,15 @@ describe("repo-health (feature 49)", () => {
       expect(parseRepoSlug("nogithub")).toBeNull();
       expect(parseRepoSlug("https://github.com/onlyowner")).toBeNull();
     });
+
+    it("reject pad-traversal-segmenten (`../user` → API-escape, SSRF/confused-deputy)", () => {
+      expect(parseRepoSlug("../user")).toBeNull();
+      expect(parseRepoSlug("https://github.com/../user")).toBeNull();
+      expect(parseRepoSlug("..//user")).toBeNull();
+      expect(parseRepoSlug("owner/../admin")).toBeNull();
+      expect(parseRepoSlug("git@github.com:../user.git")).toBeNull();
+      expect(parseRepoSlug("/repos/../user")).toBeNull();
+    });
   });
 
   describe("licenseSignal", () => {

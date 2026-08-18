@@ -128,13 +128,13 @@ const SIGNATURES: Signature[] = [
     id: "angular",
     name: "Angular",
     category: "framework",
-    html: ["ng-version", "ng-app", "angular"],
+    html: ["ng-version", "ng-app"],
   },
   {
     id: "react",
     name: "React",
     category: "framework",
-    html: ["data-reactroot", "data-reactroot", "react-dom"],
+    html: ["data-reactroot", "react-dom"],
   },
   {
     id: "vue",
@@ -146,7 +146,7 @@ const SIGNATURES: Signature[] = [
     id: "django",
     name: "Django",
     category: "framework",
-    headers: { "x-frame-options": "" },
+    html: ["csrfmiddlewaretoken", "django.cookies"],
     cookies: ["csrftoken", "sessionid"],
   },
   {
@@ -191,7 +191,7 @@ const SIGNATURES: Signature[] = [
     id: "fastly",
     name: "Fastly",
     category: "cdn",
-    headers: { "x-served-by": "cache", "x-fastly": "" },
+    headers: { "x-served-by": "cache", "x-timer": "" },
   },
   {
     id: "nginx",

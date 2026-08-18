@@ -36,7 +36,7 @@ describe("bundle-secrets (plan 53)", () => {
   it("maskert nooit meer dan 4+4 tekens zichtbaar", () => {
     expect(maskSecret("sk_live_1234567890abcdef")).toBe("sk_l…cdef");
     expect(maskSecret("sk_live_1234567890abcdef").replace("…", "").length).toBe(8);
-    expect(maskSecret("kort")).toBe("kort");
+    expect(maskSecret("kort")).toBe("k…");
     expect(maskSecret("").length).toBe(0);
   });
 
