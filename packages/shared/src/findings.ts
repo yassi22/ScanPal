@@ -52,6 +52,10 @@ import {
   type OsvEvidence,
 } from "./sast-findings";
 import {
+  cwvEvidenceSchema,
+  type CwvEvidence,
+} from "./browser-vitals";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -104,6 +108,7 @@ export const findingSchema = z.object({
       semgrepEvidenceSchema,
       gitleaksEvidenceSchema,
       osvEvidenceSchema,
+      cwvEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -255,6 +260,7 @@ export type InlineCheckLike = {
     | SemgrepEvidence
     | GitleaksEvidence
     | OsvEvidence
+    | CwvEvidence
     | string
     | null;
 };
@@ -279,6 +285,7 @@ export function evidenceText(
     | SemgrepEvidence
     | GitleaksEvidence
     | OsvEvidence
+    | CwvEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -352,6 +359,9 @@ export function evidenceText(
     }
     if (evidence.kind === "osv-scanner") {
       return `total=${evidence.total} critical=${evidence.by_severity.critical} high=${evidence.by_severity.high} medium=${evidence.by_severity.medium} low=${evidence.by_severity.low}`;
+    }
+    if (evidence.kind === "core-web-vitals") {
+      return `lcp=${evidence.lcp_ms}(${evidence.ratings.lcp}) cls=${evidence.cls}(${evidence.ratings.cls}) inp=${evidence.inp_ms}(${evidence.ratings.inp})`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -448,6 +458,10 @@ const ISSUE_TITLES: Record<
   "osv-scanner": {
     warn: "OSV-Scanner vond kwetsbare dependencies",
     fail: "OSV-Scanner vond kritieke dependency-kwetsbaarheden",
+  },
+  "core-web-vitals": {
+    warn: "Core Web Vitals komen niet volledig in orde (needs improvement)",
+    fail: "Een of meer Core Web Vitals zijn arm (poor)",
   },
   cors: {
     warn: "CORS laat arbitraire origins toe",
@@ -580,6 +594,8 @@ const REMEDIATION: Record<string, string> = {
     "Verwijder het gelekte geheim uit de repo-geschiedenis (git filter-repo / BFG) en roteer het direct (behandel het als gelekt). Plaats secrets in een secrets-manager of omgevingsvariabelen, nooit in broncode of commits. Voeg gitleaks toe aan de CI als pre-commit/pre-push hook.",
   "osv-scanner":
     "Update de kwetsbare dependencies naar een niet-kwetsbare versie (zie het advisory-id in de evidence). Bij een onbeperkt advisary zonder patch: pin de versie, pas mitigaties toe of vervang de dependency. Voeg OSV-Scanner toe aan de CI voor continue controle.",
+  "core-web-vitals":
+    "Optimaliseer LCP (verlaag de largest render-time: pre-load van kritische resources, CDN, lazy-load niet-kritieke media), CLS (reserveer ruimte voor media/ad-banners, vermijd layout-shift door late inserts) en INP (verdeel lange taken, gebruik requestIdleCallback, optimaliseer interactie-handlers). Meet met Lighthouse / PageSpeed Insights / CrUX-field data.",
 };
 
 /**

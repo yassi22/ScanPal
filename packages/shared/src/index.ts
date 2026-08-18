@@ -140,3 +140,4 @@ export * from "./secrets-in-html";
 export * from "./mini-crawl";
 export * from "./repo-health";
 export * from "./sast-findings";
+export * from "./browser-vitals";

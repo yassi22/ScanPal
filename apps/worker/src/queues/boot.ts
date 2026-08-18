@@ -4,6 +4,7 @@ import { FlowProducer, Queue, Worker } from "bullmq";
 import type { NotifyInput } from "@scanpal/notify";
 import { createRateLimiter } from "../rate-limit";
 import { buildRegistry } from "../checks/registry";
+import { createPlaywrightRunner } from "../checks/browser/playwright-runner";
 import { createDispatcherProcessor } from "./dispatcher";
 import { createCrawlProcessor } from "./crawl";
 import { createAggregateProcessor, markScanFailed } from "./aggregate";
@@ -32,7 +33,8 @@ export function startScanWorkers(deps: WorkerDeps): WorkerHandle {
   const connection = { connection: deps.redis };
 
   const rateLimiter = createRateLimiter(deps.redis);
-  const registry = buildRegistry(rateLimiter);
+  const browserRunner = createPlaywrightRunner();
+  const registry = buildRegistry(rateLimiter, browserRunner);
   const flowProducer = new FlowProducer(connection);
   const crawlQueue = new Queue(QUEUES.crawl, { connection: deps.redis });
 

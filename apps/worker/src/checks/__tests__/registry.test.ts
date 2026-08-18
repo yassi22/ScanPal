@@ -1,11 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { buildRegistry, skeletonTotals } from "../registry";
+import type { BrowserRunner } from "../browser/runner";
 
 const rateLimit = {} as never;
+const mockRunner: BrowserRunner = { captureVitals: () => Promise.resolve({ ok: false, error: "mock" }) };
 
 describe("skeletonTotals (progress-skelet)", () => {
   it("telt de eerste http-checks zonder actieve tests", () => {
-    const registry = buildRegistry(rateLimit);
+    const registry = buildRegistry(rateLimit, mockRunner);
     const totals = skeletonTotals(registry, ["http", "browser"], false);
     // reachability + https + tls-cert + domain-watchtower + 8 security-header-checks
     // + 5 cookie-checks + secrets-in-bundles + secrets-in-html + cors = http,
@@ -15,9 +17,10 @@ describe("skeletonTotals (progress-skelet)", () => {
     // onder categorie compliance. stack-detection (plan 40) is category seo →
     // telt mee onder seo. redirects-mixed + subresources (plan 32/34) zijn
     // category http. structured-data + security-txt (plan 39/37) zijn category seo.
+    // Feature 41: core-web-vitals draait in de browser-worker (aeo) → aeo 1->2.
     expect(totals.http).toBe(22);
     expect(totals.seo).toBe(5);
-    expect(totals.aeo).toBe(1);
+    expect(totals.aeo).toBe(2);
     expect(totals.compliance).toBe(5);
     // Categorieën zonder queue-owner krijgen geen key (initialProgressDetails
     // default naar 0).
@@ -25,7 +28,7 @@ describe("skeletonTotals (progress-skelet)", () => {
   });
 
   it("telt de actieve-test-checks mee met de flag aan", () => {
-    const registry = buildRegistry(rateLimit);
+    const registry = buildRegistry(rateLimit, mockRunner);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
     // 11 actieve-test-catalog-checks + 22 passieve http-checks.
     expect(totals.http).toBe(33);
@@ -33,7 +36,7 @@ describe("skeletonTotals (progress-skelet)", () => {
   });
 
   it("draagt github-checks alleen mee als de queue draait", () => {
-    const registry = buildRegistry(rateLimit);
+    const registry = buildRegistry(rateLimit, mockRunner);
     const totals = skeletonTotals(registry, ["http", "browser", "github"], false);
     // Feature 49: repo-health is de eerste github-implementatie (site-level);
     // feature 46 voegt Semgrep toe, 47 Gitleaks, 48 OSV-Scanner (github 2->4).

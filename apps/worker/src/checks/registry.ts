@@ -29,6 +29,8 @@ import { repoHealthCheck } from "./github/repo-health";
 import { semgrepCheck } from "./github/semgrep";
 import { gitleaksCheck } from "./github/gitleaks";
 import { osvScannerCheck } from "./github/osv-scanner";
+import { createCoreWebVitalsCheck } from "./browser/core-web-vitals";
+import type { BrowserRunner } from "./browser/runner";
 
 /**
  * Geïmplementeerde check per queue (plan 27, besluit 8). `outputCheckIds`
@@ -54,7 +56,10 @@ function toImplemented(
   return { id: impl.id, category: impl.category, outputCheckIds: outputCheckIds ?? [impl.id], run: impl.run };
 }
 
-export function buildRegistry(rateLimit: RateLimiter): Record<QueueName, ImplementedCheck[]> {
+export function buildRegistry(
+  rateLimit: RateLimiter,
+  browserRunner: BrowserRunner,
+): Record<QueueName, ImplementedCheck[]> {
   return {
     http: [
       toImplemented(reachabilityCheck),
@@ -88,9 +93,11 @@ export function buildRegistry(rateLimit: RateLimiter): Record<QueueName, Impleme
       // Feature 38: mini-crawl — image-alt audit + orphan-page detectie.
       toImplemented(miniCrawlCheck),
     ],
-    // Features 41–43 vullen de browser-worker; feature 27 levert alleen de
-    // pipeline (geen aeo-checks geïmplementeerd).
-    browser: [],
+    // Features 41–43 vullen de browser-worker.
+    browser: [
+      // Feature 41: Core Web Vitals (LCP/CLS/INP) via Playwright.
+      toImplemented(createCoreWebVitalsCheck(browserRunner)),
+    ],
     // Features 46–49 vullen de github-worker.
     github: [
       // Feature 49: repo-health (branch protection, LICENSE, CI, MFA-proxy, README)

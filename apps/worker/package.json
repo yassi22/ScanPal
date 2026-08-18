@@ -12,13 +12,16 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@axe-core/playwright": "^4.10.1",
     "@scanpal/notify": "workspace:*",
     "@scanpal/scan-core": "workspace:*",
     "@scanpal/shared": "workspace:*",
+    "axe-core": "^4.10.0",
     "bullmq": "^6.1.2",
     "dotenv": "^17.0.0",
     "ioredis": "^5.6.0",
     "pg": "^8.16.0",
+    "playwright": "^1.49.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {

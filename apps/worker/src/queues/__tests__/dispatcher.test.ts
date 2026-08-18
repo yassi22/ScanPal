@@ -3,6 +3,7 @@ import type { Pool, QueryResult } from "pg";
 import type { Queue } from "bullmq";
 import { createDispatcherProcessor } from "../dispatcher";
 import { buildRegistry } from "../../checks/registry";
+import type { BrowserRunner } from "../../checks/browser/runner";
 
 type Row = Record<string, unknown>;
 type QueryResultLike = Partial<QueryResult<Row>>;
@@ -34,7 +35,8 @@ function fakeCrawlQueue() {
 }
 
 const rateLimit = {} as never;
-const registry = buildRegistry(rateLimit);
+const mockRunner: BrowserRunner = { captureVitals: () => Promise.resolve({ ok: false, error: "mock" }) };
+const registry = buildRegistry(rateLimit, mockRunner);
 
 describe("createDispatcherProcessor (plan 54)", () => {
   beforeEach(() => {
