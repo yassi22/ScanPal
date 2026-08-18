@@ -6,6 +6,7 @@ import { pool } from "@/lib/db";
 export type MembershipRow = {
   team_id: string;
   user_id: string;
+  workspace_id: string | null;
   role: string;
   status: string;
 };
@@ -28,7 +29,7 @@ export async function requireTeamMember(teamId: string): Promise<AuthzResult> {
   if (!user) return { ok: false, status: 401 };
 
   const result = await pool.query(
-    `select team_id, user_id, role, status from memberships
+    `select team_id, user_id, workspace_id, role, status from memberships
      where team_id = $1 and user_id = $2 and status = 'accepted'`,
     [teamId, user.id],
   );

@@ -84,9 +84,10 @@ export function PricingCards({
         Prijzen exclusief btw — btw wordt toegevoegd op de factuur.
       </p>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-3">
         {plans.map((plan) => {
           const isCurrent = usage?.plan?.id === plan.id;
+          const isFeatured = plan.id === "max";
           const priceCents =
             interval === "year" && plan.annualPriceCents
               ? plan.annualPriceCents
@@ -95,7 +96,7 @@ export function PricingCards({
             <div
               key={plan.id}
               className={`flex flex-col rounded-2xl border p-8 ${
-                plan.id === "pro"
+                isFeatured
                   ? "border-brand/40 bg-brand/5"
                   : "border-slate-800 bg-slate-900/50"
               }`}
@@ -125,7 +126,9 @@ export function PricingCards({
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-brand">✓</span>
-                  Maximaal {plan.maxMembers} teamleden
+                  {plan.features.seats !== null
+                    ? `${plan.features.seats} betaalde seats`
+                    : `Maximaal ${plan.maxMembers} teamleden`}
                 </li>
                 <li className="flex items-center gap-2">
                   <span className={plan.features.uptime ? "text-brand" : "text-slate-600"}>
@@ -138,6 +141,12 @@ export function PricingCards({
                     {plan.features.github ? "✓" : "✕"}
                   </span>
                   GitHub-reposcans
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className={plan.features.white_label ? "text-brand" : "text-slate-600"}>
+                    {plan.features.white_label ? "✓" : "✕"}
+                  </span>
+                  White-label branding
                 </li>
               </ul>
 
@@ -154,7 +163,7 @@ export function PricingCards({
                 <Link
                   href="/register"
                   className={`rounded-lg px-4 py-3 text-center text-sm font-semibold transition ${
-                    plan.id === "pro"
+                    isFeatured
                       ? "bg-brand text-slate-950 hover:bg-brand/90"
                       : "border border-slate-700 hover:border-slate-500"
                   }`}
@@ -175,7 +184,7 @@ export function PricingCards({
                   onClick={() => checkout(plan.id)}
                   className="rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
                 >
-                  {busy === "pro" ? "Bezig…" : "Upgrade naar Pro"}
+                  {busy === plan.id ? "Bezig…" : `Upgrade naar ${plan.name}`}
                 </button>
               )}
             </div>

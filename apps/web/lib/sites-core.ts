@@ -10,6 +10,7 @@ import { setSiteScanState } from "@scanpal/scan-core";
 export type SiteRowWithStatus = {
   id: string;
   team_id: string;
+  workspace_id?: string | null;
   url: string;
   github_repo: string | null;
   label: string | null;
@@ -40,7 +41,7 @@ export class SiteError extends Error {
 
 export { setSiteScanState };
 
-const SITE_COLUMNS = `id, team_id, url, github_repo, label, public_status_slug,
+const SITE_COLUMNS = `id, team_id, workspace_id, url, github_repo, label, public_status_slug,
   (github_webhook_secret is not null) as github_webhook_configured,
   last_scan_id, last_scan_status, last_scan_score, last_scanned_at,
   uptime_state, scan_frequency, next_scan_at, created_at`;
@@ -48,14 +49,31 @@ const SITE_COLUMNS = `id, team_id, url, github_repo, label, public_status_slug,
 export async function listSitesWithStatus(
   db: Pool,
   teamId: string,
+  workspaceId?: string | null,
 ): Promise<SiteRowWithStatus[]> {
+  const scope = workspaceId === undefined ? "" : " and workspace_id = $2";
   const result = await db.query(
     `select ${SITE_COLUMNS} from sites
-     where team_id = $1
+     where team_id = $1${scope}
      order by last_scanned_at desc nulls last, created_at desc`,
-    [teamId],
+    workspaceId === undefined ? [teamId] : [teamId, workspaceId],
   );
   return result.rows as SiteRowWithStatus[];
+}
+
+/** Eén site met status, team-scoped (MCP-tool get_site, plan 63). */
+export async function getSite(
+  db: Pool,
+  input: { teamId: string; siteId: string; workspaceId?: string | null },
+): Promise<SiteRowWithStatus | null> {
+  const scope = input.workspaceId === undefined ? "" : " and workspace_id = $3";
+  const result = await db.query(
+    `select ${SITE_COLUMNS} from sites where id = $1 and team_id = $2${scope}`,
+    input.workspaceId === undefined
+      ? [input.siteId, input.teamId]
+      : [input.siteId, input.teamId, input.workspaceId],
+  );
+  return (result.rows[0] as SiteRowWithStatus) ?? null;
 }
 
 async function findSite(
@@ -80,6 +98,7 @@ export async function createSite(
     githubRepo?: string | null;
     label?: string | null;
     reuse?: boolean;
+    workspaceId?: string | null;
   },
 ): Promise<{ site: SiteRowWithStatus; created: boolean }> {
   const canonicalUrl = canonicalizeSiteUrl(input.url);
@@ -105,12 +124,20 @@ export async function createSite(
       : detectGithubRepoFromUrl(input.url);
     const label = input.label?.trim() || null;
 
-    const inserted = await client.query(
-      `insert into sites (team_id, url, github_repo, label, next_domain_check_at)
-       values ($1, $2, $3, $4, now())
-       returning ${SITE_COLUMNS}`,
-      [input.teamId, canonicalUrl, githubRepo, label],
-    );
+    const inserted =
+      input.workspaceId === undefined
+        ? await client.query(
+            `insert into sites (team_id, url, github_repo, label, next_domain_check_at)
+             values ($1, $2, $3, $4, now())
+             returning ${SITE_COLUMNS}`,
+            [input.teamId, canonicalUrl, githubRepo, label],
+          )
+        : await client.query(
+            `insert into sites (team_id, workspace_id, url, github_repo, label, next_domain_check_at)
+             values ($1, $2, $3, $4, $5, now())
+             returning ${SITE_COLUMNS}`,
+            [input.teamId, input.workspaceId, canonicalUrl, githubRepo, label],
+          );
 
     await client.query("commit");
     return { site: inserted.rows[0] as SiteRowWithStatus, created: true };
@@ -137,6 +164,8 @@ export async function updateSite(
      *  bestaande slug bij her-toggle (geen onnodige rotatie). */
     publicStatus?: { enabled: boolean } | undefined;
     currentSlug?: string | null;
+    workspaceId?: string | null;
+    scopeWorkspaceId?: string | null;
   },
 ): Promise<SiteRowWithStatus> {
   const patches: string[] = [];
@@ -159,11 +188,19 @@ export async function updateSite(
     params.push(slug);
     patches.push(`public_status_slug = $${params.length}`);
   }
+  if (input.workspaceId !== undefined) {
+    params.push(input.workspaceId);
+    patches.push(`workspace_id = $${params.length}`);
+  }
 
+  const siteIdPosition = params.length + 1;
+  const teamIdPosition = params.length + 2;
   params.push(input.siteId, input.teamId);
+  const scope = input.scopeWorkspaceId === undefined ? "" : ` and workspace_id = $${params.length + 1}`;
+  if (input.scopeWorkspaceId !== undefined) params.push(input.scopeWorkspaceId);
   const result = await db.query(
     `update sites set ${patches.join(", ")}
-     where id = $${params.length - 1} and team_id = $${params.length}
+     where id = $${siteIdPosition} and team_id = $${teamIdPosition}${scope}
      returning ${SITE_COLUMNS}`,
     params,
   );
@@ -176,11 +213,14 @@ export async function updateSite(
 
 export async function deleteSite(
   db: Pool,
-  input: { teamId: string; siteId: string },
+  input: { teamId: string; siteId: string; scopeWorkspaceId?: string | null },
 ): Promise<boolean> {
+  const scope = input.scopeWorkspaceId === undefined ? "" : " and workspace_id = $3";
   const result = await db.query(
-    "delete from sites where id = $1 and team_id = $2",
-    [input.siteId, input.teamId],
+    `delete from sites where id = $1 and team_id = $2${scope}`,
+    input.scopeWorkspaceId === undefined
+      ? [input.siteId, input.teamId]
+      : [input.siteId, input.teamId, input.scopeWorkspaceId],
   );
   return (result.rowCount ?? 0) > 0;
 }

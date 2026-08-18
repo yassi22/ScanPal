@@ -12,6 +12,7 @@ import {
   InviteError,
   INVITATION_TTL_MS,
   generateToken,
+  nextPlanForMemberLimit,
 } from "../../lib/invites-core";
 
 type Row = Record<string, unknown>;
@@ -297,7 +298,13 @@ describe("createInvitation", () => {
 
     await expect(
       createInvitation(state.db, { ...inviteInput, email: "dave@example.com", role: "member" }),
-    ).rejects.toMatchObject({ code: "member_limit" });
+    ).rejects.toMatchObject({
+      code: "member_limit",
+      // Plan 64 stap 2: de foutmelding is next-plan-agnostic; de route bouwt
+      // de upsell op, niet de foutmelding zelf ("Upgrade naar Pro" hardcoded
+      // was fout voor Pro/Max-teams die zelf al tegen de limiet aanlopen).
+      message: "De ledenlimiet van dit plan (3) is bereikt.",
+    });
   });
 
   it("staat meer leden toe op het Pro-plan", async () => {
@@ -308,6 +315,30 @@ describe("createInvitation", () => {
     await createInvitation(state.db, { ...inviteInput, email: "erin@example.com", role: "member" });
 
     expect(state.invitations).toHaveLength(3);
+  });
+
+  it("blokkeert uitnodigen op het Max-plan bij 2 leden + 1 pending (seats-limiet 3)", async () => {
+    state.subscriptions[0].plan = "max";
+
+    // 2 accepted memberships (owner + member, seeded) + 1 pending = 3, gelijk aan de seats-limiet.
+    await createInvitation(state.db, { ...inviteInput, email: "carol@example.com", role: "member" });
+
+    await expect(
+      createInvitation(state.db, { ...inviteInput, email: "dave@example.com", role: "member" }),
+    ).rejects.toMatchObject({ code: "member_limit" });
+  });
+
+  it("staat uitnodigen toe op het Max-plan bij 1 lid + 1 pending (onder de seats-limiet)", async () => {
+    state.subscriptions[0].plan = "max";
+    const idx = state.memberships.findIndex((m) => m.user_id === "u-member");
+    state.memberships.splice(idx, 1);
+
+    // 1 accepted membership (owner) + 1 pending = 2, onder de seats-limiet van 3.
+    await createInvitation(state.db, { ...inviteInput, email: "carol@example.com", role: "member" });
+
+    await expect(
+      createInvitation(state.db, { ...inviteInput, email: "dave@example.com", role: "member" }),
+    ).resolves.toBeDefined();
   });
 
   it("generates tokens die uniek zijn", () => {
@@ -531,5 +562,19 @@ describe("InviteError", () => {
     expect(err.code).toBe("expired");
     expect(err.message).toBe("verlopen");
     expect(err).toBeInstanceOf(Error);
+  });
+});
+
+describe("nextPlanForMemberLimit", () => {
+  it("stelt Pro voor als upsell wanneer het Free-plan de ledenlimiet raakt", () => {
+    expect(nextPlanForMemberLimit("free")).toBe("pro");
+  });
+
+  it("heeft geen upsell voor het Pro-plan (geen hogere ledentier)", () => {
+    expect(nextPlanForMemberLimit("pro")).toBeNull();
+  });
+
+  it("heeft geen upsell voor het Max-plan (seats=3 is lager dan Pro's maxMembers)", () => {
+    expect(nextPlanForMemberLimit("max")).toBeNull();
   });
 });

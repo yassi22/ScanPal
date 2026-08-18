@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
-import { plans, type UserRole } from "@scanpal/shared";
+import { plans, type PlanId, type UserRole } from "@scanpal/shared";
 
 export const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -59,6 +59,11 @@ export function generateToken(): string {
   return randomBytes(32).toString("hex");
 }
 
+/**
+ * Plan 64 stap 2: de seat-limiet komt uit `plan.features.seats` (Max: een
+ * los, lager seat-aantal dan `maxMembers`); valt terug op `plan.maxMembers`
+ * voor plannen zonder een expliciet seats-getal (Free/Pro: seats = null).
+ */
 async function maxMembersForTeam(
   db: Pool | PoolClient,
   teamId: string,
@@ -68,7 +73,18 @@ async function maxMembersForTeam(
     [teamId],
   );
   const planId = (result.rows[0]?.plan as string | undefined) ?? "free";
-  return plans[planId as keyof typeof plans].maxMembers;
+  const plan = plans[planId as keyof typeof plans];
+  return plan.features.seats ?? plan.maxMembers;
+}
+
+/**
+ * Plan 64 stap 2: welk plan lost de ledenlimiet op als er een hogere
+ * ledenlimiet bestaat? Free (3) -> Pro (10). Pro (10) en Max (seats 3, wat
+ * lager is dan Pro's maxMembers) hebben geen hogere ledentier, dus geen
+ * upsell-plan voor de member_limit-fout.
+ */
+export function nextPlanForMemberLimit(planId: PlanId): PlanId | null {
+  return planId === "free" ? "pro" : null;
 }
 
 async function assertSeatAvailable(
@@ -81,7 +97,7 @@ async function assertSeatAvailable(
   if (seats >= maxMembers) {
     throw new InviteError(
       "member_limit",
-      `De ledenlimiet van dit plan (${maxMembers}) is bereikt. Upgrade naar Pro voor meer leden.`,
+      `De ledenlimiet van dit plan (${maxMembers}) is bereikt.`,
     );
   }
 }

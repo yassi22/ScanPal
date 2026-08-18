@@ -26,6 +26,8 @@ vi.mock("@/lib/env", () => ({
     stripeWebhookSecret: "whsec_1",
     stripePricePro: "price_pro_month",
     stripePriceProAnnual: "price_pro_year",
+    stripePriceMax: "price_max_month",
+    stripePriceMaxAnnual: "price_max_year",
     appUrl: "http://localhost:3000",
   },
 }));
@@ -47,9 +49,11 @@ beforeEach(() => {
 });
 
 describe("resolvePlanFromPrice", () => {
-  it("mapped maand- én jaarprice naar pro", () => {
+  it("mapped maand- én jaarprice naar pro én max", () => {
     expect(resolvePlanFromPrice("price_pro_month")).toBe("pro");
     expect(resolvePlanFromPrice("price_pro_year")).toBe("pro");
+    expect(resolvePlanFromPrice("price_max_month")).toBe("max");
+    expect(resolvePlanFromPrice("price_max_year")).toBe("max");
     expect(resolvePlanFromPrice("price_other")).toBeNull();
     expect(resolvePlanFromPrice(undefined)).toBeNull();
   });
@@ -94,6 +98,27 @@ describe("createCheckoutSession", () => {
     expect(params.customer).toBe("cus_1");
     expect(params.customer_update).toEqual({ address: "auto" });
     expect(params.customer_creation).toBeUndefined();
+  });
+
+  it("gebruikt de max-price (maand én jaar) bij planId max", async () => {
+    mocks.sessionsCreate.mockResolvedValue({ url: "https://checkout.stripe.com/mx" });
+
+    await createCheckoutSession(
+      { teamId: "team-1", teamName: "Team", email: "a@b.nl", planId: "max", customerId: null },
+      "month",
+    );
+    await createCheckoutSession(
+      { teamId: "team-1", teamName: "Team", email: "a@b.nl", planId: "max", customerId: null },
+      "year",
+    );
+
+    const monthParams = mocks.sessionsCreate.mock.calls[0][0];
+    expect(monthParams.line_items[0].price).toBe("price_max_month");
+    expect(monthParams.metadata).toMatchObject({ plan_id: "max", interval: "month" });
+
+    const yearParams = mocks.sessionsCreate.mock.calls[1][0];
+    expect(yearParams.line_items[0].price).toBe("price_max_year");
+    expect(yearParams.metadata).toMatchObject({ plan_id: "max", interval: "year" });
   });
 
   it("gooit BillingNotConfiguredError als de jaarlijkse price ontbreekt", async () => {
@@ -203,11 +228,29 @@ describe("cancel / reactivate / switch", () => {
       items: { data: [{ id: "si_1" }] },
     });
 
-    await switchSubscriptionInterval("sub_1", "year");
+    await switchSubscriptionInterval("sub_1", "year", "pro");
 
     expect(mocks.subscriptionsRetrieve).toHaveBeenCalledWith("sub_1");
     expect(mocks.subscriptionsUpdate).toHaveBeenCalledWith("sub_1", {
       items: [{ id: "si_1", price: "price_pro_year" }],
+      proration_behavior: "create_prorations",
+    });
+  });
+
+  it("switchSubscriptionInterval gebruikt de max-prices voor het max-plan", async () => {
+    mocks.subscriptionsRetrieve.mockResolvedValue({
+      items: { data: [{ id: "si_1" }] },
+    });
+
+    await switchSubscriptionInterval("sub_1", "year", "max");
+    expect(mocks.subscriptionsUpdate).toHaveBeenCalledWith("sub_1", {
+      items: [{ id: "si_1", price: "price_max_year" }],
+      proration_behavior: "create_prorations",
+    });
+
+    await switchSubscriptionInterval("sub_1", "month", "max");
+    expect(mocks.subscriptionsUpdate).toHaveBeenCalledWith("sub_1", {
+      items: [{ id: "si_1", price: "price_max_month" }],
       proration_behavior: "create_prorations",
     });
   });

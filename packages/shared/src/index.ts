@@ -146,3 +146,6 @@ export * from "./accessibility";
 export * from "./browser-runtime";
 export * from "./aeo-render";
 export * from "./mcp-tools";
+export * from "./branding";
+export * from "./workspaces";
+export * from "./report-tokens";

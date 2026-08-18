@@ -1,25 +1,44 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import {
   findingSchema,
   findingStatusUpdateSchema,
   findingsPayloadSchema,
   type Finding,
+  type FindingsPayload,
 } from "@scanpal/shared";
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
+/** Haalt de findings-payload van een team-scoped scan op; null = onbekend. */
+async function findPayload(
+  teamId: string,
+  scanId: string,
+  workspaceId?: string | null,
+): Promise<FindingsPayload | null> {
+  const scope = workspaceId === undefined ? "" : " and st.workspace_id = $3";
+  const result = await pool.query(
+    `select s.findings from scans s
+     join sites st on st.id = s.site_id
+     where s.id = $1 and st.team_id = $2${scope}`,
+    workspaceId === undefined ? [scanId, teamId] : [scanId, teamId, workspaceId],
+  );
+  if (result.rowCount === 0) return null;
+
+  const payload = findingsPayloadSchema.safeParse(result.rows[0].findings);
+  return payload.success ? payload.data : null;
+}
+
 /**
- * PATCH /api/scans/[id]/findings/[findingId] — status (open/fixed/ignored)
- * + optionele note (plan 09) én snooze_until (7/30 dagen of "next-scan",
- * plan 59). Beide zijn optioneel: een snooze-actie verandert de status niet
- * en omgekeerd. Zelfde authz als de GET-route; onbekende finding in deze
- * scan → 404. De note wordt bij een status-wijziging zonder opgegeven note
- * leeggemaakt.
+ * GET /api/scans/[id]/findings/[findingId] — finding-detail (plan 63,
+ * MCP-tool get_finding). Zelfde authz als PATCH; onbekende scan of finding
+ * in deze scan → 404 (geen existence-leak).
  */
-export async function PATCH(
-  request: Request,
+export async function GET(
+  request: NextRequest,
   { params }: { params: Promise<{ id: string; findingId: string }> },
 ) {
   const auth = await requireTeam(request);
@@ -36,6 +55,55 @@ export async function PATCH(
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
+
+  const { id, findingId } = await params;
+
+  const payload = await findPayload(teamId, id, workspaceId);
+  const finding = payload?.items.find((item) => item.id === findingId);
+  if (!finding) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const parsedFinding = findingSchema.safeParse(finding);
+  if (!parsedFinding.success) {
+    console.error("finding voldoet niet aan het contract:", parsedFinding.error);
+    return NextResponse.json(
+      { error: "Ophalen mislukt. Probeer het opnieuw." },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json(parsedFinding.data);
+}
+
+/**
+ * PATCH /api/scans/[id]/findings/[findingId] — status (open/fixed/ignored)
+ * + optionele note (plan 09) én snooze_until (7/30 dagen of "next-scan",
+ * plan 59). Beide zijn optioneel: een snooze-actie verandert de status niet
+ * en omgekeerd. Zelfde authz als de GET-route; onbekende finding in deze
+ * scan → 404. De note wordt bij een status-wijziging zonder opgegeven note
+ * leeggemaakt.
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; findingId: string }> },
+) {
+  const auth = await requireTeam(request);
+  if (!auth.ok) {
+    return NextResponse.json(
+      { error: auth.status === 429 ? "Te veel verzoeken" : "Unauthorized" },
+      {
+        status: auth.status,
+        headers:
+          auth.status === 429
+            ? { "Retry-After": String(auth.retryAfter) }
+            : undefined,
+      },
+    );
+  }
+  const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const { id, findingId } = await params;
 
@@ -48,22 +116,12 @@ export async function PATCH(
     );
   }
 
-  const result = await pool.query(
-    `select s.findings from scans s
-     join sites st on st.id = s.site_id
-     where s.id = $1 and st.team_id = $2`,
-    [id, teamId],
-  );
-  if (result.rowCount === 0) {
+  const payload = await findPayload(teamId, id, workspaceId);
+  if (!payload) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const payload = findingsPayloadSchema.safeParse(result.rows[0].findings);
-  if (!payload.success) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
-  const items = payload.data.items;
+  const items = payload.items;
   const index = items.findIndex((finding) => finding.id === findingId);
   if (index === -1) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

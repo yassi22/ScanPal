@@ -4,6 +4,7 @@ import { scanTrendResponseSchema } from "@scanpal/shared";
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
 import { getScanTrend } from "@/lib/scans-core";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,7 @@ export async function GET(
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
   const { id } = await params;
 
   const url = new URL(request.url);
@@ -40,6 +42,7 @@ export async function GET(
   const { site, points } = await getScanTrend(pool, {
     teamId,
     siteId: id,
+    workspaceId,
     limit: Number.isFinite(limit) ? (limit as number) : undefined,
   });
 

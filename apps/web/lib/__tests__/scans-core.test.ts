@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { Pool, PoolClient, QueryResult } from "pg";
-import type { ProgressDetails } from "@scanpal/shared";
+import {
+  scanCreateResponseSchema,
+  type ProgressDetails,
+} from "@scanpal/shared";
 import {
   createManualScan,
   listScanHistory,
@@ -9,6 +12,7 @@ import {
   getScanTrend,
   cancelScan,
   finishScan,
+  toScanJson,
   ScanError,
   CancelScanError,
   type ScanRowWithMeta,
@@ -59,6 +63,7 @@ function makeScan(
     score: null,
     findings: {},
     diff: {},
+    crux: null,
     category_scores: null,
     active_tests: false,
     trigger: "manual",
@@ -802,6 +807,61 @@ describe("finishScan guard", () => {
     expect(scan.status).toBe("completed");
     expect(scan.score).toBe(66);
     expect(state.sites[0].last_scan_status).toBe("completed");
+  });
+});
+
+describe("toScanJson (contract-pasvorm)", () => {
+  const UUID = "3f3d9e0a-0000-4000-8000-000000000001";
+  const SITE_UUID = "3f3d9e0a-0000-4000-8000-000000000002";
+
+  it("verwijdert lege DB-defaults zodat de scan aan scanCreateResponseSchema voldoet", () => {
+    const json = toScanJson(
+      makeScan(UUID, SITE_UUID, {
+        progress_details: {} as ProgressDetails,
+        diff: {},
+        crux: {},
+      }),
+    );
+
+    expect(json.progress_details).toBeUndefined();
+    expect(json.diff).toBeUndefined();
+    expect(json.crux).toBeNull();
+    expect(scanCreateResponseSchema.safeParse({ scan: json }).success).toBe(
+      true,
+    );
+  });
+
+  it("laat een berekende diff en crux-data intact", () => {
+    const json = toScanJson(
+      makeScan(UUID, SITE_UUID, {
+        diff: {
+          new: { critical: 1, high: 0, medium: 0, low: 0, info: 0 },
+          resolved: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+          regressed: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+          unchanged: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+          new_finding_ids: ["h:1"],
+          regressed_finding_ids: [],
+          alert_new: { critical: 1, high: 0, medium: 0, low: 0, info: 0 },
+          alert_regressed: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+        },
+        crux: {
+          origin: "https://example.com",
+          collection_period: "2026-07",
+          metrics: {
+            lcp: { p75: 1800, good: 0.3, needs_improvement: 0.4, poor: 0.3 },
+            inp: { p75: 150, good: 0.8, needs_improvement: 0.2, poor: 0 },
+            cls: { p75: 0.05, good: 0.9, needs_improvement: 0.1, poor: 0 },
+          },
+        },
+      }),
+    );
+
+    const parsed = scanCreateResponseSchema.safeParse({ scan: json });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.scan.diff?.new.critical).toBe(1);
+      expect(parsed.data.scan.crux?.metrics.lcp.p75).toBe(1800);
+    }
   });
 });
 

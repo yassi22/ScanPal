@@ -37,7 +37,7 @@ import {
 export type TeamContext = {
   teamId: string;
   auth:
-    | { type: "session"; userId: string }
+    | { type: "session"; userId: string; role: string; workspaceId: string | null }
     | { type: "key"; keyId: string };
 };
 
@@ -72,9 +72,27 @@ export async function requireTeam(
     auth_provider: user.app_metadata?.provider ?? null,
   });
 
+  let workspaceId = result.membership.workspace_id;
+  if (result.membership.role !== "owner") {
+    const membership = await pool.query<{ role: string; workspace_id: string | null }>(
+      `select role, workspace_id from memberships
+       where team_id = $1 and user_id = $2 and status = 'accepted'`,
+      [result.team.id, user.id],
+    );
+    workspaceId = membership.rows[0]?.workspace_id ?? null;
+  }
+
   return {
     ok: true,
-    ctx: { teamId: result.team.id, auth: { type: "session", userId: user.id } },
+    ctx: {
+      teamId: result.team.id,
+      auth: {
+        type: "session",
+        userId: user.id,
+        role: result.membership.role,
+        workspaceId,
+      },
+    },
   };
 }
 

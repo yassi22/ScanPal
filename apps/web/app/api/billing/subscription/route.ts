@@ -59,6 +59,7 @@ export async function PATCH(request: NextRequest) {
       await switchSubscriptionInterval(
         subscription.stripe_subscription_id,
         parsed.data.interval,
+        subscription.plan,
       );
     }
     if (parsed.data.reactivate) {

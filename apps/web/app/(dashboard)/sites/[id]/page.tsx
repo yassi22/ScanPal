@@ -10,6 +10,7 @@ import { ScanTrendChart } from "@/components/scan-trend-chart";
 import { DomainWatchtowerCard } from "@/components/domain-watchtower-card";
 import { PublicStatusToggle } from "@/components/public-status-toggle";
 import { DeployWebhookCard } from "@/components/deploy-webhook-card";
+import { getMembershipWorkspace } from "@/lib/workspace-scope";
 
 export const dynamic = "force-dynamic";
 
@@ -58,9 +59,14 @@ export default async function SiteDetailPage({
     auth_provider: user.app_metadata?.provider ?? null,
   });
 
+  const scope =
+    result.membership.role === "owner"
+      ? { role: "owner", workspaceId: null }
+      : await getMembershipWorkspace(pool, { teamId: result.team.id, userId: user.id });
   const { site, points } = await getScanTrend(pool, {
     teamId: result.team.id,
     siteId: id,
+    workspaceId: scope.role === "owner" ? undefined : scope.workspaceId,
   });
 
   if (!site) notFound();

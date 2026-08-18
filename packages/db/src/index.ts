@@ -3,7 +3,7 @@ export const membershipStatuses = ["pending", "accepted"] as const;
 export const scanStatuses = ["queued", "running", "completed", "failed"] as const;
 export const scanTriggers = ["manual", "schedule", "deploy"] as const;
 export const scanFrequencies = ["none", "daily", "weekly"] as const;
-export const planIds = ["free", "pro"] as const;
+export const planIds = ["free", "pro", "max"] as const;
 export const subscriptionStatuses = ["active", "trialing", "past_due", "canceled"] as const;
 export const uptimeStates = ["up", "down", "unknown"] as const;
 export const uptimeEventStatuses = ["up", "down"] as const;
@@ -52,12 +52,21 @@ export type UserRow = {
 export type TeamRow = {
   id: string;
   name: string;
+  branding: Record<string, unknown>;
+  created_at: Date;
+};
+
+export type WorkspaceRow = {
+  id: string;
+  parent_team_id: string;
+  name: string;
   created_at: Date;
 };
 
 export type MembershipRow = {
   team_id: string;
   user_id: string;
+  workspace_id: string | null;
   role: (typeof userRoles)[number];
   status: (typeof membershipStatuses)[number];
   invited_by: string | null;
@@ -67,6 +76,7 @@ export type MembershipRow = {
 export type SiteRow = {
   id: string;
   team_id: string;
+  workspace_id: string | null;
   url: string;
   github_repo: string | null;
   label: string | null;
@@ -117,6 +127,8 @@ export type ScanRow = {
   active_tests: boolean;
   trigger: (typeof scanTriggers)[number];
   scheduled_for: Date | null;
+  report_token: string | null;
+  report_token_expires_at: Date | null;
   created_at: Date;
   completed_at: Date | null;
 };

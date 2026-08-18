@@ -4,6 +4,11 @@ import { pool } from "@/lib/db";
 import { listMembers, listPendingInvitations } from "@/lib/invites-core";
 import { TeamSettings } from "@/components/team-settings";
 import { SettingsNav } from "@/components/settings-nav";
+import { getTeamUsage } from "@/lib/credits";
+import { brandingSchema } from "@scanpal/shared";
+import { listWorkspaces, toWorkspaceJson } from "@/lib/workspaces-core";
+import { WorkspaceManager } from "@/components/workspace-manager";
+import { getMembershipWorkspace } from "@/lib/workspace-scope";
 
 export default async function SettingsTeamPage() {
   const supabase = await createClient();
@@ -19,10 +24,18 @@ export default async function SettingsTeamPage() {
     auth_provider: user?.app_metadata?.provider ?? null,
   });
 
-  const [members, invitations] = await Promise.all([
+  const workspaceScope =
+    result.membership.role === "owner"
+      ? undefined
+      : (await getMembershipWorkspace(pool, { teamId: result.team.id, userId: result.user.id })).workspaceId;
+  const [members, invitations, teamRow, usage, workspaceRows] = await Promise.all([
     listMembers(pool, result.team.id),
     listPendingInvitations(pool, result.team.id),
+    pool.query("select branding from teams where id = $1", [result.team.id]),
+    getTeamUsage(pool, result.team.id),
+    listWorkspaces(pool, { teamId: result.team.id, workspaceId: workspaceScope }),
   ]);
+  const branding = brandingSchema.parse(teamRow.rows[0]?.branding ?? {});
 
   return (
     <div>
@@ -38,6 +51,8 @@ export default async function SettingsTeamPage() {
         teamName={result.team.name}
         isOwner={result.membership.role === "owner"}
         currentUserId={result.membership.user_id}
+        branding={branding}
+        whiteLabelEnabled={usage.plan.features.white_label}
         members={members.map((m) => ({
           ...m,
           created_at:
@@ -50,6 +65,11 @@ export default async function SettingsTeamPage() {
           expires_at:
             typeof i.expires_at === "string" ? i.expires_at : i.expires_at.toISOString(),
         }))}
+      />
+      <WorkspaceManager
+        teamId={result.team.id}
+        isOwner={result.membership.role === "owner"}
+        initialWorkspaces={workspaceRows.map(toWorkspaceJson).map(({ id, name }) => ({ id, name }))}
       />
     </div>
   );

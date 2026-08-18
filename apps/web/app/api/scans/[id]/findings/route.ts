@@ -3,6 +3,7 @@ import { findingsQuerySchema, findingsResponseSchema } from "@scanpal/shared";
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
 import { queryFindings } from "@/lib/findings-core";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,7 @@ export async function GET(
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const { id } = await params;
 
@@ -48,8 +50,8 @@ export async function GET(
   const result = await pool.query(
     `select s.findings from scans s
      join sites st on st.id = s.site_id
-     where s.id = $1 and st.team_id = $2`,
-    [id, teamId],
+     where s.id = $1 and st.team_id = $2${workspaceId === undefined ? "" : " and st.workspace_id = $3"}`,
+    workspaceId === undefined ? [id, teamId] : [id, teamId, workspaceId],
   );
   if (result.rowCount === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

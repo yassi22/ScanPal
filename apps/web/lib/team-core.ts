@@ -10,7 +10,13 @@ export type AuthUser = {
 
 export type TeamResult = {
   team: { id: string; name: string };
-  membership: { team_id: string; user_id: string; role: string; status: string };
+  membership: {
+    team_id: string;
+    user_id: string;
+    role: string;
+    status: string;
+    workspace_id: string | null;
+  };
   user: { id: string; email: string; onboarding_completed_at: Date | null };
 };
 
@@ -80,7 +86,13 @@ export async function ensureUserTeam(
 
     return {
       team: team.rows[0],
-      membership: { team_id: teamId, user_id: user.id, role, status },
+      membership: {
+        team_id: teamId,
+        user_id: user.id,
+        role,
+        status,
+        workspace_id: (existing.rows[0]?.workspace_id as string | null) ?? null,
+      },
       user: userRow.rows[0],
     };
   } catch (err) {

@@ -32,7 +32,9 @@ export async function POST(
             ? 410
             : err.code === "email_mismatch"
               ? 403
-              : 400;
+              : err.code === "member_limit"
+                ? 409
+                : 400;
       return NextResponse.json({ error: err.message }, { status });
     }
     console.error("uitnodiging accepteren mislukt:", err);

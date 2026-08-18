@@ -47,13 +47,17 @@ const ACTIVE_SCAN_STATUSES = "('queued', 'running')";
 
 export async function listScanHistory(
   db: Pool,
-  input: { teamId: string; siteId?: string },
+  input: { teamId: string; siteId?: string; workspaceId?: string | null },
 ): Promise<ScanHistoryRow[]> {
   const params: unknown[] = [input.teamId];
-  let siteFilter = "";
+  const filters = ["s.team_id = $1"];
   if (input.siteId) {
     params.push(input.siteId);
-    siteFilter = `and sc.site_id = $2`;
+    filters.push(`sc.site_id = $${params.length}`);
+  }
+  if (input.workspaceId !== undefined) {
+    params.push(input.workspaceId);
+    filters.push(`s.workspace_id = $${params.length}`);
   }
 
   const result = await db.query(
@@ -62,7 +66,7 @@ export async function listScanHistory(
             sc.scheduled_for, sc.created_at, sc.completed_at
      from scans sc
      join sites s on s.id = sc.site_id
-     where s.team_id = $1 ${siteFilter}
+     where ${filters.join(" and ")}
      order by sc.created_at desc
      limit 100`,
     params,
@@ -89,6 +93,7 @@ export async function createManualScan(
     siteId: string;
     activeTests?: boolean;
     trigger?: "manual" | "deploy";
+    workspaceId?: string | null;
   },
 ): Promise<CreateScanOutcome> {
   const client = await db.connect();
@@ -98,8 +103,12 @@ export async function createManualScan(
     await client.query("begin");
 
     const site = await client.query(
-      "select url from sites where id = $1 and team_id = $2",
-      [input.siteId, input.teamId],
+      input.workspaceId === undefined
+        ? "select url from sites where id = $1 and team_id = $2"
+        : "select url from sites where id = $1 and team_id = $2 and workspace_id = $3",
+      input.workspaceId === undefined
+        ? [input.siteId, input.teamId]
+        : [input.siteId, input.teamId, input.workspaceId],
     );
     if (site.rowCount === 0) {
       await client.query("rollback");
@@ -161,7 +170,7 @@ export async function createManualScan(
  */
 export async function cancelScan(
   db: Pool,
-  input: { teamId: string; scanId: string },
+  input: { teamId: string; scanId: string; workspaceId?: string | null },
 ): Promise<ScanRowWithMeta> {
   const client = await db.connect();
   try {
@@ -171,9 +180,11 @@ export async function cancelScan(
       `select s.id, s.site_id, s.status
        from scans s
        join sites st on st.id = s.site_id
-       where s.id = $1 and st.team_id = $2
+       where s.id = $1 and st.team_id = $2${input.workspaceId === undefined ? "" : " and st.workspace_id = $3"}
        for update`,
-      [input.scanId, input.teamId],
+      input.workspaceId === undefined
+        ? [input.scanId, input.teamId]
+        : [input.scanId, input.teamId, input.workspaceId],
     );
     if (result.rowCount === 0) {
       await client.query("rollback");
@@ -226,6 +237,7 @@ export async function setSiteSchedule(
     siteId: string;
     frequency: ScanFrequency;
     now?: Date;
+    workspaceId?: string | null;
   },
 ): Promise<{ siteId: string; scan_frequency: ScanFrequency; next_scan_at: Date | null }> {
   const next =
@@ -234,9 +246,11 @@ export async function setSiteSchedule(
   const result = await db.query(
     `update sites
         set scan_frequency = $1, next_scan_at = $2
-      where id = $3 and team_id = $4
+      where id = $3 and team_id = $4${input.workspaceId === undefined ? "" : " and workspace_id = $5"}
       returning id, scan_frequency, next_scan_at`,
-    [input.frequency, next, input.siteId, input.teamId],
+    input.workspaceId === undefined
+      ? [input.frequency, next, input.siteId, input.teamId]
+      : [input.frequency, next, input.siteId, input.teamId, input.workspaceId],
   );
 
   if (result.rowCount === 0) {
@@ -299,17 +313,20 @@ export type ScanTrendSiteSummary = {
  */
 export async function getScanTrend(
   db: Pool,
-  input: { teamId: string; siteId: string; limit?: number },
+  input: { teamId: string; siteId: string; limit?: number; workspaceId?: string | null },
 ): Promise<{ site: ScanTrendSiteSummary | null; points: ScanTrendPointRow[] }> {
   const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
 
+  const siteScope = input.workspaceId === undefined ? "" : " and workspace_id = $3";
   const siteResult = await db.query(
     `select id, url, github_repo, label, public_status_slug,
        (github_webhook_secret is not null) as github_webhook_configured,
        last_scan_score, last_scanned_at
-       from sites
-      where id = $1 and team_id = $2`,
-    [input.siteId, input.teamId],
+      from sites
+      where id = $1 and team_id = $2${siteScope}`,
+    input.workspaceId === undefined
+      ? [input.siteId, input.teamId]
+      : [input.siteId, input.teamId, input.workspaceId],
   );
   if (siteResult.rowCount === 0) {
     return { site: null, points: [] };
@@ -328,9 +345,20 @@ export async function getScanTrend(
 }
 
 export function toScanJson(scan: ScanRowWithMeta) {
+  const isEmptyObject = (v: unknown) =>
+    v != null && typeof v === "object" && !Array.isArray(v) &&
+    Object.keys(v).length === 0;
   return {
     ...scan,
-    progress_details: scan.progress_details,
+    // Lege DB-defaults ('{}') zijn geen geldige contract-waarden: de
+    // dispatcher-skeleton kan nog niet geschreven zijn, crux-'{}' betekent
+    // "geen data" → null (plan 62, besluit 3) en diff-'{}' betekent "nog geen
+    // diff berekend" → undefined (plan 59: scanDiffSchema vereist alle velden).
+    progress_details:
+      isEmptyObject(scan.progress_details) ? undefined : scan.progress_details,
+    crux: isEmptyObject(scan.crux) ? null : scan.crux,
+    diff:
+      scan.diff == null || isEmptyObject(scan.diff) ? undefined : scan.diff,
     scheduled_for: scan.scheduled_for ? scan.scheduled_for.toISOString() : null,
     created_at: scan.created_at.toISOString(),
     completed_at: scan.completed_at ? scan.completed_at.toISOString() : null,

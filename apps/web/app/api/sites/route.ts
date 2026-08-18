@@ -13,6 +13,7 @@ import {
   SiteError,
   toSiteJson,
 } from "@/lib/sites-core";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
@@ -31,8 +32,9 @@ export async function GET(request: Request) {
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
-  const sites = (await listSitesWithStatus(pool, teamId)).map(toSiteJson);
+  const sites = (await listSitesWithStatus(pool, teamId, workspaceId)).map(toSiteJson);
   const parsed = siteListResponseSchema.safeParse({ sites });
   if (!parsed.success) {
     console.error("site-lijst voldoet niet aan het contract:", parsed.error);
@@ -60,6 +62,7 @@ export async function POST(request: Request) {
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const body = await request.json().catch(() => null);
   const parsed = addSiteInputSchema.safeParse(body);
@@ -90,12 +93,21 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (parsed.data.workspace_id) {
+      const workspace = await pool.query(
+        "select 1 from workspaces where id = $1 and parent_team_id = $2",
+        [parsed.data.workspace_id, teamId],
+      );
+      if (workspace.rowCount === 0) return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
+    }
     const { site, created } = await createSite(pool, {
       teamId,
       url: parsed.data.url,
       githubRepo: parsed.data.github_repo ?? null,
       label: parsed.data.label ?? null,
       reuse: parsed.data.reuse,
+      workspaceId:
+        workspaceId === undefined ? parsed.data.workspace_id : workspaceId,
     });
 
     const parsedSite = siteWithStatusSchema.safeParse(toSiteJson(site));

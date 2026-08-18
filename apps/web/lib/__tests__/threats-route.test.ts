@@ -106,6 +106,13 @@ describe("GET /api/threats", () => {
     expect(body.sites[0].site.hit_count).toBe(3);
   });
 
+  it("staat het Max-plan toe door de gate (voorheen 403 op plan-identiteit)", async () => {
+    planMock.mockResolvedValue({ id: "max" } as never);
+    overviewMock.mockResolvedValue([OVERVIEW] as never);
+    const response = await GET();
+    expect(response.status).toBe(200);
+  });
+
   it("geeft 500 als de data niet aan het contract voldoet", async () => {
     overviewMock.mockResolvedValue([
       { ...OVERVIEW, site: { ...OVERVIEW.site, enabled: "ja" } },

@@ -93,6 +93,13 @@ describe("GET /api/threats/events", () => {
     expect(response.status).toBe(400);
   });
 
+  it("staat het Max-plan toe door de gate (voorheen 403 op plan-identiteit)", async () => {
+    planMock.mockResolvedValue({ id: "max" } as never);
+    eventsMock.mockResolvedValue({ events: [], total: 0 } as never);
+    const response = await getResponse("");
+    expect(response.status).toBe(200);
+  });
+
   it("retourneert gefilterde, gepagineerde events", async () => {
     eventsMock.mockResolvedValue({ events: [EVENT], total: 1 } as never);
     const response = await getResponse("risk=high&kind=pattern&page=2&page_size=25");

@@ -1,5 +1,5 @@
 import type { Pool, PoolClient } from "pg";
-import type { PlanId, SubscriptionStatus } from "@scanpal/shared";
+import { planIdSchema, type PlanId, type SubscriptionStatus } from "@scanpal/shared";
 
 type StripeObject = {
   id?: string;
@@ -104,7 +104,10 @@ async function handleCheckoutCompleted(
   const teamId = object.metadata?.team_id;
   if (!teamId || !object.subscription) return;
 
-  const plan: PlanId = "pro";
+  // Plan komt uit checkout-metadata; legacy events zonder (of met ongeldig)
+  // plan_id vallen terug op "pro" (het historische default-plan).
+  const parsedPlan = planIdSchema.safeParse(object.metadata?.plan_id);
+  const plan: PlanId = parsedPlan.success ? parsedPlan.data : "pro";
 
   await client.query(
     `insert into subscriptions (team_id, plan, status, stripe_customer_id, stripe_subscription_id, current_period_end, updated_at)

@@ -3,7 +3,7 @@ import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { getTeamUsage } from "@/lib/credits";
 import { getSubscriptionView } from "@/lib/billing";
-import { plans } from "@scanpal/shared";
+import { plans, isPaidPlan } from "@scanpal/shared";
 import { BillingManager } from "@/components/billing-manager";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -32,7 +32,7 @@ export default async function BillingPage() {
     getSubscriptionView(pool, result.team.id),
   ]);
   const plan = plans[usage.plan.id];
-  const isPro = plan.id === "pro";
+  const isPaid = isPaidPlan(plan.id);
   const isOwner = result.membership.role === "owner";
   const usedPct = usage.creditsLimit > 0
     ? Math.min(100, Math.round((usage.creditsUsed / usage.creditsLimit) * 100))
@@ -63,11 +63,13 @@ export default async function BillingPage() {
               </span>
             </div>
             <p className="mt-2 text-sm text-slate-400">
-              {isPro
-                ? `${plan.creditsPerPeriod} scans per ${subscription.interval === "year" ? "jaar" : "maand"} · ${plan.maxMembers} teamleden · uptime & GitHub-scans`
-                : `${plan.creditsPerPeriod} scans per maand · ${plan.maxMembers} teamleden`}
+              {plan.id === "max"
+                ? `${plan.creditsPerPeriod} scans per ${subscription.interval === "year" ? "jaar" : "maand"} · ${plan.features.seats ?? plan.maxMembers} betaalde seats · white-label branding`
+                : isPaid
+                  ? `${plan.creditsPerPeriod} scans per ${subscription.interval === "year" ? "jaar" : "maand"} · ${plan.maxMembers} teamleden · uptime & GitHub-scans`
+                  : `${plan.creditsPerPeriod} scans per maand · ${plan.maxMembers} teamleden`}
             </p>
-            {isPro && (
+            {isPaid && (
               <p className="mt-1 text-xs text-slate-500">
                 {subscription.cancel_at_period_end && subscription.current_period_end
                   ? `Stopt op ${new Date(subscription.current_period_end).toLocaleDateString("nl-NL")}`
@@ -89,7 +91,7 @@ export default async function BillingPage() {
 
           <BillingManager
             isOwner={isOwner}
-            isPro={isPro}
+            isPaid={isPaid}
             subscription={subscription}
           />
         </div>

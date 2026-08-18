@@ -4,6 +4,8 @@ import { pool } from "@/lib/db";
 import { listSitesWithStatus, toSiteJson } from "@/lib/sites-core";
 import { getPlanForTeam } from "@/lib/credits";
 import { SitesManager } from "@/components/sites-manager";
+import { isPaidPlan } from "@scanpal/shared";
+import { getMembershipWorkspace } from "@/lib/workspace-scope";
 
 export default async function SitesPage() {
   const supabase = await createClient();
@@ -19,8 +21,17 @@ export default async function SitesPage() {
     auth_provider: user?.app_metadata?.provider ?? null,
   });
 
+  const scope =
+    result.membership.role === "owner"
+      ? { role: "owner", workspaceId: null }
+      : await getMembershipWorkspace(pool, { teamId: result.team.id, userId: result.user?.id ?? "" });
+
   const [sites, plan] = await Promise.all([
-    listSitesWithStatus(pool, result.team.id),
+    listSitesWithStatus(
+      pool,
+      result.team.id,
+      scope.role === "owner" ? undefined : scope.workspaceId,
+    ),
     getPlanForTeam(pool, result.team.id),
   ]);
 
@@ -34,7 +45,7 @@ export default async function SitesPage() {
       <SitesManager
         sites={sites.map(toSiteJson)}
         githubEnabled={plan.features.github}
-        schedulingEnabled={plan.id === "pro"}
+        schedulingEnabled={isPaidPlan(plan.id)}
         activeTestsEnabled={plan.features.activeTests}
         isOwner={result.membership.role === "owner"}
       />

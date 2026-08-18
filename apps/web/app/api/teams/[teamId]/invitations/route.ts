@@ -6,8 +6,10 @@ import { pool } from "@/lib/db";
 import {
   createInvitation,
   listPendingInvitations,
+  nextPlanForMemberLimit,
   InviteError,
 } from "@/lib/invites-core";
+import { getPlanForTeam } from "@/lib/credits";
 import { env } from "@/lib/env";
 import { sendInviteEmail } from "@/lib/email";
 
@@ -54,6 +56,17 @@ export async function POST(
     return NextResponse.json({ invitation }, { status: 201 });
   } catch (err) {
     if (err instanceof InviteError) {
+      if (err.code === "member_limit") {
+        const plan = await getPlanForTeam(pool, teamId);
+        const nextPlan = nextPlanForMemberLimit(plan.id);
+        return NextResponse.json(
+          {
+            error: err.message,
+            ...(nextPlan ? { upsell: { plan: nextPlan, feature: "seats" } } : {}),
+          },
+          { status: 409 },
+        );
+      }
       const status =
         err.code === "already_member" || err.code === "pending_exists" ? 409 : 400;
       return NextResponse.json({ error: err.message }, { status });

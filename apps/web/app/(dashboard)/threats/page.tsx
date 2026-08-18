@@ -8,6 +8,7 @@ import { ThreatEvents } from "@/components/threats/threat-events";
 import { ThreatsUpsell } from "@/components/threats/threats-upsell";
 import { RiskBadge } from "@/components/threats/risk-badge";
 import type { ThreatRuleKey } from "@scanpal/shared";
+import { isPaidPlan } from "@scanpal/shared";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export default async function ThreatsPage() {
   });
 
   const plan = await getPlanForTeam(pool, result.team.id);
-  if (plan.id !== "pro") {
+  if (!isPaidPlan(plan.id)) {
     return (
       <div>
         <h1 className="text-2xl font-bold">Threats</h1>

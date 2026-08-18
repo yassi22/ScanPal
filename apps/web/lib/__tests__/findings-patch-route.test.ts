@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PATCH } from "@/app/api/scans/[id]/findings/[findingId]/route";
+import { NextRequest } from "next/server";
+import { GET, PATCH } from "@/app/api/scans/[id]/findings/[findingId]/route";
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
 
@@ -48,7 +49,7 @@ function makePayload(items: unknown[] = [makeItem()]) {
 }
 
 async function patchResponse(body: unknown): Promise<Response> {
-  const request = new Request(
+  const request = new NextRequest(
     `http://localhost/api/scans/${SCAN_ID}/findings/${encodeURIComponent(FINDING_ID)}`,
     {
       method: "PATCH",
@@ -60,6 +61,69 @@ async function patchResponse(body: unknown): Promise<Response> {
     params: Promise.resolve({ id: SCAN_ID, findingId: FINDING_ID }),
   });
 }
+
+async function getResponse(): Promise<Response> {
+  const request = new NextRequest(
+    `http://localhost/api/scans/${SCAN_ID}/findings/${encodeURIComponent(FINDING_ID)}`,
+  );
+  return GET(request, {
+    params: Promise.resolve({ id: SCAN_ID, findingId: FINDING_ID }),
+  });
+}
+
+describe("GET /api/scans/[id]/findings/[findingId]", () => {
+  beforeEach(() => {
+    queryMock.mockReset();
+    requireTeamMock.mockReset();
+    sessionTeam();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("geeft 401 zonder sessie en zonder key", async () => {
+    requireTeamMock.mockResolvedValue({ ok: false, status: 401 } as never);
+    const response = await getResponse();
+    expect(response.status).toBe(401);
+  });
+
+  it("geeft 404 voor een scan die geen teamlid bezit", async () => {
+    queryMock.mockResolvedValue({ rowCount: 0, rows: [] } as never);
+    const response = await getResponse();
+    expect(response.status).toBe(404);
+  });
+
+  it("geeft 404 bij een onbekende finding-id in deze scan", async () => {
+    queryMock.mockResolvedValueOnce({
+      rowCount: 1,
+      rows: [{ findings: makePayload([makeItem({ id: "a:anders" })]) }],
+    } as never);
+    const response = await getResponse();
+    expect(response.status).toBe(404);
+  });
+
+  it("retourneert de finding-detail zonder te schrijven", async () => {
+    queryMock.mockResolvedValueOnce({
+      rowCount: 1,
+      rows: [{ findings: makePayload([makeItem()]) }],
+    } as never);
+
+    const response = await getResponse();
+    expect(response.status).toBe(200);
+
+    const body = await response.json();
+    expect(body).toMatchObject({
+      id: FINDING_ID,
+      check_id: "https",
+      severity: "high",
+      status: "open",
+    });
+
+    expect(queryMock).toHaveBeenCalledTimes(1);
+    expect(queryMock.mock.calls[0][0]).toMatch(/^select s\.findings/);
+  });
+});
 
 describe("PATCH /api/scans/[id]/findings/[findingId]", () => {
   beforeEach(() => {

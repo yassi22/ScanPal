@@ -8,6 +8,7 @@ import {
   CancelScanError,
   toScanJson,
 } from "@/lib/scans-core";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
@@ -34,11 +35,12 @@ export async function POST(
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const { id } = await params;
 
   try {
-    const scan = await cancelScan(pool, { teamId, scanId: id });
+    const scan = await cancelScan(pool, { teamId, scanId: id, workspaceId });
 
     const parsed = scanCreateResponseSchema.safeParse({
       scan: toScanJson(scan),

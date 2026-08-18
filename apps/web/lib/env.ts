@@ -17,6 +17,10 @@ const envSchema = z.object({
   STRIPE_PRICE_PRO: z.string().min(1).optional(),
   /** Jaarplan (plan 16): prijs-ID van het jaarlijkse Pro-abonnement. */
   STRIPE_PRICE_PRO_ANNUAL: z.string().min(1).optional(),
+  /** Plan 64: prijs-ID van het maandelijkse Max-abonnement. */
+  STRIPE_PRICE_MAX: z.string().min(1).optional(),
+  /** Plan 64: prijs-ID van het jaarlijkse Max-abonnement. */
+  STRIPE_PRICE_MAX_ANNUAL: z.string().min(1).optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   /** 32-byte base64 AES-GCM-sleutel voor outbound webhook-secrets (plan 15). */
   WEBHOOK_SECRET_KEY: z.string().min(1).optional(),
@@ -50,6 +54,8 @@ export const env = {
   stripeWebhookSecret: raw.STRIPE_WEBHOOK_SECRET,
   stripePricePro: raw.STRIPE_PRICE_PRO,
   stripePriceProAnnual: raw.STRIPE_PRICE_PRO_ANNUAL,
+  stripePriceMax: raw.STRIPE_PRICE_MAX,
+  stripePriceMaxAnnual: raw.STRIPE_PRICE_MAX_ANNUAL,
   stripePublishableKey: raw.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   webhookSecretKey: raw.WEBHOOK_SECRET_KEY,
   vercelWebhookSecret: raw.VERCEL_WEBHOOK_SECRET,

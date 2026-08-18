@@ -14,11 +14,11 @@ const STATUS_LABELS: Record<string, string> = {
 
 type Props = {
   isOwner: boolean;
-  isPro: boolean;
+  isPaid: boolean;
   subscription: SubscriptionView;
 };
 
-export function BillingManager({ isOwner, isPro, subscription: initial }: Props) {
+export function BillingManager({ isOwner, isPaid, subscription: initial }: Props) {
   const [subscription, setSubscription] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,15 +85,15 @@ export function BillingManager({ isOwner, isPro, subscription: initial }: Props)
     );
   }
 
-  const isProActive =
-    isPro && (subscription.status === "active" || subscription.status === "trialing");
+  const isPaidActive =
+    isPaid && (subscription.status === "active" || subscription.status === "trialing");
 
   return (
     <>
       <div className="flex flex-col items-end gap-2">
         {error && <p className="text-sm text-red-400">{error}</p>}
         {notice && <p className="text-sm text-emerald-400">{notice}</p>}
-        {isProActive && (
+        {isPaidActive && (
           <div className="flex flex-wrap justify-end gap-2">
             <PortalButton />
             {isOwner && !subscription.cancel_at_period_end && (

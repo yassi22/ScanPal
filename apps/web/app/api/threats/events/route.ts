@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { threatEventsQuerySchema, threatEventsResponseSchema } from "@scanpal/shared";
+import { threatEventsQuerySchema, threatEventsResponseSchema, isPaidPlan } from "@scanpal/shared";
 import { getSessionUser } from "@/lib/supabase/server";
 import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   }
 
   const plan = await getPlanForTeam(pool, teamId);
-  if (plan.id !== "pro") {
+  if (!isPaidPlan(plan.id)) {
     return NextResponse.json(
       {
         error: "Threat-monitoring is alleen beschikbaar op Pro.",

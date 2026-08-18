@@ -67,7 +67,8 @@ export async function GET(
      from scans s
      join sites st on st.id = s.site_id
      join memberships m on m.team_id = st.team_id
-     where s.id = $1 and m.user_id = $2`,
+     where s.id = $1 and m.user_id = $2 and m.status = 'accepted'
+       and (m.role = 'owner' or st.workspace_id = m.workspace_id)`,
     [id, user.id],
   );
 
@@ -78,14 +79,25 @@ export async function GET(
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
+      let closed = false;
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try {
+          controller.close();
+        } catch {
+          // runtime heeft de controller al gesloten (bv. client-disconnect)
+        }
+      };
+
       const send = (payload: unknown) => {
+        if (closed) return;
         const parsed = scanProgressEventSchema.safeParse(payload);
         if (!parsed.success) return;
         const { event, ...data } = parsed.data;
         controller.enqueue(encoder.encode(sseFrame(event, data)));
       };
 
-      const close = () => controller.close();
       let sentFingerprint = "";
 
       const run = async () => {
@@ -101,7 +113,8 @@ export async function GET(
              from scans s
              join sites st on st.id = s.site_id
              join memberships m on m.team_id = st.team_id
-             where s.id = $1 and m.user_id = $2`,
+             where s.id = $1 and m.user_id = $2 and m.status = 'accepted'
+               and (m.role = 'owner' or st.workspace_id = m.workspace_id)`,
             [id, user.id],
           );
           const current = row.rows[0];
@@ -165,7 +178,9 @@ export async function GET(
 
           const now = Date.now();
           if (now - lastHeartbeatAt >= HEARTBEAT_INTERVAL_MS) {
-            controller.enqueue(encoder.encode(`: ping\n\n`));
+            if (!closed) {
+              controller.enqueue(encoder.encode(`: ping\n\n`));
+            }
             lastHeartbeatAt = now;
           }
 

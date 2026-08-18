@@ -130,6 +130,7 @@ export const addSiteInputSchema = z
       .trim()
       .max(100, "Label is maximaal 100 tekens")
       .optional(),
+    workspace_id: z.string().uuid().nullable().optional(),
     reuse: z.boolean().optional(),
   })
   .superRefine((value, ctx) => {
@@ -164,12 +165,14 @@ export const updateSiteInputSchema = z
       .optional(),
     /** Plan 57: publieke statuspagina aan/uit — slug genereren/verwijderen. */
     public_status: z.object({ enabled: z.boolean() }).optional(),
+    workspace_id: z.string().uuid().nullable().optional(),
   })
   .superRefine((value, ctx) => {
     if (
       value.label === undefined &&
       value.github_repo === undefined &&
-      value.public_status === undefined
+      value.public_status === undefined &&
+      value.workspace_id === undefined
     ) {
       ctx.addIssue({
         code: "custom",
@@ -180,6 +183,7 @@ export const updateSiteInputSchema = z
 export type UpdateSiteInput = z.infer<typeof updateSiteInputSchema>;
 
 export const siteWithStatusSchema = siteSchema.extend({
+  workspace_id: z.string().uuid().nullable().optional(),
   github_repo: z.string().nullable(),
   label: z.string().nullable(),
   /** Plan 57: niet-rabare publieke status-slug (null = niet publiek). */

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const planIdSchema = z.enum(["free", "pro"]);
+export const planIdSchema = z.enum(["free", "pro", "max"]);
 export type PlanId = z.infer<typeof planIdSchema>;
 
 export const subscriptionStatusSchema = z.enum([
@@ -31,6 +31,10 @@ export type Plan = {
     activeTests: boolean;
     /** Plan 58: on-deploy triggers (GitHub/Vercel webhooks) — alleen Pro. */
     onDeploy: boolean;
+    /** Plan 64: betaalde seats (aantal) — bij Max = maxMembers; null op free/pro. */
+    seats: number | null;
+    /** Plan 64: white-label optie (eigen logo/branding) — alleen Max. */
+    white_label: boolean;
   };
 };
 
@@ -43,7 +47,14 @@ export const plans: Record<PlanId, Plan> = {
     maxMembers: 3,
     apiRatePerMinute: 60,
     maxWebhooks: 1,
-    features: { uptime: false, github: false, activeTests: false, onDeploy: false },
+    features: {
+      uptime: false,
+      github: false,
+      activeTests: false,
+      onDeploy: false,
+      seats: null,
+      white_label: false,
+    },
   },
   pro: {
     id: "pro",
@@ -54,11 +65,39 @@ export const plans: Record<PlanId, Plan> = {
     maxMembers: 10,
     apiRatePerMinute: 120,
     maxWebhooks: 3,
-    features: { uptime: true, github: true, activeTests: true, onDeploy: true },
+    features: {
+      uptime: true,
+      github: true,
+      activeTests: true,
+      onDeploy: true,
+      seats: null,
+      white_label: false,
+    },
+  },
+  max: {
+    id: "max",
+    name: "Max",
+    priceCents: 11600,
+    annualPriceCents: 116000,
+    creditsPerPeriod: 2000,
+    maxMembers: 3,
+    apiRatePerMinute: 240,
+    maxWebhooks: 3,
+    features: {
+      uptime: true,
+      github: true,
+      activeTests: true,
+      onDeploy: true,
+      seats: 3,
+      white_label: true,
+    },
   },
 };
 
-export const planList: Plan[] = [plans.free, plans.pro];
+export const planList: Plan[] = [plans.free, plans.pro, plans.max];
+
+/** Plan 64 stap 2 (MFL-20260818-008): elk plan behalve free is betaald. */
+export const isPaidPlan = (id: PlanId): boolean => id !== "free";
 
 export const publicPlanSchema = z.object({
   id: planIdSchema,
@@ -74,6 +113,8 @@ export const publicPlanSchema = z.object({
     github: z.boolean(),
     activeTests: z.boolean(),
     onDeploy: z.boolean(),
+    seats: z.number().int().positive().nullable(),
+    white_label: z.boolean(),
   }),
 });
 export type PublicPlan = z.infer<typeof publicPlanSchema>;

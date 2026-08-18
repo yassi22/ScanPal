@@ -210,7 +210,7 @@ describe("PATCH /api/billing/subscription", () => {
 
     const response = await subPATCH(jsonRequest("http://localhost/api/billing/subscription", { interval: "year" }));
     expect(response.status).toBe(200);
-    expect(switchMock).toHaveBeenCalledWith("sub_1", "year");
+    expect(switchMock).toHaveBeenCalledWith("sub_1", "year", "pro");
     const body = await response.json();
     expect(body.subscription.interval).toBe("year");
   });
@@ -266,6 +266,22 @@ describe("POST /api/billing/checkout", () => {
     expect(checkoutMock).toHaveBeenCalledWith(
       expect.objectContaining({ teamId: TEAM_ID, planId: "pro" }),
       "year",
+    );
+  });
+
+  it("200: checkout met het max-plan", async () => {
+    getSessionMock.mockResolvedValue({ id: "user-1", email: "a@b.nl" } as never);
+    ensureTeamMock.mockResolvedValue({ team: { id: TEAM_ID, name: "Team" } } as never);
+    getSubMock.mockResolvedValue(PRO_SUB as never);
+    checkoutMock.mockResolvedValue({ url: "https://checkout.stripe.com/mx" } as never);
+
+    const response = await checkoutPOST(jsonRequest("http://localhost/api/billing/checkout", { planId: "max", interval: "month" }));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.url).toBe("https://checkout.stripe.com/mx");
+    expect(checkoutMock).toHaveBeenCalledWith(
+      expect.objectContaining({ teamId: TEAM_ID, planId: "max" }),
+      "month",
     );
   });
 

@@ -25,6 +25,9 @@ export function resolvePlanFromPrice(priceId: string | undefined): PlanId | null
   if (priceId && (priceId === env.stripePricePro || priceId === env.stripePriceProAnnual)) {
     return "pro";
   }
+  if (priceId && (priceId === env.stripePriceMax || priceId === env.stripePriceMaxAnnual)) {
+    return "max";
+  }
   return null;
 }
 
@@ -41,7 +44,14 @@ export async function createCheckoutSession(
   interval: SubscriptionInterval = "month",
 ): Promise<{ url: string }> {
   const stripe = getStripe();
-  const price = interval === "year" ? env.stripePriceProAnnual : env.stripePricePro;
+  const price =
+    input.planId === "max"
+      ? interval === "year"
+        ? env.stripePriceMaxAnnual
+        : env.stripePriceMax
+      : interval === "year"
+        ? env.stripePriceProAnnual
+        : env.stripePricePro;
   if (!price) throw new BillingNotConfiguredError();
 
   const params: Stripe.Checkout.SessionCreateParams = {
@@ -256,13 +266,23 @@ export async function reactivateSubscription(subscriptionId: string): Promise<vo
   });
 }
 
-/** Plan-wissel maand↔jaar via de items-price (met pro-rating). */
+/** Plan-wissel maand↔jaar via de items-price (met pro-rating). De prijsparen
+ *  hangen af van het huidige plan (pro/max) zodat een Max-abonnement op de
+ *  Max-prices blijft. */
 export async function switchSubscriptionInterval(
   subscriptionId: string,
   interval: SubscriptionInterval,
+  planId: PlanId,
 ): Promise<void> {
   const stripe = getStripe();
-  const price = interval === "year" ? env.stripePriceProAnnual : env.stripePricePro;
+  const price =
+    planId === "max"
+      ? interval === "year"
+        ? env.stripePriceMaxAnnual
+        : env.stripePriceMax
+      : interval === "year"
+        ? env.stripePriceProAnnual
+        : env.stripePricePro;
   if (!price) throw new BillingNotConfiguredError();
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);

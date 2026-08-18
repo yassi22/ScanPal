@@ -15,6 +15,7 @@ import {
   ScanError,
   toScanJson,
 } from "@/lib/scans-core";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const body = await request.json().catch(() => null);
   const parsed = scanTriggerInputSchema.safeParse(body);
@@ -63,6 +65,7 @@ export async function POST(request: Request) {
       teamId,
       siteId: parsed.data.site_id,
       activeTests: parsed.data.active_tests,
+      workspaceId,
     });
 
     // Queue-modus (plan 27): enqueue + 202 — de worker-pipeline voert de scan
@@ -73,7 +76,10 @@ export async function POST(request: Request) {
       scan: toScanJson(scan),
     });
     if (!parsedScan.success) {
-      throw new Error("scan voldoet niet aan het contract");
+      throw new Error(
+        "scan voldoet niet aan het contract: " +
+          JSON.stringify(parsedScan.error.issues),
+      );
     }
 
     return NextResponse.json(parsedScan.data, { status: 202 });
@@ -122,11 +128,12 @@ export async function GET(request: Request) {
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const url = new URL(request.url);
   const siteId = url.searchParams.get("site_id") ?? undefined;
 
-  const rows = await listScanHistory(pool, { teamId, siteId });
+  const rows = await listScanHistory(pool, { teamId, siteId, workspaceId });
   const scans: ScanListItem[] = rows.map((row) => ({
     ...row,
     scheduled_for: row.scheduled_for ? row.scheduled_for.toISOString() : null,

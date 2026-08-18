@@ -129,8 +129,8 @@ function fakePool() {
   return { db, subscriptions, webhookEvents };
 }
 
-const resolveProPrice = (priceId: string | undefined) =>
-  priceId === "price_pro" ? ("pro" as const) : null;
+const resolvePlanFromPrice = (priceId: string | undefined) =>
+  priceId === "price_pro" ? ("pro" as const) : priceId === "price_max" ? ("max" as const) : null;
 
 function checkoutEvent(overrides: Partial<StripeWebhookEvent["data"]["object"]> = {}): StripeWebhookEvent {
   return {
@@ -156,7 +156,7 @@ describe("processStripeEvent", () => {
   });
 
   it("activeert een Pro-abonnement na checkout.session.completed", async () => {
-    const outcome = await processStripeEvent(state.db, checkoutEvent(), resolveProPrice);
+    const outcome = await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
     expect(outcome).toBe("processed");
     expect(state.subscriptions).toHaveLength(1);
@@ -171,9 +171,53 @@ describe("processStripeEvent", () => {
     expect(state.webhookEvents).toEqual(["evt_checkout"]);
   });
 
+  it("activeert een Max-abonnement op basis van metadata.plan_id", async () => {
+    const outcome = await processStripeEvent(
+      state.db,
+      checkoutEvent({ metadata: { team_id: "team-2", plan_id: "max" } }),
+      resolvePlanFromPrice,
+    );
+
+    expect(outcome).toBe("processed");
+    expect(state.subscriptions).toHaveLength(1);
+    expect(state.subscriptions[0]).toMatchObject({
+      team_id: "team-2",
+      plan: "max",
+      status: "active",
+    });
+  });
+
+  it("valt terug op pro bij een legacy checkout zonder plan_id", async () => {
+    const outcome = await processStripeEvent(
+      state.db,
+      checkoutEvent({ metadata: { team_id: "team-3" } }),
+      resolvePlanFromPrice,
+    );
+
+    expect(outcome).toBe("processed");
+    expect(state.subscriptions[0]).toMatchObject({
+      team_id: "team-3",
+      plan: "pro",
+    });
+  });
+
+  it("valt terug op pro bij een ongeldig plan_id", async () => {
+    const outcome = await processStripeEvent(
+      state.db,
+      checkoutEvent({ metadata: { team_id: "team-4", plan_id: "enterprise" } }),
+      resolvePlanFromPrice,
+    );
+
+    expect(outcome).toBe("processed");
+    expect(state.subscriptions[0]).toMatchObject({
+      team_id: "team-4",
+      plan: "pro",
+    });
+  });
+
   it("is idempotent: een dubbele event geeft geen dubbele verwerking", async () => {
-    await processStripeEvent(state.db, checkoutEvent(), resolveProPrice);
-    const second = await processStripeEvent(state.db, checkoutEvent(), resolveProPrice);
+    await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
+    const second = await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
     expect(second).toBe("duplicate");
     expect(state.subscriptions).toHaveLength(1);
@@ -181,7 +225,7 @@ describe("processStripeEvent", () => {
   });
 
   it("syncs status en periode bij customer.subscription.updated", async () => {
-    await processStripeEvent(state.db, checkoutEvent(), resolveProPrice);
+    await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
     const periodEnd = new Date("2026-09-15T00:00:00.000Z");
     const outcome = await processStripeEvent(
@@ -199,7 +243,7 @@ describe("processStripeEvent", () => {
           },
         },
       },
-      resolveProPrice,
+      resolvePlanFromPrice,
     );
 
     expect(outcome).toBe("processed");
@@ -210,7 +254,7 @@ describe("processStripeEvent", () => {
   });
 
   it("verwerkt customer.subscription.deleted als geannuleerd", async () => {
-    await processStripeEvent(state.db, checkoutEvent(), resolveProPrice);
+    await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
     const outcome = await processStripeEvent(
       state.db,
@@ -221,7 +265,7 @@ describe("processStripeEvent", () => {
           object: { id: "sub_1", customer: "cus_1", status: "canceled" },
         },
       },
-      resolveProPrice,
+      resolvePlanFromPrice,
     );
 
     expect(outcome).toBe("processed");
@@ -236,7 +280,7 @@ describe("processStripeEvent", () => {
         type: "invoice.payment_succeeded",
         data: { object: { id: "in_1" } },
       },
-      resolveProPrice,
+      resolvePlanFromPrice,
     );
 
     expect(outcome).toBe("ignored");
@@ -247,7 +291,7 @@ describe("processStripeEvent", () => {
     const outcome = await processStripeEvent(
       state.db,
       checkoutEvent({ metadata: {} }),
-      resolveProPrice,
+      resolvePlanFromPrice,
     );
 
     expect(outcome).toBe("processed");
@@ -255,7 +299,7 @@ describe("processStripeEvent", () => {
   });
 
   it("syncs cancel_at_period_end en interval bij subscription.updated", async () => {
-    await processStripeEvent(state.db, checkoutEvent(), resolveProPrice);
+    await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
     const outcome = await processStripeEvent(
       state.db,
@@ -275,7 +319,7 @@ describe("processStripeEvent", () => {
           },
         },
       },
-      resolveProPrice,
+      resolvePlanFromPrice,
     );
 
     expect(outcome).toBe("processed");
@@ -285,7 +329,7 @@ describe("processStripeEvent", () => {
   });
 
   it("verandert interval niet als het webhook-object het niet bevat", async () => {
-    await processStripeEvent(state.db, checkoutEvent(), resolveProPrice);
+    await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
     await processStripeEvent(
       state.db,
@@ -302,14 +346,14 @@ describe("processStripeEvent", () => {
           },
         },
       },
-      resolveProPrice,
+      resolvePlanFromPrice,
     );
 
     expect(state.subscriptions[0].interval).toBe("month");
   });
 
   it("verwerkt invoice.payment_failed idempotent (voor de notificatie)", async () => {
-    await processStripeEvent(state.db, checkoutEvent(), resolveProPrice);
+    await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
     const invoiceEvent = {
       id: "evt_invoice_payment_failed",
@@ -319,8 +363,8 @@ describe("processStripeEvent", () => {
       },
     };
 
-    const first = await processStripeEvent(state.db, invoiceEvent, resolveProPrice);
-    const second = await processStripeEvent(state.db, invoiceEvent, resolveProPrice);
+    const first = await processStripeEvent(state.db, invoiceEvent, resolvePlanFromPrice);
+    const second = await processStripeEvent(state.db, invoiceEvent, resolvePlanFromPrice);
 
     expect(first).toBe("processed");
     expect(second).toBe("duplicate");
@@ -331,7 +375,7 @@ describe("processStripeEvent", () => {
   });
 
   it("vindt de team-id van een stripe-customer", async () => {
-    await processStripeEvent(state.db, checkoutEvent(), resolveProPrice);
+    await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
     const teamId = await findTeamIdByStripeCustomer(state.db, "cus_1");
     expect(teamId).toBe("team-1");
@@ -350,7 +394,7 @@ describe("processStripeEvent", () => {
           object: { id: "sub_ghost", customer: "cus_ghost", status: "canceled" },
         },
       },
-      resolveProPrice,
+      resolvePlanFromPrice,
     );
 
     expect(outcome).toBe("processed");

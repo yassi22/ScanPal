@@ -95,6 +95,16 @@ describe("POST /api/sites/[id]/honeypot", () => {
     expect(response.status).toBe(400);
   });
 
+  it("staat het Max-plan toe door de gate (voorheen 403 op plan-identiteit)", async () => {
+    planMock.mockResolvedValue({ id: "max" } as never);
+    setHoneypotMock.mockResolvedValue({
+      view: HONEYPOT,
+      snippet: { html: "", url: "https://scanpal.app/h/abc" },
+    } as never);
+    const response = await postResponse({ enabled: true });
+    expect(response.status).toBe(200);
+  });
+
   it("zet de honeypot en retourneert view + snippet", async () => {
     setHoneypotMock.mockResolvedValue({
       view: HONEYPOT,

@@ -2,7 +2,7 @@
 
 **Doel**: Het Max-plan compleet maken — 3 team-seats inbegrepen (uitbreidbaar), client-workspaces met een klantportaal (delen van rapporten via token-URL) en white-label-rapporten (eigen logo/branding, geen ScanPal-naam). Dit is CheckVibe's Max: "3 team seats, white-label reports, client workspaces + portal, commercial client use & report resale".
 
-**Status**: Nog niet gestart.
+**Status**: ✅ Afgerond 2026-08-18.
 
 ## Besluiten (bevestigd 2026-08-16)
 
@@ -36,14 +36,15 @@
 
 ## Open vragen
 
-- Seats-definitie: "actief" = uitgenodigd + geaccepteerd, of ook owners — en telt de owner zelf mee (3 seats incl. owner)?
-- Rapporten-token: per scan (eenvoudig, expireerbaar) of per site (portaal met alle rapporten)? — voorstel per scan + site-overzicht later
-- Workspace-rollen: eigen owner/member-rol binnen een workspace, of één rol (member) volstaat?
+- ✅ Seats-definitie: geaccepteerde memberships inclusief owner; pending invites reserveren capaciteit.
+- ✅ Rapporten-token: per scan, 16 bytes entropie in 32 lowercase hex-tekens, met optionele expiry.
+- ✅ Workspace-rollen: bestaande teamrol blijft leidend; een member krijgt maximaal één workspace, owner ziet alle workspaces.
+- ✅ Branding bij `hide_branding`: geldt voor PDF, Markdown en het publieke rapport; de publieke statuspagina blijft een aparte, niet-rapport-brandingflow.
 
 ## Acceptatiecriteria
 
-- [ ] Max-plan heeft 3 seats; invite bij limiet → 409 + upsell; downgrade werkt (actieve members vallen niet weg, invites stoppen)
-- [ ] White-label-branding (logo, kleur, naam, hide-branding) zit in PDF en MD; geen ScanPal-naam bij `hide_branding`
-- [ ] Workspaces bestaan, sites hangen eraan en membership-scoping werkt (member ziet alleen de eigen workspace)
-- [ ] Portaal-token geeft read-only, gemaskeerd, gebrandingd rapport; noindex + rate limited; brute-force-proof tokens
-- [ ] Licentie-link naar Terms in de UI; geen hardcoded juridische claims in code
+- [x] Max-plan heeft 3 seats; invite bij limiet → 409 + upsell; downgrade werkt (actieve members vallen niet weg, invites stoppen)
+- [x] White-label-branding (logo, kleur, naam, hide-branding) zit in PDF en MD; geen ScanPal-naam bij `hide_branding`
+- [x] Workspaces bestaan, sites hangen eraan en membership-scoping werkt (member ziet alleen de eigen workspace)
+- [x] Portaal-token geeft read-only, gemaskeerd, gebrandingd rapport; noindex + rate limited; brute-force-proof tokens
+- [x] Licentie-link naar Terms in de UI; geen hardcoded juridische claims in code

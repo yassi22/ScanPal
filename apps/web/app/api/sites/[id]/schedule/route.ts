@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { siteScheduleSchema } from "@scanpal/shared";
+import { siteScheduleSchema, isPaidPlan } from "@scanpal/shared";
 import { getSessionUser } from "@/lib/supabase/server";
 import { pool } from "@/lib/db";
 import { getPlanForTeam } from "@/lib/credits";
@@ -13,13 +13,17 @@ async function authorizeSite(siteId: string) {
   if (!user) return null;
 
   const result = await pool.query(
-    `select s.team_id from sites s
+    `select s.team_id, m.role, m.workspace_id from sites s
      join memberships m on m.team_id = s.team_id
-     where s.id = $1 and m.user_id = $2 and m.status = 'accepted'`,
+     where s.id = $1 and m.user_id = $2 and m.status = 'accepted'
+       and (m.role = 'owner' or s.workspace_id = m.workspace_id)`,
     [siteId, user.id],
   );
   if (result.rowCount === 0) return null;
-  return result.rows[0].team_id as string;
+  return {
+    teamId: result.rows[0].team_id as string,
+    workspaceId: result.rows[0].role === "owner" ? undefined : (result.rows[0].workspace_id as string | null),
+  };
 }
 
 export async function PATCH(
@@ -27,8 +31,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const teamId = await authorizeSite(id);
-  if (!teamId) {
+  const authorization = await authorizeSite(id);
+  if (!authorization) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -42,8 +46,8 @@ export async function PATCH(
   }
 
   if (parsed.data.frequency !== "none") {
-    const plan = await getPlanForTeam(pool, teamId);
-    if (plan.id !== "pro") {
+    const plan = await getPlanForTeam(pool, authorization.teamId);
+    if (!isPaidPlan(plan.id)) {
       return NextResponse.json(
         {
           error: "Geplande scans zijn alleen beschikbaar op Pro.",
@@ -57,9 +61,10 @@ export async function PATCH(
 
   try {
     const schedule = await setSiteSchedule(pool, {
-      teamId,
+      teamId: authorization.teamId,
       siteId: id,
       frequency: parsed.data.frequency,
+      workspaceId: authorization.workspaceId,
     });
     return NextResponse.json({ schedule });
   } catch (err) {
