@@ -45,6 +45,13 @@ webhooks ── webhook_deliveries (outbox) · reports (opgeslagen exports, plan
 - Types exported from `src/index.ts` are the compile-time contract; runtime
   shapes are validated with `packages/shared` zod schemas.
 - No secrets in migrations or seeds.
+- RLS (migratie 024): tabellen met team-data hebben RLS + select-policies
+  volgens de app-laag-regels (teamleden lezen team-data, alleen de eigen
+  users-rij, api_keys/api_key_usage default-deny). De app-pool-rol
+  (BYPASSRLS) is niet geraakt; RLS is de grens voor niet-bypassende rollen
+  (PostgREST/anon). Gebruik `public.is_team_member`/`is_team_owner`
+  (security definer) in nieuwe policies — nooit direct op memberships
+  subquery-en in een policy (recursie).
 
 ## Commands
 
