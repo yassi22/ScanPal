@@ -19,6 +19,7 @@ never duplicate the SQL in `apps/*`. Pure math lives in `packages/shared`
 | `src/finish-scan.ts` | `setSiteScanState` (site-status-cache) + `finishScan` (finaliseert completed/failed, race-guard op `canceled`, schrijft `category_scores` + `scans.diff`) |
 | `src/scan-diff.ts` | Plan 59: `findCleanSnapshot` (laatste schone scan van de site) + `computeAndWriteScanDiff` (diff-berekening binnen de finish-transactie, `regressed`-flags + `"next-scan"`-snooze-sentinels verbruiken) |
 | `src/build-findings.ts` | `buildFindingsFromChecks` — `checks`-rijen → versioned findings-payload (plan 27, besluit 5) |
+| `src/crux.ts` | Plan 62: `writeScanCrux` (http-worker schrijft `scans.crux`, geen ad-hoc SQL) + `upsertDerivedFinding` (aggregator schrijft de `crux-divergence`-finding als extra checks-rij) |
 | `src/finding-status.ts` | `carryOverFindingStatuses` — fixed/ignored overnemen uit de vorige scan (plan 09) |
 | `src/notifications.ts` | `emitScanFinishedNotifications` — scan_done / critical_finding via `packages/notify` (send injected) |
 | `src/credits.ts` | `spendCredit` / `refundCredit` / plan-gating (subscription state) |

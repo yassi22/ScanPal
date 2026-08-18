@@ -19,6 +19,7 @@ BullMQ.
 | `src/scoring.ts` | Category scores (`categoryScoresSchema`) + `categoryScoresFromFindings` (pass-ratio per categorie) + `overallScoreFromFindings` (plan 08/27) |
 | `src/report.ts` | Export-contract (plan 10): `reportFormatSchema`, `reportDataSchema`, `reportMetaSchema`, `reportListResponseSchema`, `reportListQuerySchema` |
 | `src/fix-prompt.ts` | AI fix-prompts (plan 60): `fixPromptSchema` (`{prompt, findings_covered, truncated}`), `fixPromptTemplates` per check-id + fallback, `buildFindingFixPrompt`/`buildScanFixPrompt` (grouping per bestand/route, ~1500-token-truncatie), `findingLocation`/`extractFilePath`, `estimateTokens` |
+| `src/crux.ts` | Plan 62 CrUX field data: `cruxMetricSchema`/`cruxDataSchema`/`cruxEvidenceSchema`/`cruxDivergenceEvidenceSchema`, `computeCruxDivergences` (drempels: LCP > 1s, INP > 200ms, CLS > 0,1), `CRUX_VITAL_LABELS` |
 | `src/index.ts` | Re-exports |
 
 ## Rules

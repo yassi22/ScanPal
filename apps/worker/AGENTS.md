@@ -64,9 +64,26 @@ mapper converts them to v1 findings.
 
 Registry (`src/checks/registry.ts`): queue → implemented checks. The http
 queue already runs reachability, https, security-headers, meta-tags,
-secrets-in-bundles and the active-tests bundle (plan 52); browser/github
-queues are empty until features 41–43 / 46–49. `skeletonTotals` computes the
-progress totals per category (active-tests only when the scan flag is on).
+secrets-in-bundles, the active-tests bundle (plan 52), aeo-engine-matrix
+(plan 55), compliance (plan 61) en crux-field-data (plan 62 — CrUX History
+API-call, schrijft `scans.crux` via scan-core, 24u Redis-cache per origin);
+browser/github queues are empty until features 41–43 / 46–49.
+`skeletonTotals` computes the progress totals per category (active-tests only
+when the scan flag is on).
+
+## CrUX field data (plan 62)
+
+- Client in `src/lib/crux.ts`: `POST records:queryHistoryRecord` (History API),
+  parse + normalisatie naar `cruxDataSchema` (p75 + fracties per vital),
+  Redis-cache 24u per origin (ook negatieve 404-resultaten), 429/5xx/network-
+  errors → null (check faalt nooit hard). API-key via env `CRUX_API_KEY`
+  (zonder key → info-finding).
+- Check `src/checks/http/crux-field-data.ts` (categorie aeo in de http-worker):
+  schrijft `scans.crux` via `writeScanCrux`; geen data → info-finding, geen
+  score-straf. `GET /api/scans/[id]` retourneert hetzelfde veld.
+- Divergentie in de aggregator (`queues/aggregate.ts`, na álle children):
+  `computeCruxDivergences` (shared) → `crux-divergence`-finding (medium) met
+  lab- en field-waarden, geschreven via `upsertDerivedFinding`.
 
 ## Uptime worker (feature 50)
 

@@ -116,7 +116,7 @@ docker-compose.yml
 
 ## Data model (core tables)
 
-`users` · `teams` · `memberships` · `sites` · `scans` (status, progress, scores) ·
+`users` · `teams` · `memberships` · `sites` · `scans` (status, progress, scores, `crux` JSONB — plan 62) ·
 `findings` (JSONB) · `checks` · `uptime_events` · `threat_honeypots`/`threat_events`/`threat_rules` ·
 `api_keys` · `subscriptions` · `notifications` · `webhooks`/`webhook_deliveries` (outbound, plan 15)
 

@@ -2,7 +2,7 @@
 
 **Doel**: Chrome UX Report (CrUX)-fielddata toevoegen naast de lab-Core Web Vitals (41): per vital de p75-waarde en de good/needs-improvement/poor-fracties van echte Chrome-gebruikers, met een lab/field-divergentie-flag. Dit is CheckVibe's "field data, not lab guesses — the same real-user data Google ranks with".
 
-**Status**: Nog niet gestart.
+**Status**: ✅ Klaar (2026-08-18) — `scans.crux`, check in de http-worker, divergentie-finding in de aggregator, UI-kaart lab vs field. Trend-endpoint (v2) is bewust niet gebouwd; de data ligt klaar in `scans.crux`.
 
 ## Besluiten (bevestigd 2026-08-16)
 
@@ -37,13 +37,13 @@
 
 ## Open vragen
 
-- CrUX dekt alleen Chrome-gebruikers op voldoende bezochte origins — acceptabel als "field", of is de dekking-limiet juist een verkooppunt (probeer het te meten)?
-- History API vs dataset-API: History heeft een periode-array (handig voor trends) maar andere response-shape — welke API-versie als basis?
-- Lab-vs-field vergelijken is eerlijk over dezelfde route/URL; de lab-check meet nu de homepage — top-routes (54) later ook?
+- ~~CrUX dekt alleen Chrome-gebruikers op voldoende bezochte origins — acceptabel als "field", of is de dekking-limiet juist een verkooppunt (probeer het te meten)?~~ → **Besloten**: dekking is een feit en wordt eerlijk gecommuniceerd ("geen field data beschikbaar" info-finding, geen score-straf). Voldoende-bezochte origins zijn juist de betalende doelgroep — dekking is een verkooppunt.
+- ~~History API vs dataset-API: History heeft een periode-array (handig voor trends) maar andere response-shape — welke API-versie als basis?~~ → **Besloten**: History API (`queryHistoryRecord`); de huidige periode komt in `scans.crux`, `metrics.*.history` blijft beschikbaar voor de trend-uitbreiding.
+- ~~Lab-vs-field vergelijken is eerlijk over dezelfde route/URL; de lab-check meet nu de homepage — top-routes (54) later ook?~~ → **Besloten**: crux is origin-level en wordt gemeten op de homepage-seed, hetzelfde pad als de lab-CWV-check. Top-routes (54) blijven een latere uitbreiding.
 
 ## Acceptatiecriteria
 
-- [ ] Elke scan haalt field-data op (waar beschikbaar) en slaat `scans.crux` op; geen data → info-finding, geen score-straf
-- [ ] Lab/field-divergentie boven de drempels levert een `crux-divergence`-finding met beide waarden
-- [ ] Max 1 API-call per scan per site; 24u-cache; 429/rate-limit wordt netjes afgehandeld (check faalt niet hard)
-- [ ] UI toont p75 + fracties side-by-side; trends kunnen het veld hergebruiken
+- [x] Elke scan haalt field-data op (waar beschikbaar) en slaat `scans.crux` op; geen data → info-finding, geen score-straf
+- [x] Lab/field-divergentie boven de drempels levert een `crux-divergence`-finding met beide waarden
+- [x] Max 1 API-call per scan per site; 24u-cache; 429/rate-limit wordt netjes afgehandeld (check faalt niet hard)
+- [x] UI toont p75 + fracties side-by-side; trends kunnen het veld hergebruiken

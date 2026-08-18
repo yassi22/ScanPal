@@ -15,6 +15,8 @@ export type ScanRowWithMeta = {
   category_scores: Record<string, unknown> | null;
   /** Plan 59: diff t.o.v. de laatste schone snapshot (scanDiffSchema). */
   diff: Record<string, unknown>;
+  /** Plan 62: CrUX field data; null/leeg = geen dekking. */
+  crux: Record<string, unknown> | null;
   active_tests: boolean;
   trigger: ScanTrigger;
   scheduled_for: Date | null;
