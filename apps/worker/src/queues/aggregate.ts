@@ -2,16 +2,27 @@ import type { Pool } from "pg";
 import type { NotifyInput } from "@scanpal/notify";
 import {
   categoryScoresFromFindings,
+  computeCruxDivergences,
   countAtOrAbove,
+  CRUX_VITAL_LABELS,
+  cruxDataSchema,
+  cwvEvidenceSchema,
+  findingId,
   findingsPayloadSchema,
   overallScoreFromFindings,
   scanDiffSchema,
+  type CruxData,
+  type CruxDivergence,
+  type CruxDivergenceEvidence,
+  type Finding,
+  type LabCwv,
   type SeverityCounts,
 } from "@scanpal/shared";
 import {
   buildFindingsFromChecks,
   emitScanFinishedNotifications,
   finishScan,
+  upsertDerivedFinding,
   type CheckRow,
 } from "@scanpal/scan-core";
 import type { ScanJobData } from "./index";
@@ -50,6 +61,78 @@ async function previousScore(
 }
 
 /**
+ * Plan 62 — lab-waarden uit de core-web-vitals-check (browser-worker). De
+ * check-rij is pas gegarandeerd aanwezig als álle children klaar zijn — de
+ * aggregator draait daarom na de fan-out (divergentie hoort hier, niet in de
+ * http-check die parallel aan de browser-check loopt).
+ */
+function labCwvFromChecks(rows: CheckRow[]): LabCwv | null {
+  const row = rows.find((r) => r.check_id === "core-web-vitals");
+  if (!row?.finding) return null;
+  const evidence = (row.finding as { evidence?: unknown }).evidence;
+  const parsed = cwvEvidenceSchema.safeParse(evidence);
+  if (!parsed.success) return null;
+  return {
+    lcp_ms: parsed.data.lcp_ms,
+    cls: parsed.data.cls,
+    inp_ms: parsed.data.inp_ms,
+  };
+}
+
+function formatVitalValue(vital: CruxDivergence["vital"], value: number | null): string {
+  if (value === null) return "—";
+  return vital === "cls" ? String(value) : `${Math.round(value)} ms`;
+}
+
+function describeDivergences(divergences: CruxDivergence[]): string {
+  return divergences
+    .map(
+      (d) =>
+        `${CRUX_VITAL_LABELS[d.vital]}: lab ${formatVitalValue(d.vital, d.lab_value)} vs field ${formatVitalValue(d.vital, d.field_value)} (drempel ${d.threshold})`,
+    )
+    .join(", ");
+}
+
+/**
+ * Plan 62 (besluit 4): lab/field-divergentie → finding `crux-divergence`
+ * (medium) met beide waarden — "divergence is the diagnosis". De finding is
+ * afgeleid (geen catalog-check): de progress-skeleton telt alleen
+ * `crux-field-data`; de aggregator schrijft de finding als extra checks-rij.
+ */
+export function buildCruxDivergenceFinding(input: {
+  lab: LabCwv;
+  crux: CruxData;
+  divergences: CruxDivergence[];
+  now: string;
+}): Finding {
+  const title = "Lab- en field-metingen wijken af";
+  const evidence: CruxDivergenceEvidence = {
+    kind: "crux-divergence",
+    lab: input.lab,
+    field: input.crux,
+    divergences: input.divergences,
+  };
+  return {
+    id: findingId("crux-divergence", title),
+    check_id: "crux-divergence",
+    category: "aeo",
+    severity: "medium",
+    title,
+    description: `De lab-metingen wijken af van de CrUX field-data van echte Chrome-gebruikers (${describeDivergences(input.divergences)}). Divergentie betekent dat de lab-meting de werkelijkheid niet representeert — Google rankt op field data.`,
+    remediation:
+      "Reproduceer de field-condities lokaal (throttled netwerk/CPU, mobiel profiel, echte route) en optimaliseer op de field-p75-waarden. Controleer ook of de lab-check dezelfde route en omstandigheden meet als het echte verkeer.",
+    evidence,
+    active: false,
+    status: "open",
+    note: null,
+    route_url: null,
+    regressed: false,
+    snooze_until: null,
+    created_at: input.now,
+  };
+}
+
+/**
  * Aggregator (plan 27, stap 7): draait pas als álle children compleet zijn
  * (flow-semantiek). Bouwt de finale findings-payload uit de `checks`-rijen,
  * valideert met `findingsPayloadSchema`, berekent overall + per-categorie
@@ -76,6 +159,33 @@ export function createAggregateProcessor(
        from checks where scan_id = $1`,
       [scanId],
     );
+
+    // Plan 62: lab/field-divergentie (na álle children — scans.crux en de
+    // core-web-vitals-check zijn dan gegarandeerd geschreven).
+    const cruxResult = await db.query<{ crux: unknown }>(
+      "select crux from scans where id = $1",
+      [scanId],
+    );
+    const cruxParsed = cruxDataSchema.safeParse(cruxResult.rows[0]?.crux);
+    const crux: CruxData | null = cruxParsed.success ? cruxParsed.data : null;
+    const lab = labCwvFromChecks(checks.rows);
+    const divergences = computeCruxDivergences(lab, crux);
+    if (divergences.length > 0 && lab && crux) {
+      const finding = buildCruxDivergenceFinding({
+        lab,
+        crux,
+        divergences,
+        now: new Date().toISOString(),
+      });
+      await upsertDerivedFinding(db, { scanId, finding });
+      checks.rows.push({
+        check_id: finding.check_id,
+        category: finding.category,
+        status: "warn",
+        severity: finding.severity,
+        finding,
+      });
+    }
 
     const findings = buildFindingsFromChecks(checks.rows);
     const parsed = findingsPayloadSchema.safeParse(findings);

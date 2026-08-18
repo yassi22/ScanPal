@@ -6,6 +6,8 @@ import {
 } from "@scanpal/shared";
 import type { RateLimiter } from "../rate-limit";
 import type { CheckContext } from "./types";
+import type { Redis } from "ioredis";
+import type { Pool } from "pg";
 import { reachabilityCheck } from "./http/reachability";
 import { httpsCheck } from "./http/https";
 import { tlsCertCheck } from "./http/tls-cert";
@@ -18,6 +20,7 @@ import { secretsInHtmlCheck } from "./http/secrets-in-html";
 import { createActiveTestsCheck } from "./http/active-tests";
 import { corsCheck } from "./http/cors";
 import { aeoEngineMatrixCheck } from "./http/aeo-engine-matrix";
+import { createCruxFieldDataCheck } from "./http/crux-field-data";
 import { COMPLIANCE_CHECK_IDS, complianceCheck } from "./http/compliance";
 import { stackDetectionCheck } from "./http/stack-detection";
 import { redirectsMixedCheck } from "./http/redirects-mixed";
@@ -63,6 +66,7 @@ function toImplemented(
 export function buildRegistry(
   rateLimit: RateLimiter,
   browserRunner: BrowserRunner,
+  cruxDeps: { redis: Redis; db: Pool },
 ): Record<QueueName, ImplementedCheck[]> {
   return {
     http: [
@@ -81,6 +85,9 @@ export function buildRegistry(
       // Plan 55: AEO per-engine matrix draait in de http-worker (geen browser
       // nodig); catalog-categorie is aeo (progress wordt via http voortgeschoven).
       toImplemented(aeoEngineMatrixCheck),
+      // Plan 62: CrUX field data — pure REST-call in de http-worker (categorie
+      // aeo); schrijft scans.crux via scan-core; geen data → info-finding.
+      toImplemented(createCruxFieldDataCheck(cruxDeps)),
       // Plan 61: compliance-pijler (passief, homepage-only). Eén implementatie
       // produceert de vijf compliance-check-ids; categorie-compliance.
       toImplemented(complianceCheck, [...COMPLIANCE_CHECK_IDS]),

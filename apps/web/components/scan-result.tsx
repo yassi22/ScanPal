@@ -8,10 +8,14 @@ import {
   categoryLabels,
   checksForCategory,
   COMPLIANCE_DISCLAIMER,
+  computeCruxDivergences,
   scanCategories,
   type CategoryProgress,
+  type CruxData,
+  type CwvEvidence,
   type EngineMatrixEvidence,
   type Finding,
+  type LabCwv,
   type ScanCategory,
   type SeverityCounts,
 } from "@scanpal/shared";
@@ -274,6 +278,179 @@ function ComplianceSection({ items }: { items: Finding[] }) {
   );
 }
 
+function isCwvEvidence(evidence: Finding["evidence"]): evidence is CwvEvidence {
+  return (
+    evidence !== null &&
+    typeof evidence === "object" &&
+    "kind" in evidence &&
+    evidence.kind === "core-web-vitals"
+  );
+}
+
+const CRUX_VITALS = [
+  { key: "lcp", label: "LCP", name: "Largest Contentful Paint" },
+  { key: "inp", label: "INP", name: "Interaction to Next Paint" },
+  { key: "cls", label: "CLS", name: "Cumulative Layout Shift" },
+] as const;
+
+type CruxVitalKey = (typeof CRUX_VITALS)[number]["key"];
+
+function vitalLabValue(lab: LabCwv, key: CruxVitalKey): number | null {
+  if (key === "lcp") return lab.lcp_ms;
+  if (key === "inp") return lab.inp_ms;
+  return lab.cls;
+}
+
+function formatVital(value: number | null, key: CruxVitalKey): string {
+  if (value === null) return "—";
+  if (key === "cls") return String(value);
+  return value >= 1000 ? `${(value / 1000).toFixed(1)} s` : `${value} ms`;
+}
+
+function FractionBar({
+  good,
+  ni,
+  poor,
+}: {
+  good: number | null;
+  ni: number | null;
+  poor: number | null;
+}) {
+  const segments = [
+    { value: good ?? 0, className: "bg-emerald-500" },
+    { value: ni ?? 0, className: "bg-amber-500" },
+    { value: poor ?? 0, className: "bg-red-500" },
+  ];
+  const total = segments.reduce((sum, segment) => sum + segment.value, 0) || 1;
+  return (
+    <div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-800">
+      {segments.map((segment, index) => (
+        <div
+          key={index}
+          className={segment.className}
+          style={{ width: `${Math.max((segment.value / total) * 100, segment.value > 0 ? 2 : 0)}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Plan 62 — CrUX field data: lab vs field side-by-side per vital (p75 +
+ * good/needs-improvement/poor-fracties van echte Chrome-gebruikers) met een
+ * divergentie-badge waar lab en field boven de drempel afwijken. Geen
+ * CrUX-dekking → uitleg in plaats van een score-straf (besluit 3).
+ */
+function CruxSection({ items, crux }: { items: Finding[]; crux: CruxData | null }) {
+  const finding = items.find(
+    (item) => item.check_id === "core-web-vitals" && !item.active,
+  );
+  const lab: LabCwv | null =
+    finding && isCwvEvidence(finding.evidence)
+      ? {
+          lcp_ms: finding.evidence.lcp_ms,
+          cls: finding.evidence.cls,
+          inp_ms: finding.evidence.inp_ms,
+        }
+      : null;
+
+  if (!lab && !crux) return null;
+
+  const divergences = computeCruxDivergences(lab, crux);
+  const divergedVitals = new Set(divergences.map((d) => d.vital));
+
+  return (
+    <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-bold">Prestatie: lab vs field</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-sky-400">
+            Field data (CrUX)
+          </span>
+          {divergences.length > 0 && (
+            <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">
+              {divergences.length} divergentie(s) — zie findings
+            </span>
+          )}
+        </div>
+      </div>
+      <p className="mt-1 text-xs text-slate-500">
+        Lab = Playwright-meting in deze scan; field = p75 van echte
+        Chrome-gebruikers (Chrome UX Report, periode {crux?.collection_period ?? "—"}).
+        Google rankt op field data, niet op lab-guesses.
+      </p>
+
+      {!crux && (
+        <p className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
+          Geen field data beschikbaar — CrUX dekt alleen voldoende bezochte
+          origins (laag verkeer of nieuw domein). Geen score-straf.
+        </p>
+      )}
+
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-slate-800 text-left text-xs text-slate-500">
+              <th className="py-2 pr-4 font-semibold">Vital</th>
+              <th className="py-2 pr-4 font-semibold">Lab</th>
+              <th className="py-2 pr-4 font-semibold">Field p75</th>
+              <th className="py-2 pr-4 font-semibold">Field fracties</th>
+              <th className="py-2 font-semibold">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {CRUX_VITALS.map(({ key, label, name }) => {
+              const metric = crux?.metrics[key];
+              const labValue = lab ? vitalLabValue(lab, key) : null;
+              return (
+                <tr key={key} className="border-b border-slate-800/60 align-middle">
+                  <td className="py-2.5 pr-4">
+                    <p className="font-semibold text-slate-200">{label}</p>
+                    <p className="text-xs text-slate-500">{name}</p>
+                  </td>
+                  <td className="py-2.5 pr-4 font-medium text-slate-300">
+                    {formatVital(labValue, key)}
+                  </td>
+                  <td className="py-2.5 pr-4 font-medium text-slate-200">
+                    {metric ? formatVital(metric.p75, key) : "—"}
+                  </td>
+                  <td className="py-2.5 pr-4">
+                    {metric ? (
+                      <div className="max-w-56 space-y-1">
+                        <FractionBar
+                          good={metric.good}
+                          ni={metric.needs_improvement}
+                          poor={metric.poor}
+                        />
+                        <p className="text-[10px] text-slate-500">
+                          good {Math.round((metric.good ?? 0) * 100)}% · ni{" "}
+                          {Math.round((metric.needs_improvement ?? 0) * 100)}% · poor{" "}
+                          {Math.round((metric.poor ?? 0) * 100)}%
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-600">—</span>
+                    )}
+                  </td>
+                  <td className="py-2.5">
+                    {divergedVitals.has(key) ? (
+                      <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
+                        Afwijkend
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-600">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function ReachBadge({ ok }: { ok: boolean }) {
   return ok ? (
     <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
@@ -398,6 +575,45 @@ function ExportMenu({ scanId }: { scanId: string }) {
   );
 }
 
+function ShareReportButton({ scanId }: { scanId: string }) {
+  const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function share() {
+    setLoading(true);
+    setMessage(null);
+    try {
+      const response = await fetch(`/api/reports/${scanId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error ?? "Link maken mislukt");
+      await navigator.clipboard.writeText(data.url);
+      setMessage("Link gekopieerd");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Link maken mislukt");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={share}
+        disabled={loading}
+        className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 disabled:opacity-50"
+      >
+        {loading ? "Link maken…" : "Publieke link"}
+      </button>
+      {message && <span className="text-xs text-slate-400">{message}</span>}
+    </div>
+  );
+}
+
 function CategoryCard({
   category,
   progress,
@@ -517,7 +733,7 @@ function ProgressView({ state }: { state: ScanViewState }) {
           <CategoryCard
             key={category}
             category={category}
-            progress={details?.categories[category]}
+            progress={details?.categories?.[category]}
           />
         ))}
       </div>
@@ -655,7 +871,12 @@ export function ScanResultView({
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge status={state.status} />
-          {state.status === "completed" && <ExportMenu scanId={scanId} />}
+          {state.status === "completed" && (
+            <>
+              <ShareReportButton scanId={scanId} />
+              <ExportMenu scanId={scanId} />
+            </>
+          )}
         </div>
       </div>
 
@@ -721,6 +942,8 @@ export function ScanResultView({
               <ActiveTestsSection items={findingsItems} />
 
               <EngineMatrixSection items={findingsItems} />
+
+              <CruxSection items={findingsItems} crux={state.crux} />
 
               <ComplianceSection items={findingsItems} />
 

@@ -110,6 +110,8 @@ export type ScanRow = {
   progress_details: Record<string, unknown>;
   score: number | null;
   findings: Record<string, unknown>;
+  /** Plan 62: CrUX field data (cruxDataSchema uit packages/shared). */
+  crux: Record<string, unknown>;
   /** Plan 59: diff t.o.v. de laatste schone snapshot (scanDiffSchema). */
   diff: Record<string, unknown>;
   active_tests: boolean;

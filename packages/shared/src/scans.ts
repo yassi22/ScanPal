@@ -3,6 +3,7 @@ import { scanStatusSchema } from "./sites";
 import { progressDetailsSchema } from "./scan-progress";
 import { categoryScoresSchema } from "./scoring";
 import { scanDiffSchema } from "./diff";
+import { cruxDataSchema } from "./crux";
 
 export const scanFrequencySchema = z.enum(["none", "daily", "weekly"]);
 export type ScanFrequency = z.infer<typeof scanFrequencySchema>;
@@ -20,6 +21,8 @@ export const scanSchema = z.object({
   findings: z.record(z.string(), z.unknown()).default({}),
   /** Plan 59: diff t.o.v. de laatste schone snapshot (scanDiffSchema). */
   diff: scanDiffSchema.optional(),
+  /** Plan 62: CrUX field data (cruxDataSchema); null = geen dekking. */
+  crux: cruxDataSchema.nullable().optional(),
   active_tests: z.boolean().default(false),
   trigger: scanTriggerSchema,
   scheduled_for: z.string().datetime().nullable(),

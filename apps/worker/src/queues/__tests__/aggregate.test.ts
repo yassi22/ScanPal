@@ -8,12 +8,18 @@ vi.mock("@scanpal/scan-core", async (importOriginal) => {
     ...actual,
     finishScan: vi.fn(),
     emitScanFinishedNotifications: vi.fn(),
+    upsertDerivedFinding: vi.fn(),
   };
 });
 
-import { finishScan, emitScanFinishedNotifications } from "@scanpal/scan-core";
+import {
+  finishScan,
+  emitScanFinishedNotifications,
+  upsertDerivedFinding,
+} from "@scanpal/scan-core";
 const mockedFinish = vi.mocked(finishScan);
 const mockedEmit = vi.mocked(emitScanFinishedNotifications);
+const mockedUpsertDerived = vi.mocked(upsertDerivedFinding);
 
 const CHECK_ROWS = [
   {
@@ -38,7 +44,11 @@ const CHECK_ROWS = [
   },
 ];
 
-function fakeDb(scan: Record<string, unknown> | null, checks: unknown[] = []) {
+function fakeDb(
+  scan: Record<string, unknown> | null,
+  checks: unknown[] = [],
+  crux: unknown = null,
+) {
   const db = {
     query: async (sql: string, _params: unknown[] = []) => {
       const text = sql.replace(/\s+/g, " ").trim();
@@ -47,6 +57,9 @@ function fakeDb(scan: Record<string, unknown> | null, checks: unknown[] = []) {
       }
       if (text.startsWith("select check_id, category, status, severity, finding")) {
         return { rowCount: checks.length, rows: checks };
+      }
+      if (text.startsWith("select crux from scans")) {
+        return { rowCount: 1, rows: [{ crux }] };
       }
       if (text.startsWith("select score from scans")) {
         return { rowCount: 0, rows: [] };
@@ -195,5 +208,99 @@ describe("createAggregateProcessor", () => {
 
     expect(mockedEmit).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("voegt een crux-divergence-finding toe bij lab/field-divergentie (plan 62)", async () => {
+    const scan = { site_id: "site-1", team_id: "team-1", url: "example.com", label: null };
+    const cwvRow = {
+      check_id: "core-web-vitals",
+      category: "aeo",
+      status: "warn",
+      severity: "medium",
+      finding: {
+        id: "core-web-vitals:core-web-vitals",
+        check_id: "core-web-vitals",
+        category: "aeo",
+        severity: "medium",
+        title: "Core Web Vitals",
+        description: "",
+        remediation: "",
+        evidence: {
+          kind: "core-web-vitals",
+          lcp_ms: 3600,
+          cls: 0.05,
+          inp_ms: 150,
+          ratings: {
+            lcp: "needs-improvement",
+            cls: "good",
+            inp: "good",
+          },
+        },
+        active: false,
+        status: "open",
+        note: null,
+        route_url: null,
+        regressed: false,
+        snooze_until: null,
+        created_at: "2026-08-17T10:00:00.000Z",
+      },
+    };
+    const crux = {
+      origin: "https://example.com",
+      collection_period: "2026-07",
+      metrics: {
+        lcp: { p75: 2000, good: 0.8, needs_improvement: 0.1, poor: 0.1 },
+        inp: { p75: 180, good: 0.8, needs_improvement: 0.15, poor: 0.05 },
+        cls: { p75: 0.05, good: 0.85, needs_improvement: 0.1, poor: 0.05 },
+      },
+    };
+    const { db } = fakeDb(scan, [cwvRow], crux);
+    mockedFinish.mockResolvedValue({
+      id: "scan-1",
+      status: "completed",
+      trigger: "schedule",
+      score: 25,
+      diff: makeDiff(),
+      findings: { v: 1, items: [] },
+    } as never);
+
+    const processor = createAggregateProcessor(db, notify, () => {});
+    await processor({ data: { scanId: "scan-1" } });
+
+    expect(mockedUpsertDerived).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ scanId: "scan-1" }),
+    );
+    const finishCall = mockedFinish.mock.calls[0][1] as unknown as {
+      findings: { items: unknown[] };
+    };
+    const items = finishCall.findings.items as {
+      check_id: string;
+      severity: string;
+      evidence?: { kind: string; divergences: unknown[] };
+    }[];
+    const divergence = items.find((f) => f.check_id === "crux-divergence");
+    expect(divergence).toBeDefined();
+    expect(divergence!.severity).toBe("medium");
+    expect(divergence!.evidence?.kind).toBe("crux-divergence");
+    expect(divergence!.evidence?.divergences).toHaveLength(1);
+  });
+
+  it("geen crux-divergence-finding zonder divergentie", async () => {
+    const scan = { site_id: "site-1", team_id: "team-1", url: "example.com", label: null };
+    const { db } = fakeDb(scan, CHECK_ROWS, null);
+    mockedFinish.mockResolvedValue({
+      id: "scan-1",
+      status: "completed",
+      trigger: "schedule",
+      score: 25,
+      diff: makeDiff(),
+      findings: { v: 1, items: [] },
+    } as never);
+
+    const processor = createAggregateProcessor(db, notify, () => {});
+    await processor({ data: { scanId: "scan-1" } });
+
+    expect(mockedUpsertDerived).not.toHaveBeenCalled();
   });
 });

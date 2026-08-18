@@ -56,6 +56,13 @@ import {
   type CwvEvidence,
 } from "./browser-vitals";
 import {
+  cruxEvidenceSchema,
+  cruxDivergenceEvidenceSchema,
+  CRUX_VITAL_LABELS,
+  type CruxEvidence,
+  type CruxDivergenceEvidence,
+} from "./crux";
+import {
   axeEvidenceSchema,
   type AxeEvidence,
 } from "./accessibility";
@@ -123,6 +130,8 @@ export const findingSchema = z.object({
       gitleaksEvidenceSchema,
       osvEvidenceSchema,
       cwvEvidenceSchema,
+      cruxEvidenceSchema,
+      cruxDivergenceEvidenceSchema,
       axeEvidenceSchema,
       consoleEvidenceSchema,
       responsiveEvidenceSchema,
@@ -279,6 +288,8 @@ export type InlineCheckLike = {
     | GitleaksEvidence
     | OsvEvidence
     | CwvEvidence
+    | CruxEvidence
+    | CruxDivergenceEvidence
     | AxeEvidence
     | ConsoleEvidence
     | ResponsiveEvidence
@@ -308,6 +319,8 @@ export function evidenceText(
     | GitleaksEvidence
     | OsvEvidence
     | CwvEvidence
+    | CruxEvidence
+    | CruxDivergenceEvidence
     | AxeEvidence
     | ConsoleEvidence
     | ResponsiveEvidence
@@ -317,6 +330,18 @@ export function evidenceText(
   if (!evidence) return "";
   if (typeof evidence === "string") return evidence;
   if ("kind" in evidence) {
+    if (evidence.kind === "crux-field-data") {
+      const m = evidence.data.metrics;
+      return `lcp p75=${m.lcp.p75} (good ${m.lcp.good}, ni ${m.lcp.needs_improvement}, poor ${m.lcp.poor}) | inp p75=${m.inp.p75} (good ${m.inp.good}, ni ${m.inp.needs_improvement}, poor ${m.inp.poor}) | cls p75=${m.cls.p75} (good ${m.cls.good}, ni ${m.cls.needs_improvement}, poor ${m.cls.poor})`;
+    }
+    if (evidence.kind === "crux-divergence") {
+      return evidence.divergences
+        .map(
+          (d) =>
+            `${CRUX_VITAL_LABELS[d.vital]} lab=${d.lab_value} field=${d.field_value} (delta ${d.delta}, drempel ${d.threshold})`,
+        )
+        .join(" | ");
+    }
     if (evidence.kind === "bundle-secrets") {
       return evidence.matches
         .map(

@@ -22,6 +22,8 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
   RESEND_FROM: z.string().default("ScanPal <no-reply@scanpal.dev>"),
   APP_URL: z.url().optional().default("http://localhost:3000"),
+  /** Plan 62: CrUX-API-key (Google, gratis). Zonder key → geen field data. */
+  CRUX_API_KEY: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

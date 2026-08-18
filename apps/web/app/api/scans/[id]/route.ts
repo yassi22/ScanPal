@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { cruxDataSchema } from "@scanpal/shared";
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
 import { summarizeFindings } from "@/lib/scan-progress";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
@@ -24,14 +26,15 @@ export async function GET(
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const { id } = await params;
 
   const result = await pool.query(
     `select s.*, st.url as site_url from scans s
      join sites st on st.id = s.site_id
-     where s.id = $1 and st.team_id = $2`,
-    [id, teamId],
+     where s.id = $1 and st.team_id = $2${workspaceId === undefined ? "" : " and st.workspace_id = $3"}`,
+    workspaceId === undefined ? [id, teamId] : [id, teamId, workspaceId],
   );
 
   if (result.rowCount === 0) {
@@ -48,6 +51,9 @@ export async function GET(
     [id],
   );
 
+  // Plan 62: CrUX field data (cruxDataSchema); ongeldig/'{}'-default → null.
+  const cruxParsed = cruxDataSchema.safeParse(row.crux);
+
   return NextResponse.json({
     id: row.id,
     site_id: row.site_id,
@@ -58,6 +64,7 @@ export async function GET(
     score: row.score,
     findings,
     diff: row.diff ?? {},
+    crux: cruxParsed.success ? cruxParsed.data : null,
     summary:
       row.status === "completed" ? summarizeFindings(findings) : null,
     error:

@@ -1,5 +1,6 @@
 import {
   scanProgressEventSchema,
+  type CruxData,
   type ProgressDetails,
   type SeverityCounts,
 } from "@scanpal/shared";
@@ -14,6 +15,8 @@ export type ScanViewState = {
   error: string | null;
   /** Plan 54: aantal ontdekte routes (route-teller tijdens de scan). */
   routeCount: number | null;
+  /** Plan 62: CrUX field data (null = geen dekking). */
+  crux: CruxData | null;
   completedAt: string | null;
 };
 
@@ -36,6 +39,7 @@ type ScanResponse = {
   summary: SeverityCounts | null;
   error: string | null;
   route_count?: number | null;
+  crux?: CruxData | null;
   completed_at: string | null;
 };
 
@@ -82,6 +86,7 @@ export function createScanProgressController(
       summary: d.summary ?? null,
       error: d.error ?? null,
       routeCount: d.route_count ?? null,
+      crux: d.crux ?? null,
       completedAt: d.completed_at ?? null,
     };
   }

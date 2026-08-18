@@ -34,7 +34,10 @@ export function startScanWorkers(deps: WorkerDeps): WorkerHandle {
 
   const rateLimiter = createRateLimiter(deps.redis);
   const browserRunner = createPlaywrightRunner();
-  const registry = buildRegistry(rateLimiter, browserRunner);
+  const registry = buildRegistry(rateLimiter, browserRunner, {
+    redis: deps.redis,
+    db: deps.db,
+  });
   const flowProducer = new FlowProducer(connection);
   const crawlQueue = new Queue(QUEUES.crawl, { connection: deps.redis });
 

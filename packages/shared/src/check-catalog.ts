@@ -59,6 +59,10 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // markeert (enige aeo-check die vandaag draait).
   { id: "aeo-engine-matrix", category: "aeo", name: "AEO engine-matrix & llms.txt", active: false },
   { id: "core-web-vitals", category: "aeo", name: "Core Web Vitals", active: false },
+  // Plan 62: CrUX field data (real-user CWV) — draait in de http-worker
+  // (pure REST-call, geen browser); categorie aeo (subcheck van de
+  // performance-groep). Geen data → info-finding, geen score-straf.
+  { id: "crux-field-data", category: "aeo", name: "CrUX field data (real-user CWV)", active: false },
   { id: "accessibility", category: "aeo", name: "Accessibility (axe-core)", active: false },
   { id: "aeo-scan", category: "aeo", name: "AEO-content & LLM-parsability", active: false },
   // Feature 44: console-errors + network-failures via Playwright (aeo).

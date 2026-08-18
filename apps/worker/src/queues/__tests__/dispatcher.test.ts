@@ -35,6 +35,7 @@ function fakeCrawlQueue() {
 }
 
 const rateLimit = {} as never;
+const cruxDeps = { redis: {}, db: {} } as never;
 const mockRunner: BrowserRunner = {
   captureVitals: () => Promise.resolve({ ok: false, error: "mock" }),
   runAxe: () => Promise.resolve({ ok: false, error: "mock" }),
@@ -42,7 +43,7 @@ const mockRunner: BrowserRunner = {
   captureResponsive: () => Promise.resolve({ ok: false, error: "mock" }),
   captureRenderCompare: () => Promise.resolve({ ok: false, error: "mock" }),
 };
-const registry = buildRegistry(rateLimit, mockRunner);
+const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
 
 describe("createDispatcherProcessor (plan 54)", () => {
   beforeEach(() => {
