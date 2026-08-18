@@ -9,7 +9,10 @@ import {
 import type { CheckImplementation } from "../types";
 import { cloneRepo, runSastTool } from "./sast-runner";
 
-const SEMGREP_IMAGE = process.env.SEMGREP_IMAGE ?? "returntocorp/semgrep:latest";
+// Image gepind op een concrete versie i.p.v. `:latest` (supply-chain: de
+// worker draait op aanvaller-beïnvloede repo-content); env-override blijft.
+const SEMGREP_IMAGE =
+  process.env.SEMGREP_IMAGE ?? "returntocorp/semgrep:1.110.1";
 
 function parseJsonSafe(text: string): unknown {
   if (!text) return null;
@@ -73,6 +76,8 @@ export const semgrepCheck: CheckImplementation = {
         image: SEMGREP_IMAGE,
         repoDir: clone.dir,
         args: ["semgrep", "--json", "--config", "auto", "/repo"],
+        // `--config auto` haalt de registry-rules op; netwerk daarom aan.
+        network: "default",
       });
       if (!res.ok) {
         return [

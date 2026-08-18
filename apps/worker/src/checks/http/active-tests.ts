@@ -16,6 +16,7 @@ import {
   type InlineCheckLike,
 } from "@scanpal/shared";
 import type { CheckImplementation, CheckContext } from "../types";
+import { fetchPage, redirectChainOf } from "../types";
 import type { RateLimiter } from "../../rate-limit";
 
 type ActiveTestOutput = InlineCheckLike & {
@@ -38,24 +39,20 @@ async function probeGet(
   );
   if (!rate.ok) return null;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ACTIVE_TEST_LIMITS.timeoutMs);
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: controller.signal,
-      headers: { "User-Agent": "ScanPal/0.1 (+https://scanpal.dev)" },
-    });
+    // Via fetchPage: SSRF-guard (private/loopback targets geweigerd, ook per
+    // redirect-hop) + byte-cap. De gevolgde redirect-ketting blijft leesbaar
+    // via `redirectChainOf` voor de open-redirect-detectie.
+    const res = await fetchPage(url, { timeoutMs: ACTIVE_TEST_LIMITS.timeoutMs });
     const body = await res.text().catch(() => "");
+    const chain = redirectChainOf(res);
     return {
       status: res.status,
       body,
-      location: res.headers.get("location"),
+      location: chain.length > 0 ? chain[0] : null,
     };
   } catch {
     return null;
-  } finally {
-    clearTimeout(timer);
   }
 }
 

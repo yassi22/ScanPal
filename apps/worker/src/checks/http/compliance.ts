@@ -334,11 +334,17 @@ export const complianceCheck: CheckImplementation = {
         const res = await fetchPage(ctx.url, {
           timeoutMs: COMPLIANCE_LIMITS.fetchTimeoutMs,
         });
-        const contentType = res.headers.get("content-type") ?? "";
-        if (!contentType.includes("text/html")) {
-          fetchError = `geen HTML-pagina (${contentType || "onbekend content-type"})`;
+        // HTTP-statuscheck vóór analyse: een 404/500-errorpagina is niet "de
+        // echte homepage" — die analyseren zou onterechte pass/warn geven.
+        if (res.status >= 400) {
+          fetchError = `HTTP ${res.status}`;
         } else {
-          html = await res.text();
+          const contentType = res.headers.get("content-type") ?? "";
+          if (!contentType.includes("text/html")) {
+            fetchError = `geen HTML-pagina (${contentType || "onbekend content-type"})`;
+          } else {
+            html = await res.text();
+          }
         }
       }
     } catch (err) {

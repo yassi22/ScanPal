@@ -9,7 +9,10 @@ import {
 import type { CheckImplementation } from "../types";
 import { cloneRepo, runSastTool } from "./sast-runner";
 
-const GITLEAKS_IMAGE = process.env.GITLEAKS_IMAGE ?? "zricethezav/gitleaks:latest";
+// Image gepind op een concrete versie i.p.v. `:latest` (supply-chain);
+// env-override blijft.
+const GITLEAKS_IMAGE =
+  process.env.GITLEAKS_IMAGE ?? "zricethezav/gitleaks:v8.24.0";
 
 function parseJsonSafe(text: string): unknown {
   if (!text) return null;

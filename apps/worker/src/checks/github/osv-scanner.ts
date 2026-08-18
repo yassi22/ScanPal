@@ -9,7 +9,10 @@ import {
 import type { CheckImplementation } from "../types";
 import { cloneRepo, runSastTool } from "./sast-runner";
 
-const OSV_IMAGE = process.env.OSV_SCANNER_IMAGE ?? "google/osv-scanner:latest";
+// Image gepind op een concrete versie i.p.v. `:latest` (supply-chain);
+// env-override blijft.
+const OSV_IMAGE =
+  process.env.OSV_SCANNER_IMAGE ?? "ghcr.io/google/osv-scanner:v1.9.2";
 
 function parseJsonSafe(text: string): unknown {
   if (!text) return null;
@@ -75,6 +78,8 @@ export const osvScannerCheck: CheckImplementation = {
         image: OSV_IMAGE,
         repoDir: clone.dir,
         args: ["--json", "--recursive", "/repo"],
+        // OSV bevraagt api.osv.dev voor kwetsbaarheden; netwerk daarom aan.
+        network: "default",
       });
       if (!res.ok) {
         return [

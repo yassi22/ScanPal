@@ -1,6 +1,7 @@
 import tls from "node:tls";
 import { checkById, type InlineCheckLike } from "@scanpal/shared";
 import type { CheckImplementation } from "../types";
+import { assertOutboundAllowed } from "../types";
 
 const RATE_LIMIT_WINDOW_SECONDS = 60;
 const RATE_LIMIT_PER_HOST_PER_MINUTE = 10;
@@ -277,7 +278,20 @@ export const tlsCertCheck: CheckImplementation = {
     }
 
     const host = parsed.hostname;
+    // Alleen poort 443: de check meet het TLS-certificaat van de site. Een
+    // aanvaller-gekozen poort zou de worker als interne portscanner
+    // misbruiken (SSRF via rauwe socket).
     const port = parsed.port ? Number(parsed.port) : 443;
+    if (port !== 443) {
+      return [
+        {
+          id: "tls-cert",
+          name,
+          status: "info",
+          detail: "TLS niet controleerbaar: alleen poort 443 wordt gemeten.",
+        },
+      ];
+    }
 
     const rate = await ctx.rateLimit(
       `tls-cert:${host}`,
@@ -291,6 +305,20 @@ export const tlsCertCheck: CheckImplementation = {
           name,
           status: "info",
           detail: `TLS niet controleerbaar: rate-limit (probeer opnieuw over ${rate.retryAfterSeconds}s).`,
+        },
+      ];
+    }
+
+    // SSRF-guard (zoals alle outbound fetches): private/loopback/link-local
+    // targets (incl. via DNS-resolutie) worden geweigerd.
+    const blocked = await assertOutboundAllowed(`https://${host}:443`);
+    if (blocked) {
+      return [
+        {
+          id: "tls-cert",
+          name,
+          status: "info",
+          detail: `TLS niet controleerbaar: target geweigerd (${blocked}).`,
         },
       ];
     }

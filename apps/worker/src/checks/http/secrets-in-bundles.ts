@@ -13,6 +13,7 @@ import {
   type InlineCheckLike,
 } from "@scanpal/shared";
 import type { CheckImplementation } from "../types";
+import { fetchPage } from "../types";
 import type { RateLimiter } from "../../rate-limit";
 
 type DownloadResult =
@@ -35,55 +36,24 @@ async function downloadText(
   );
   if (!rate.ok) return { ok: false, reason: "rate-limited", detail: "rate-limit" };
 
-  const controller = new AbortController();
-  const timer = setTimeout(
-    () => controller.abort(),
-    BUNDLE_SCAN_LIMITS.downloadTimeoutMs,
-  );
   try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      redirect: "follow",
-      headers: { "User-Agent": "ScanPal/0.1 (+https://scanpal.dev)" },
+    // Via fetchPage: SSRF-guard (private targets geweigerd, ook per redirect-
+    // hop) + byte-cap van 5 MB in de body-stream.
+    const res = await fetchPage(url, {
+      timeoutMs: BUNDLE_SCAN_LIMITS.downloadTimeoutMs,
+      maxBytes: BUNDLE_SCAN_LIMITS.maxBundleBytes,
     });
     if (!res.ok) {
       return { ok: false, reason: "error", detail: `HTTP ${res.status}` };
     }
-    const contentLength = Number(res.headers.get("content-length") ?? 0);
-    if (contentLength > BUNDLE_SCAN_LIMITS.maxBundleBytes) {
-      return {
-        ok: false,
-        reason: "too-large",
-        detail: `${contentLength} bytes`,
-      };
+    const text = await res.text();
+    return { ok: true, text };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes("exceeds")) {
+      return { ok: false, reason: "too-large", detail: "> 5 MB" };
     }
-    if (!res.body) {
-      return { ok: false, reason: "error", detail: "geen response-body" };
-    }
-
-    const reader = res.body.getReader();
-    const chunks: Uint8Array[] = [];
-    let received = 0;
-    let tooLarge = false;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      received += value.byteLength;
-      if (received > BUNDLE_SCAN_LIMITS.maxBundleBytes) {
-        tooLarge = true;
-        await reader.cancel().catch(() => undefined);
-        break;
-      }
-      chunks.push(value);
-    }
-    if (tooLarge) {
-      return { ok: false, reason: "too-large", detail: `${received} bytes` };
-    }
-    return { ok: true, text: Buffer.concat(chunks).toString("utf8") };
-  } catch {
     return { ok: false, reason: "error", detail: "download mislukt" };
-  } finally {
-    clearTimeout(timer);
   }
 }
 
@@ -125,10 +95,7 @@ export function createSecretsInBundlesCheck(
     async run(ctx): Promise<InlineCheckLike[]> {
       let html = "";
       try {
-        const page = await fetch(ctx.url, {
-          redirect: "follow",
-          headers: { "User-Agent": "ScanPal/0.1 (+https://scanpal.dev)" },
-        });
+        const page = await fetchPage(ctx.url, { timeoutMs: 10_000 });
         const contentType = page.headers.get("content-type") ?? "";
         if (contentType.includes("text/html")) {
           html = await page.text();
