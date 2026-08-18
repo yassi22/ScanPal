@@ -75,6 +75,7 @@ export async function listReports(
   input: {
     teamId: string;
     siteId?: string;
+    workspaceId?: string | null;
     cursor?: { created_at: string; id: string } | null;
     limit?: number;
   },
@@ -88,6 +89,11 @@ export async function listReports(
   if (input.siteId) {
     params.push(input.siteId);
     siteFilter = `and r.site_id = $${paramIndex}`;
+    paramIndex += 1;
+  }
+  if (input.workspaceId !== undefined) {
+    params.push(input.workspaceId);
+    siteFilter += ` and s.workspace_id = $${paramIndex}`;
     paramIndex += 1;
   }
   if (input.cursor) {
@@ -126,14 +132,17 @@ export async function listReports(
 /** Opgeslagen bytes voor een download — geen regeneratie (besluit 6-route). */
 export async function getReportContent(
   db: Pool,
-  input: { teamId: string; reportId: string },
+    input: { teamId: string; reportId: string; workspaceId?: string | null },
 ): Promise<StoredReport | null> {
+  const scope = input.workspaceId === undefined ? "" : " and s.workspace_id = $3";
   const result = await db.query(
     `select r.format, r.filename, r.content
      from reports r
      join sites s on s.id = r.site_id
-     where r.id = $1 and s.team_id = $2`,
-    [input.reportId, input.teamId],
+     where r.id = $1 and s.team_id = $2${scope}`,
+    input.workspaceId === undefined
+      ? [input.reportId, input.teamId]
+      : [input.reportId, input.teamId, input.workspaceId],
   );
   if (result.rowCount === 0) return null;
   const row = result.rows[0];

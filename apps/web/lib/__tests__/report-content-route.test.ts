@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { GET } from "@/app/api/reports/[id]/content/route";
+import { GET } from "@/app/api/reports/[scanId]/content/route";
 import { requireTeam } from "@/lib/api-auth";
 import { getReportContent } from "@/lib/report/store";
 
@@ -32,21 +32,21 @@ beforeEach(() => {
   } as never);
 });
 
-describe("GET /api/reports/[id]/content", () => {
+describe("GET /api/reports/[scanId]/content", () => {
   it("geeft 401 zonder auth", async () => {
     requireTeamMock.mockResolvedValue({ ok: false, status: 401 } as never);
-    const res = await GET(request(), { params: Promise.resolve({ id: REPORT_ID }) });
+    const res = await GET(request(), { params: Promise.resolve({ scanId: REPORT_ID }) });
     expect(res.status).toBe(401);
   });
 
   it("geeft 404 voor een rapport buiten het team", async () => {
     getReportContentMock.mockResolvedValue(null);
-    const res = await GET(request(), { params: Promise.resolve({ id: REPORT_ID }) });
+    const res = await GET(request(), { params: Promise.resolve({ scanId: REPORT_ID }) });
     expect(res.status).toBe(404);
   });
 
   it("retourneert de opgeslagen bytes + filename zonder regeneratie", async () => {
-    const res = await GET(request(), { params: Promise.resolve({ id: REPORT_ID }) });
+    const res = await GET(request(), { params: Promise.resolve({ scanId: REPORT_ID }) });
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/markdown");
     expect(res.headers.get("content-disposition")).toBe(
@@ -62,7 +62,7 @@ describe("GET /api/reports/[id]/content", () => {
       filename: "scanpal-x-2026-08-15.pdf",
       content: pdf,
     } as never);
-    const res = await GET(request(), { params: Promise.resolve({ id: REPORT_ID }) });
+    const res = await GET(request(), { params: Promise.resolve({ scanId: REPORT_ID }) });
     expect(res.headers.get("content-type")).toContain("application/pdf");
     expect(Buffer.from(await res.arrayBuffer()).toString()).toBe("%PDF-1.7 test");
   });

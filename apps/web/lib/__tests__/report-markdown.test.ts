@@ -121,4 +121,20 @@ describe("renderMarkdown", () => {
     expect(md).toContain("### Fix prompt 1");
     expect(md).toContain("Fix the HTTPS issue.");
   });
+
+  it("gebruikt white-label tokens en verwijdert ScanPal bij hide_branding", () => {
+    const md = renderMarkdown(
+      makeRenderData({}, undefined, undefined, {
+        logo_url: "https://example.com/logo.png",
+        primary_color: "#123456",
+        report_name: "Acme Security",
+        hide_branding: true,
+      }),
+    );
+
+    expect(md).toContain("# Acme Security");
+    expect(md).toContain("https://example.com/logo.png");
+    expect(md).toContain("#123456");
+    expect(md).not.toContain("ScanPal");
+  });
 });

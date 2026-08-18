@@ -12,6 +12,7 @@ import { buildReportData, reportFilename, type ReportRenderData } from "@/lib/re
 import { renderMarkdown } from "@/lib/report/markdown";
 import { renderPdf } from "@/lib/report/pdf";
 import { saveReport } from "@/lib/report/store";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
@@ -32,6 +33,7 @@ export async function GET(
   const auth = await requireTeam(request);
   if (!auth.ok) return authError(auth.status, auth.retryAfter);
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const url = new URL(request.url);
   const format = reportFormatSchema.safeParse(
@@ -50,7 +52,7 @@ export async function GET(
   );
 
   const { scanId } = await params;
-  const result = await buildReportData(pool, scanId, teamId);
+  const result = await buildReportData(pool, scanId, teamId, workspaceId);
   if (!result.ok) {
     if (result.reason === "not_completed") {
       return NextResponse.json(

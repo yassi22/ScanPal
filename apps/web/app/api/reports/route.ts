@@ -7,6 +7,7 @@ import {
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
 import { listReports } from "@/lib/report/store";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,7 @@ export async function GET(request: Request) {
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const url = new URL(request.url);
   const query = reportListQuerySchema.safeParse({
@@ -39,8 +41,10 @@ export async function GET(request: Request) {
   const siteId = query.data.site_id;
   if (siteId) {
     const owned = await pool.query(
-      "select 1 from sites where id = $1 and team_id = $2",
-      [siteId, teamId],
+      workspaceId === undefined
+        ? "select 1 from sites where id = $1 and team_id = $2"
+        : "select 1 from sites where id = $1 and team_id = $2 and workspace_id = $3",
+      workspaceId === undefined ? [siteId, teamId] : [siteId, teamId, workspaceId],
     );
     if (owned.rowCount === 0) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -57,6 +61,7 @@ export async function GET(request: Request) {
   const { reports, next_cursor } = await listReports(pool, {
     teamId,
     siteId,
+    workspaceId,
     cursor,
     limit: query.data.limit,
   });

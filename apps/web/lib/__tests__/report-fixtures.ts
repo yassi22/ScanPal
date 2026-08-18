@@ -1,4 +1,5 @@
 import type { Finding, ReportData, SeverityCounts } from "@scanpal/shared";
+import { brandingSchema, type Branding } from "@scanpal/shared";
 import type { ReportRenderData } from "@/lib/report/data";
 
 export const NOW = "2026-08-15T09:00:00.000Z";
@@ -53,6 +54,12 @@ export function makeRenderData(
   overrides: Partial<ReportData> = {},
   omitted: SeverityCounts = EMPTY_OMITTED,
   prompts?: string[],
+  branding?: Branding,
 ): ReportRenderData {
-  return { data: makeReportData(overrides), omitted, ...(prompts ? { prompts } : {}) };
+  return {
+    data: makeReportData(overrides),
+    omitted,
+    branding: branding ?? brandingSchema.parse({}),
+    ...(prompts ? { prompts } : {}),
+  };
 }

@@ -10,6 +10,8 @@ import {
   type Finding,
   type FindingSeverity,
   type FindingStatus,
+  brandingSchema,
+  type Branding,
   type ReportData,
   type ReportFormat,
   type ScanCategory,
@@ -20,7 +22,14 @@ import {
 export const REPORT_MAX_PER_SEVERITY = 100;
 
 export type BuildReportDataResult =
-  | { ok: true; data: ReportData; siteId: string; omitted: SeverityCounts; githubRepo: string | null }
+  | {
+      ok: true;
+      data: ReportData;
+      siteId: string;
+      omitted: SeverityCounts;
+      githubRepo: string | null;
+      branding: Branding;
+    }
   | { ok: false; reason: "not_found" }
   | { ok: false; reason: "not_completed"; status: string };
 
@@ -28,6 +37,7 @@ export type BuildReportDataResult =
 export type ReportRenderData = {
   data: ReportData;
   omitted: SeverityCounts;
+  branding?: Branding;
   /** Plan 60: optioneel gegenereerde AI fix-prompts per finding (Engels). */
   prompts?: string[];
 };
@@ -43,15 +53,18 @@ export async function buildReportData(
   db: Pool,
   scanId: string,
   teamId: string,
+  workspaceId?: string | null,
 ): Promise<BuildReportDataResult> {
+  const scope = workspaceId === undefined ? "" : " and st.workspace_id = $3";
   const result = await db.query(
     `select s.id, s.status, s.score, s.findings, s.trigger, s.created_at,
             s.completed_at, st.id as site_id, st.url as site_url, st.label as site_label,
-            st.github_repo
+            st.github_repo, t.branding as team_branding
      from scans s
      join sites st on st.id = s.site_id
-     where s.id = $1 and st.team_id = $2`,
-    [scanId, teamId],
+     join teams t on t.id = st.team_id
+     where s.id = $1 and st.team_id = $2${scope}`,
+    workspaceId === undefined ? [scanId, teamId] : [scanId, teamId, workspaceId],
   );
   if (result.rowCount === 0) return { ok: false, reason: "not_found" };
 
@@ -63,12 +76,14 @@ export async function buildReportData(
   const parsed = findingsPayloadSchema.safeParse(row.findings ?? {});
   const all = parsed.success ? parsed.data.items : [];
   const { sorted, omitted } = sortBySeverityCap(all);
+  const branding = brandingSchema.parse(row.team_branding ?? {});
 
   return {
     ok: true,
     siteId: row.site_id,
     githubRepo: row.github_repo ?? null,
     omitted,
+    branding,
     data: {
       scan: {
         id: row.id,

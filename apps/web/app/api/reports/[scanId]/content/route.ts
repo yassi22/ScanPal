@@ -3,12 +3,13 @@ import type { NextRequest } from "next/server";
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
 import { getReportContent } from "@/lib/report/store";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ scanId: string }> },
 ) {
   const auth = await requireTeam(request);
   if (!auth.ok) {
@@ -23,11 +24,12 @@ export async function GET(
       },
     );
   }
-  const { id } = await params;
+  const { scanId } = await params;
 
   const row = await getReportContent(pool, {
     teamId: auth.ctx.teamId,
-    reportId: id,
+    reportId: scanId,
+    workspaceId: workspaceIdForContext(auth.ctx),
   });
   if (!row) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
