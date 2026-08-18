@@ -1,7 +1,14 @@
 import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
-import type { BrowserRunner, BrowserRunResult, AxeRunResult } from "./runner";
-import type { CwvMetrics } from "@scanpal/shared";
+import type {
+  BrowserRunner,
+  BrowserRunResult,
+  AxeRunResult,
+  ConsoleRunResult,
+  ResponsiveRunResult,
+} from "./runner";
+import { parseConsoleMessages, parseRequestFailures } from "@scanpal/shared";
+import type { CwvMetrics, ConsoleCapture, ResponsiveCapture } from "@scanpal/shared";
 
 /**
  * Playwright-default BrowserRunner (feature 41). Lanceert een headless Chromium
@@ -88,6 +95,156 @@ export function createPlaywrightRunner(): BrowserRunner {
         await page.goto(url, { waitUntil: "networkidle", timeout: 30_000 });
         const results = await new AxeBuilder({ page }).analyze();
         return { ok: true, violations: results.violations };
+      } catch (err) {
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      } finally {
+        await browser?.close().catch(() => {});
+      }
+    },
+    async captureConsole(url): Promise<ConsoleRunResult> {
+      let browser;
+      try {
+        browser = await chromium.launch({ headless: true });
+        const ctx = await browser.newContext();
+        const page = await ctx.newPage();
+        const messages: unknown[] = [];
+        const failedRequests: unknown[] = [];
+
+        page.on("console", (msg) => {
+          const type = msg.type();
+          const text = msg.text();
+          const location = msg.location()?.url;
+          messages.push({
+            type,
+            text,
+            ...(location ? { location } : {}),
+          });
+        });
+        page.on("pageerror", (err) => {
+          messages.push({ type: "error", text: err.message });
+        });
+        page.on("requestfailed", (req) => {
+          failedRequests.push({
+            url: req.url(),
+            method: req.method(),
+            status: null,
+            error: req.failure()?.errorText,
+          });
+        });
+        page.on("response", (res) => {
+          const status = res.status();
+          if (status >= 400) {
+            failedRequests.push({
+              url: res.url(),
+              method: res.request().method(),
+              status,
+            });
+          }
+        });
+
+        await page.goto(url, { waitUntil: "networkidle", timeout: 30_000 });
+        await page.waitForTimeout(1500).catch(() => {});
+
+        const capture: ConsoleCapture = {
+          messages: parseConsoleMessages(messages.slice(0, 100)),
+          failed_requests: parseRequestFailures(failedRequests.slice(0, 50)),
+        };
+        return { ok: true, capture };
+      } catch (err) {
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      } finally {
+        await browser?.close().catch(() => {});
+      }
+    },
+    async captureResponsive(url): Promise<ResponsiveRunResult> {
+      let browser;
+      try {
+        browser = await chromium.launch({ headless: true });
+
+        async function probeViewport(width: number, height: number) {
+          const ctx = await browser!.newContext({ viewport: { width, height } });
+          const page = await ctx.newPage();
+          await page.goto(url, { waitUntil: "networkidle", timeout: 30_000 });
+          await page.waitForTimeout(1000).catch(() => {});
+
+          const result = await page.evaluate(
+            `({ w, h }) => {
+              const docEl = document.documentElement;
+              const body = document.body;
+              const scrollWidth = Math.max(
+                docEl.scrollWidth,
+                body ? body.scrollWidth : 0,
+              );
+              const overflowPx = Math.max(0, scrollWidth - w);
+              return {
+                width: w,
+                height: h,
+                horizontal_scroll: overflowPx > 0,
+                overflow_px: overflowPx,
+              };
+            }`,
+            { w: width, h: height },
+          );
+
+          // Tap-target-audit: zoek naar interactieve elementen die kleiner zijn
+          // dan 24×24 CSS-pixels (alleen op mobile).
+          let tapTargetIssues: { selector: string; width_px: number; height_px: number }[] = [];
+          if (width < 500) {
+            tapTargetIssues = await page.evaluate(
+              `(minPx) => {
+                const selector = "a, button, input, select, textarea, [role='button'], [role='link'], [tabindex]";
+                const els = Array.from(document.querySelectorAll(selector));
+                const issues = [];
+                for (const el of els) {
+                  const rect = el.getBoundingClientRect();
+                  if (rect.width <= 0 || rect.height <= 0) continue;
+                  if (rect.width >= minPx && rect.height >= minPx) continue;
+                  const id = el.id ? "#" + el.id : "";
+                  const cls = el.className && typeof el.className === "string"
+                    ? "." + el.className.trim().split(/\\s+/).join(".")
+                    : "";
+                  const tag = el.tagName.toLowerCase();
+                  issues.push({
+                    selector: (tag + id + cls).slice(0, 120) || tag,
+                    width_px: Math.round(rect.width),
+                    height_px: Math.round(rect.height),
+                  });
+                }
+                return issues;
+              }`,
+              24,
+            );
+          }
+
+          await ctx.close();
+          return { ...result, tap_target_issues: tapTargetIssues };
+        }
+
+        const mobile = await probeViewport(375, 667);
+        const desktop = await probeViewport(1280, 720);
+
+        const capture: ResponsiveCapture = {
+          mobile: {
+            width: mobile.width,
+            height: mobile.height,
+            horizontal_scroll: mobile.horizontal_scroll,
+            overflow_px: mobile.overflow_px,
+          },
+          desktop: {
+            width: desktop.width,
+            height: desktop.height,
+            horizontal_scroll: desktop.horizontal_scroll,
+            overflow_px: desktop.overflow_px,
+          },
+          tap_target_issues: mobile.tap_target_issues,
+        };
+        return { ok: true, capture };
       } catch (err) {
         return {
           ok: false,

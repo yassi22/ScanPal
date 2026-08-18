@@ -38,6 +38,8 @@ const rateLimit = {} as never;
 const mockRunner: BrowserRunner = {
   captureVitals: () => Promise.resolve({ ok: false, error: "mock" }),
   runAxe: () => Promise.resolve({ ok: false, error: "mock" }),
+  captureConsole: () => Promise.resolve({ ok: false, error: "mock" }),
+  captureResponsive: () => Promise.resolve({ ok: false, error: "mock" }),
 };
 const registry = buildRegistry(rateLimit, mockRunner);
 

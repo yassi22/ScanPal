@@ -31,6 +31,8 @@ import { gitleaksCheck } from "./github/gitleaks";
 import { osvScannerCheck } from "./github/osv-scanner";
 import { createCoreWebVitalsCheck } from "./browser/core-web-vitals";
 import { createAccessibilityCheck } from "./browser/accessibility";
+import { createConsoleErrorsCheck } from "./browser/console-errors";
+import { createMobileResponsiveCheck } from "./browser/mobile-responsive";
 import type { BrowserRunner } from "./browser/runner";
 
 /**
@@ -94,12 +96,16 @@ export function buildRegistry(
       // Feature 38: mini-crawl — image-alt audit + orphan-page detectie.
       toImplemented(miniCrawlCheck),
     ],
-    // Features 41–43 vullen de browser-worker.
+    // Features 41–45 vullen de browser-worker.
     browser: [
       // Feature 41: Core Web Vitals (LCP/CLS/INP) via Playwright.
       toImplemented(createCoreWebVitalsCheck(browserRunner)),
       // Feature 42: Accessibility (axe-core) via Playwright.
       toImplemented(createAccessibilityCheck(browserRunner)),
+      // Feature 44: console-errors + network-failures via Playwright.
+      toImplemented(createConsoleErrorsCheck(browserRunner)),
+      // Feature 45: mobile/responsive basis-check via Playwright.
+      toImplemented(createMobileResponsiveCheck(browserRunner)),
     ],
     // Features 46–49 vullen de github-worker.
     github: [

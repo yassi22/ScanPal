@@ -61,6 +61,10 @@ export const checkCatalog: CheckCatalogEntry[] = [
   { id: "core-web-vitals", category: "aeo", name: "Core Web Vitals", active: false },
   { id: "accessibility", category: "aeo", name: "Accessibility (axe-core)", active: false },
   { id: "aeo-scan", category: "aeo", name: "AEO-content & LLM-parsability", active: false },
+  // Feature 44: console-errors + network-failures via Playwright (aeo).
+  { id: "console-errors", category: "aeo", name: "Console-errors & network-failures", active: false },
+  // Feature 45: mobile/responsive basis-check (horizontal overflow + tap-targets).
+  { id: "mobile-responsive", category: "aeo", name: "Mobile / responsive", active: false },
   { id: "semgrep", category: "github", name: "Semgrep (SAST)", active: false },
   { id: "gitleaks", category: "github", name: "Gitleaks (secrets)", active: false },
   { id: "osv-scanner", category: "github", name: "OSV-Scanner (deps)", active: false },

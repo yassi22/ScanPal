@@ -60,6 +60,12 @@ import {
   type AxeEvidence,
 } from "./accessibility";
 import {
+  consoleEvidenceSchema,
+  responsiveEvidenceSchema,
+  type ConsoleEvidence,
+  type ResponsiveEvidence,
+} from "./browser-runtime";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -114,6 +120,8 @@ export const findingSchema = z.object({
       osvEvidenceSchema,
       cwvEvidenceSchema,
       axeEvidenceSchema,
+      consoleEvidenceSchema,
+      responsiveEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -267,6 +275,8 @@ export type InlineCheckLike = {
     | OsvEvidence
     | CwvEvidence
     | AxeEvidence
+    | ConsoleEvidence
+    | ResponsiveEvidence
     | string
     | null;
 };
@@ -293,6 +303,8 @@ export function evidenceText(
     | OsvEvidence
     | CwvEvidence
     | AxeEvidence
+    | ConsoleEvidence
+    | ResponsiveEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -374,6 +386,23 @@ export function evidenceText(
       return evidence.samples
         .map((s) => `${s.impact}:${s.id} (${s.node_count} node(s)) ${s.help}`)
         .join(" | ");
+    }
+    if (evidence.kind === "console-errors") {
+      const msgs = evidence.samples
+        .map((s) => `${s.type}: ${s.text}${s.location ? ` @ ${s.location}` : ""}`)
+        .join(" | ");
+      const fails = evidence.request_failures
+        .map((r) => `${r.method} ${r.url} ${r.status ?? "ERR"}${r.error ? ` (${r.error})` : ""}`)
+        .join(" | ");
+      return `${msgs}${fails ? ` | ${fails}` : ""}`.trim();
+    }
+    if (evidence.kind === "mobile-responsive") {
+      const parts = [
+        `mobile=${evidence.mobile.width}px overflow=${evidence.mobile.overflow_px}px`,
+        `desktop=${evidence.desktop.width}px overflow=${evidence.desktop.overflow_px}px`,
+      ];
+      if (evidence.tap_target_issues > 0) parts.push(`tap_issues=${evidence.tap_target_issues}`);
+      return parts.join(" ");
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -478,6 +507,14 @@ const ISSUE_TITLES: Record<
   accessibility: {
     warn: "axe-core vond matige toegankelijkheidsissues",
     fail: "axe-core vond kritieke toegankelijkheidsissues",
+  },
+  "console-errors": {
+    warn: "Console-warnings of failed netwerk-requests gevonden",
+    fail: "Console-errors of failed netwerk-requests gevonden",
+  },
+  "mobile-responsive": {
+    warn: "Mobiele viewport heeft overflow of te kleine tap-targets",
+    fail: "Mobiele viewport heeft significante horizontale overflow",
   },
   cors: {
     warn: "CORS laat arbitraire origins toe",
@@ -614,6 +651,10 @@ const REMEDIATION: Record<string, string> = {
     "Optimaliseer LCP (verlaag de largest render-time: pre-load van kritische resources, CDN, lazy-load niet-kritieke media), CLS (reserveer ruimte voor media/ad-banners, vermijd layout-shift door late inserts) en INP (verdeel lange taken, gebruik requestIdleCallback, optimaliseer interactie-handlers). Meet met Lighthouse / PageSpeed Insights / CrUX-field data.",
   accessibility:
     "Los de axe-core-violations op: voeg ontbrekende alt-attributen, labels, ARIA-roles, heading-volgorde, color-contrast en focus-management toe. Behandel critical/serious-issues als blockers; voeg axe toe aan de CI om regressie te voorkomen. Valideer met echte toetsenbord/schermlezer-tests.",
+  "console-errors":
+    "Los de JavaScript-console-errors op (uncaught exceptions, TypeError, ReferenceError) en de failed netwerk-requests (404, 500, CORS, timeout). Voeg een error-monitoring (bijv. Sentry) toe en monitor de console-output in CI met Playwright-traces om regressie vroeg te detecteren.",
+  "mobile-responsive":
+    "Zorg dat de layout op mobile (375px) geen horizontale overflow veroorzaakt: gebruik responsive units (rem, %, clamp), `overflow-x: hidden` waar nodig, `max-width: 100vw` op media en containers, en meta viewport-tag `width=device-width, initial-scale=1`. Vergroot tap-targets tot minimaal 24×24 CSS-pixels (WCAG 2.5.5) met padding en min-width/min-height.",
 };
 
 /**
