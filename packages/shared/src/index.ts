@@ -143,3 +143,4 @@ export * from "./sast-findings";
 export * from "./browser-vitals";
 export * from "./accessibility";
 export * from "./browser-runtime";
+export * from "./aeo-render";

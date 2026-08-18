@@ -66,6 +66,10 @@ import {
   type ResponsiveEvidence,
 } from "./browser-runtime";
 import {
+  renderCompareEvidenceSchema,
+  type RenderCompareEvidence,
+} from "./aeo-render";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -122,6 +126,7 @@ export const findingSchema = z.object({
       axeEvidenceSchema,
       consoleEvidenceSchema,
       responsiveEvidenceSchema,
+      renderCompareEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -277,6 +282,7 @@ export type InlineCheckLike = {
     | AxeEvidence
     | ConsoleEvidence
     | ResponsiveEvidence
+    | RenderCompareEvidence
     | string
     | null;
 };
@@ -305,6 +311,7 @@ export function evidenceText(
     | AxeEvidence
     | ConsoleEvidence
     | ResponsiveEvidence
+    | RenderCompareEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -403,6 +410,9 @@ export function evidenceText(
       ];
       if (evidence.tap_target_issues > 0) parts.push(`tap_issues=${evidence.tap_target_issues}`);
       return parts.join(" ");
+    }
+    if (evidence.kind === "aeo-render") {
+      return `server=${evidence.server.text_length}chars dom=${evidence.rendered.text_length}chars ratio=${evidence.text_ratio} ${evidence.issues.join(" | ")}`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -515,6 +525,10 @@ const ISSUE_TITLES: Record<
   "mobile-responsive": {
     warn: "Mobiele viewport heeft overflow of te kleine tap-targets",
     fail: "Mobiele viewport heeft significante horizontale overflow",
+  },
+  "aeo-scan": {
+    warn: "Kerncontent is deels afhankelijk van JavaScript",
+    fail: "Kerncontent is zonder JavaScript niet zichtbaar (SPA-cloaking)",
   },
   cors: {
     warn: "CORS laat arbitraire origins toe",
@@ -655,6 +669,8 @@ const REMEDIATION: Record<string, string> = {
     "Los de JavaScript-console-errors op (uncaught exceptions, TypeError, ReferenceError) en de failed netwerk-requests (404, 500, CORS, timeout). Voeg een error-monitoring (bijv. Sentry) toe en monitor de console-output in CI met Playwright-traces om regressie vroeg te detecteren.",
   "mobile-responsive":
     "Zorg dat de layout op mobile (375px) geen horizontale overflow veroorzaakt: gebruik responsive units (rem, %, clamp), `overflow-x: hidden` waar nodig, `max-width: 100vw` op media en containers, en meta viewport-tag `width=device-width, initial-scale=1`. Vergroot tap-targets tot minimaal 24×24 CSS-pixels (WCAG 2.5.5) met padding en min-width/min-height.",
+  "aeo-scan":
+    "Render de kerncontent server-side (SSR/SSG of een static HTML-shell): titel, headings en de hoofdtekst moeten zonder JavaScript in de HTML staan, zodat AI-crawlers en LLM-parsers de pagina ook zonder JS-rendering kunnen begrijpen. Vermijd een lege SPA-shell die alles via client-side JavaScript injecteert. Publiceer de content tevens via llms.txt/JSON-LD voor betere AEO-detecteerbaarheid.",
 };
 
 /**

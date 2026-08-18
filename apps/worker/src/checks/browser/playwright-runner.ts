@@ -6,9 +6,15 @@ import type {
   AxeRunResult,
   ConsoleRunResult,
   ResponsiveRunResult,
+  RenderRunResult,
 } from "./runner";
-import { parseConsoleMessages, parseRequestFailures } from "@scanpal/shared";
-import type { CwvMetrics, ConsoleCapture, ResponsiveCapture } from "@scanpal/shared";
+import { parseConsoleMessages, parseRequestFailures, extractServerProbe, parseRenderProbe } from "@scanpal/shared";
+import type {
+  CwvMetrics,
+  ConsoleCapture,
+  ResponsiveCapture,
+  RenderCompareCapture,
+} from "@scanpal/shared";
 
 /**
  * Playwright-default BrowserRunner (feature 41). Lanceert een headless Chromium
@@ -244,6 +250,55 @@ export function createPlaywrightRunner(): BrowserRunner {
           },
           tap_target_issues: mobile.tap_target_issues,
         };
+        return { ok: true, capture };
+      } catch (err) {
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      } finally {
+        await browser?.close().catch(() => {});
+      }
+    },
+    async captureRenderCompare(url): Promise<RenderRunResult> {
+      let browser;
+      try {
+        browser = await chromium.launch({ headless: true });
+        const ctx = await browser.newContext();
+
+        // 1) Server-probe: ruwe HTML via de APIRequestContext (geen JS-uitvoering).
+        const resp = await ctx.request.get(url, { timeout: 30_000 });
+        const html = await resp.text();
+        const server = extractServerProbe(html);
+
+        // 2) Gerenderde probe: JS-enabled page-load, metrics uit de live DOM.
+        const page = await ctx.newPage();
+        await page.goto(url, { waitUntil: "networkidle", timeout: 30_000 });
+        await page.waitForTimeout(1500).catch(() => {});
+
+        const rawRendered = await page.evaluate(
+          `() => {
+            const visibleText = (document.body ? document.body.innerText : "").trim();
+            const headings = document.querySelectorAll("h1,h2,h3,h4,h5,h6").length;
+            const title = (document.title || "").trim();
+            const metaEl = document.querySelector('meta[name="description"]');
+            const meta = metaEl ? (metaEl.getAttribute("content") || "").trim() : "";
+            const links = document.querySelectorAll("a[href]").length;
+            return {
+              text_length: visibleText.length,
+              heading_count: headings,
+              title: title.length > 0 ? title : null,
+              meta_description: meta.length > 0 ? meta : null,
+              link_count: links,
+            };
+          }`,
+        );
+        const rendered = parseRenderProbe(rawRendered);
+        if (!rendered) {
+          return { ok: false, error: "Gerenderde DOM-probe onleesbaar" };
+        }
+
+        const capture: RenderCompareCapture = { server, rendered };
         return { ok: true, capture };
       } catch (err) {
         return {
