@@ -10,6 +10,17 @@ export type ApiClient = {
   listSites(): Promise<unknown>;
   getUptime(): Promise<unknown>;
   getFixPrompt(id: string): Promise<unknown>;
+  listFindings(scanId: string, query?: Record<string, string>): Promise<unknown>;
+  getFinding(scanId: string, findingId: string): Promise<unknown>;
+  dismissFinding(
+    scanId: string,
+    findingId: string,
+    body: { status: string; note?: string },
+  ): Promise<unknown>;
+  getScanDiff(scanId: string): Promise<unknown>;
+  listScans(query?: Record<string, string>): Promise<unknown>;
+  getSite(siteId: string): Promise<unknown>;
+  getUptimeHistory(siteId: string, days: number): Promise<unknown>;
 };
 
 export class ApiError extends Error {
@@ -74,5 +85,29 @@ export function createApiClient({ baseUrl, apiKey }: ApiClientOptions): ApiClien
     getUptime: () => request("/api/uptime"),
     getFixPrompt: (id) =>
       request(`/api/scans/${encodeURIComponent(id)}/fix-prompt`),
+    listFindings: (scanId, query = {}) => {
+      const qs = new URLSearchParams(query).toString();
+      return request(
+        `/api/scans/${encodeURIComponent(scanId)}/findings${qs ? `?${qs}` : ""}`,
+      );
+    },
+    getFinding: (scanId, findingId) =>
+      request(
+        `/api/scans/${encodeURIComponent(scanId)}/findings/${encodeURIComponent(findingId)}`,
+      ),
+    dismissFinding: (scanId, findingId, body) =>
+      request(
+        `/api/scans/${encodeURIComponent(scanId)}/findings/${encodeURIComponent(findingId)}`,
+        { method: "PATCH", body: JSON.stringify(body) },
+      ),
+    getScanDiff: (scanId) =>
+      request(`/api/scans/${encodeURIComponent(scanId)}/diff`),
+    listScans: (query = {}) => {
+      const qs = new URLSearchParams(query).toString();
+      return request(`/api/scans${qs ? `?${qs}` : ""}`);
+    },
+    getSite: (siteId) => request(`/api/sites/${encodeURIComponent(siteId)}`),
+    getUptimeHistory: (siteId, days) =>
+      request(`/api/uptime/sites/${encodeURIComponent(siteId)}?days=${days}`),
   };
 }
