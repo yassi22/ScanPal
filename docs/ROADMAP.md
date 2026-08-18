@@ -14,7 +14,7 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 ## Fase 1 — Sites & scans (MVP)
 
 - **Taken**: 4 site toevoegen/validatie/statuslijst · 5 scan-triggers (direct/dagelijks/wekelijks, Pro-gating) · 6 live-progress via SSE · 18 sites-CRUD · 19 scans-routes (incl. cancel)
-- **Plannen**: 04 (🚧), 05, 06 (✅) · 18-sites-api (✅) · 19-scans-api (✅)
+- **Plannen**: 04 (✅), 05, 06 (✅) · 18-sites-api (✅) · 19-scans-api (✅)
 - **Klaar als**: site CRUD met statuslijst, drie trigger-manieren met credit-afdwinging, live-progress-UI (`/scans/[id]`)
 - **Afhankelijkheden**: Fase 0 (credits, authz)
 
@@ -31,7 +31,7 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 - **Plannen te schrijven**: 30–34-http-security, 35–39-http-seo, 41–43-browser, 46–49-github
 - **Klaar als**: scans lopen via BullMQ; per categorie de catalog-checks geïmplementeerd (AGENTS.md: check = catalog-entry + worker-implementatie); aggregatie berekent scores en updates `last_scan_*` (plan 04); progress_details wordt door workers geschreven
 - **Afhankelijkheden**: Fase 0 (infra), contract uit plan 06; docker-compose + Redis staan in AGENTS.md
-- **Notitie**: de pipeline-infra van 27 is opgeleverd (plan 27 ✅) — `scan.dispatcher` fanned uit naar `scan.http`/`scan.browser`/`scan.github`, de aggregator (`scan.aggregate`) finaliseert uit de `checks`-tabel; de webapp/scheduler zijn enqueue-only (202). Feature 28 is opgeleverd (plan 28 ✅): per-header security-header-checks (CSP, HSTS, XCTO, XFO, Referrer-Policy, Permissions-Policy, COOP, COEP) met inhoudelijke validatie i.p.v. één samenvattende finding. Feature 29 is opgeleverd (plan 65 ✅): per-attribuut cookie-checks (HttpOnly, Secure, SameSite, __Host-/__Secure--prefixen, expiry) uit één `Set-Cookie`-response met sessie-cookie severity-bump. Features 30–49 vullen de catalog per queue verder in.
+- **Notitie**: de pipeline-infra van 27 is opgeleverd (plan 27 ✅) — `scan.dispatcher` fanned uit naar `scan.http`/`scan.browser`/`scan.github`, de aggregator (`scan.aggregate`) finaliseert uit de `checks`-tabel; de webapp/scheduler zijn enqueue-only (202). De check-catalog in `packages/shared/src/check-catalog.ts` telt 67 entries (incl. 11 actieve-test-probes `active: true`, 5 compliance-checks, domain-watchtower, aeo-engine-matrix). Geïmplementeerd in `apps/worker/src/checks/registry.ts`: http-queue 28 (security-headers, 8 ids), 29 (cookies, 5 ids), 30 (cors), 31 (tls-cert), 32 (redirects-mixed), 33 (secrets-in-html), 34 (subresources), 35 (meta-tags), 37 (security-txt), 38 (mini-crawl), 39 (structured-data), 40 (stack-detection), plus secrets-in-bundles, active-tests, aeo-engine-matrix, compliance (5 ids), domain-watchtower, reachability, https; browser-queue 41 (core-web-vitals), 42 (accessibility), 43 (aeo-render), 44 (console-errors), 45 (mobile-responsive); github-queue 46 (semgrep), 47 (gitleaks), 48 (osv-scanner), 49 (repo-health). Enige open MVP-gap: **feature 36 (robots-sitemap)** — catalog-entry op `check-catalog.ts:50` maar geen implementatie en niet geregistreerd in `registry.ts`.
 
 ## Fase 4 — Monitoring & MCP (MVP)
 
@@ -39,7 +39,7 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 - **Plannen te schrijven**: 11-uptime-dashboard (klaar; dekt 24 + 50)
 - **Klaar als**: poller draait met locks en alert-rule; dashboard toont status per site; MCP-tools werken over de REST API (API-key-auth op de webapp is via plan 14/25 opgeleverd)
 - **Afhankelijkheden**: Fase 3 (worker-infra), Fase 1 (sites)
-- **Notitie**: de uptime-slice (50 + 24 + 11) is al opgeleverd (plan 11 ✅) — de 60s-poller draait nog als eigen proces `apps/worker/src/uptime`; hij kan later naar de `uptime.check`-queue zonder contractwijziging. De MCP-server (51) is ook opgeleverd — `packages/mcp-server` implementeert alle 5 tools (run_scan, get_scan, get_findings, list_sites, get_uptime) met zod-schema's, wrapper over de REST API met API-key-auth.
+- **Notitie**: de uptime-slice (50 + 24 + 11) is al opgeleverd (plan 11 ✅) — de 60s-poller draait nog als eigen proces `apps/worker/src/uptime`; hij kan later naar de `uptime.check`-queue zonder contractwijziging. De MCP-server (51) is ook opgeleverd — `packages/mcp-server` implementeert alle 5 tools (run_scan, get_scan, get_findings, list_sites, get_uptime) **plus een 6e `generate_fix_prompt`** met zod-schema's, wrapper over de REST API met API-key-auth.
 
 ## Fase 5 — Platform-compleet (deels MVP-rand, deels na MVP)
 
@@ -53,7 +53,7 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 
 ## Fase 6 — v2
 
-- **Taken**: 12 threat-alerts (honeypot + log-patroon-detectie) · 40 stackdetectie · 44 console/netwerk-failures · 45 mobile/responsive-check · 23 outbound webhook-delivery-service · 52–55, 61–62 worker-uitbreidingen (actieve vulnerability-tests, JS-bundle inspectie, route-discovery, AEO-engine matrix, compliance-pijler, CrUX field data) · 56–59 monitoring-uitbreidingen (domain watchtower, publieke statuspagina, on-deploy triggers, diff-gebaseerde monitoring) · 60 AI fix-prompts · 63 MCP-uitbreiding · 64 team seats/white-label
+- **Taken**: 12 threat-alerts (honeypot + log-patroon-detectie) · 36 robots.txt + sitemap.xml validatie (enige open MVP-gap) · 23 outbound webhook-delivery-service · 52–55, 61–62 worker-uitbreidingen (actieve vulnerability-tests, JS-bundle inspectie, route-discovery, AEO-engine matrix, compliance-pijler, CrUX field data) · 56–59 monitoring-uitbreidingen (domain watchtower, publieke statuspagina, on-deploy triggers, diff-gebaseerde monitoring) · 60 AI fix-prompts · 63 MCP-uitbreiding · 64 team seats/white-label
 - **Plannen**: 12-threat-alerts (klaar), 52–64 (klaar)
 - **Klaar als**: threat-paneel met honeypot-events, resterende checks uit de catalog geïmplementeerd, CheckVibe-gap-features (52–64) per plan opgeleverd
 - **Afhankelijkheden**: Fase 3 (workers), Fase 4 (logging-onderlegger), Fase 5 (notificaties, api-keys, rate limiting); 60 heeft plan 09 nodig (findings + remediatie), 63 bouwt op 09/59/60
@@ -65,7 +65,7 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 | `docs/plans/01-onboarding.md` | 1 | ✅ |
 | `docs/plans/02-team-invites.md` | 2 | ✅ |
 | `docs/plans/03-pricing-stripe-credits.md` | 3 | ✅ |
-| `docs/plans/04-sites.md` | 4 | 🚧 |
+| `docs/plans/04-sites.md` | 4 | ✅ |
 | `docs/plans/05-scan-triggers.md` | 5, 19 | ✅ |
 | `docs/plans/06-scan-progress-sse.md` | 6, 19 | ✅ |
 | `docs/plans/17-auth-api.md` | 17 | ✅ |
@@ -94,12 +94,13 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 | `docs/plans/58-on-deploy-triggers.md` | 58 | ✅ |
 | `docs/plans/59-diff-monitoring.md` | 59 | ✅ |
 | `docs/plans/60-ai-fix-prompts.md` | 60 | ✅ |
-| `docs/plans/61-compliance-pillar.md` | 61 | 🚧 |
-| `docs/plans/62-crux-field-data.md` | 62 | 📝 |
-| `docs/plans/63-mcp-expansion.md` | 63 | 📝 |
-| `docs/plans/64-team-seats-white-label.md` | 64 | 📝 |
+| `docs/plans/61-compliance-pillar.md` | 61 | ✅ |
+| `docs/plans/62-crux-field-data.md` | 62 | ✅ |
+| `docs/plans/63-mcp-expansion.md` | 63 | ✅ |
+| `docs/plans/64-team-seats-white-label.md` | 64 | ✅ |
 | `docs/plans/66-cors-misconfig.md` | 30 | 📝 |
 | `docs/plans/67-tls-cert.md` | 31 | ✅ |
-| trends (feature 10), 27+, e.v. | rest | te schrijven |
+| features 32–34, 37, 39, 40, 41–45, 46–49 | rest | ✅ (direct in code + `registry.ts`; geen apart plan-doc) |
+| feature 36 (robots-sitemap) | 36 | 💡 (catalog-entry, geen impl/registratie) |
 
-> **Update 2026-08-17 (geverifieerd tegen code)**: features 1, 2, 3, 7, 10, 22 en 51 zijn volledig gebouwd — `packages/mcp-server` implementeert alle 5 MCP-tools met zod-schema's, `api/webhooks/stripe` doet plan-sync + payment_failed-notificatie, de resultatenpagina toont overall + per-categorie scores, en feature 10 (score-trend) is opgeleverd via `app/(dashboard)/sites/[id]` + `api/sites/[id]/trend` (SVG-lijngrafiek met overall + per-categorie-scores, site-detailpagina met trend + recente scans). Statussen hierboven zijn bijgewerkt. Open MVP-gaten: de http-security-checks 32/33/34, de SEO-checks 36/37/39 (35 ✅, 38 deels), TLS-cert (31 ✅ — `apps/worker/src/checks/http/tls-cert.ts` leest `notAfter`/SAN/CN/self-signed via `node:tls`), en de hele **browser-worker (41–43)** en **github-worker (46–49)** — beide queues staan leeg in `apps/worker/src/checks/registry.ts`.
+> **Update 2026-08-17 (geverifieerd tegen code)**: features 1, 2, 3, 7, 10, 22 en 51 zijn volledig gebouwd — `packages/mcp-server` implementeert 6 MCP-tools (5 + bonus `generate_fix_prompt`) met zod-schema's, `api/webhooks/stripe` doet plan-sync + payment_failed-notificatie, de resultatenpagina toont overall + per-categorie scores, en feature 10 (score-trend) is opgeleverd via `app/(dashboard)/sites/[id]` + `api/sites/[id]/trend` (SVG-lijngrafiek met overall + per-categorie-scores, site-detailpagina met trend + recente scans). Feature 4 (sites) is volledig opgeleverd (CRUD + statuslijst). De check-catalog in `packages/shared/src/check-catalog.ts` telt 67 entries; `apps/worker/src/checks/registry.ts` registreert implementaties voor http- (28–35, 37–40 + secrets-in-bundles, active-tests, aeo-engine-matrix, compliance, domain-watchtower, reachability, https), browser- (41–45) en github-queues (46–49). TLS-cert (31 ✅ — `tls-cert.ts` leest `notAfter`/SAN/CN/self-signed via `node:tls`). Enige open MVP-gap: **feature 36 (robots-sitemap)** — catalog-entry op `check-catalog.ts:50` maar geen implementatie en niet geregistreerd in `registry.ts`. Statussen hierboven zijn bijgewerkt.

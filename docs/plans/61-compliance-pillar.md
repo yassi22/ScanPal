@@ -2,7 +2,7 @@
 
 **Doel**: Een eigen compliance-check-set op de live site — cookie-banner/CMP-detectie (OneTrust, Cookiebot, Usercentrics, …), consent-API, privacy-policy-pagina, terms/imprint, GDPR-signalen (DSAR, verwijderingsverwijzing) — als nieuwe score-categorie naast security/SEO/AEO (CheckVibe's "Compliance: cookies, privacy and legal signals"). Bevindingen zijn signalen met uitleg, geen juridische oordelen.
 
-**Status**: 🚧 In uitvoering — catalog-contract, checks, scoring-gewicht, UI en export geïmplementeerd; DB-migratie `022` klaar, nog niet op een live DB toegepast.
+**Status**: Klaar (2026-08-18). Migratie `022` toegepast op de live Supabase-DB (`pnpm db:migrate`, 2026-08-18).
 
 ## Besluiten (bevestigd 2026-08-16, aangevuld 2026-08-17)
 
