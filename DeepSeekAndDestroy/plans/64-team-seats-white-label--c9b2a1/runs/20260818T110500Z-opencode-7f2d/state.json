@@ -1,0 +1,100 @@
+{
+  "workspace_root": "DeepSeekAndDestroy",
+  "plan_id": "64-team-seats-white-label--c9b2a1",
+  "run_id": "20260818T110500Z-opencode-7f2d",
+  "run_root": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d",
+  "run_manifest": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/run-manifest.md",
+  "plan_reference": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/plan/plan-reference.md",
+  "authoritative_plan_path": "docs/plans/64-team-seats-white-label.md",
+  "plan_snapshot": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/plan/snapshots/0001-intake-64-team-seats-white-label.md",
+  "plan_source_sha256": "BA752974C36D89F9E22B47D883FB3E03DB901D219088962C2C7F661A8A46A050",
+  "orchestrator_id": "claude-code-main",
+  "orchestrator": {
+    "harness": "claude-code",
+    "model": "opus-4.8",
+    "session_id": "resume-56890a81",
+    "adapter": "harness-native",
+    "checkpoint_mode": "harness-native",
+    "worker_profile": "claude Agent tool, general-purpose subagent, model=sonnet (Sonnet 5); repair via SendMessage",
+    "profile_change_ref": "MFL-20260818-014"
+  },
+  "project_worktree": "C:/Users/Yassin/Desktop/scanpal/ScanPal",
+  "authority_index": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/authority-index.json",
+  "handover": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/HANDOVER.md",
+  "effective_config": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/effective-configuration.md",
+  "major_log": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/major-findings-and-fixes.md",
+  "execution_status": "completed",
+  "terminal_condition": "COMPLETE",
+  "next_action": "All six phases implemented and verified in the existing uncommitted baseline.",
+  "decision_sources": [
+    "docs/plans/64-team-seats-white-label.md",
+    "docs/plans/02-team-invites.md",
+    "docs/plans/03-pricing-stripe-credits.md",
+    "docs/plans/10-export.md",
+    "docs/plans/16-billing-admin.md",
+    "docs/plans/57-public-status-page.md",
+    "AGENTS.md",
+    "apps/web/AGENTS.md",
+    "apps/worker/AGENTS.md",
+    "packages/db/AGENTS.md",
+    "packages/shared/AGENTS.md",
+    "packages/scan-core/AGENTS.md",
+    "docs/FEATURES.md",
+    "docs/ROADMAP.md"
+  ],
+  "worker_availability": { "status": "available", "last_incident": null, "next_probe_at": null },
+  "context_checkpoint": { "sequence": 0, "status": "none", "reason": null },
+  "phases": {
+    "phase-1": {
+      "status": "approved",
+      "tasks": {
+        "phase-1-survey-whole-plan-a3f1": { "status": "accepted", "task_type": "phase-surveyor" },
+        "phase-1-task-1-migration-026-4f7b": { "status": "accepted", "task_type": "implementation", "review_rounds": 1, "last_verdict": "PASS" },
+        "phase-1-task-2-shared-schemas-9c2e": { "status": "accepted", "task_type": "implementation", "review_rounds": 1, "last_verdict": "PASS" }
+      },
+      "phase_review": { "status": "passed", "cycle": 1, "latest_audit": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-audit.md", "latest_remediation": null, "findings": [] }
+    },
+    "phase-2": {
+      "status": "approved",
+      "tasks": {
+        "phase-2-billing-discovery-6e0b": { "status": "accepted", "task_type": "discovery", "spec_path": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-billing-discovery-6e0b/discovery-spec.md" },
+        "phase-2-task-A-plans-max-3b8a": { "status": "accepted", "task_type": "implementation", "review_rounds": 1, "last_verdict": "PASS", "acceptance_ref": "MFL-20260818-011" },
+        "phase-2-task-B-stripe-max-7c1d": { "status": "accepted", "task_type": "implementation", "review_rounds": 1, "last_verdict": "PASS", "acceptance_ref": "MFL-20260818-015" },
+        "phase-2-task-C-paid-gates": { "status": "accepted", "task_type": "implementation", "review_rounds": 1, "last_verdict": "PASS", "acceptance_ref": "MFL-20260818-016" },
+        "phase-2-task-D-invite-seat": { "status": "accepted", "task_type": "implementation", "review_rounds": 1, "last_verdict": "PASS", "acceptance_ref": "MFL-20260818-017" },
+        "phase-2-task-E-pricing-ui": { "status": "accepted", "task_type": "implementation", "review_rounds": 1, "last_verdict": "PASS", "acceptance_ref": "MFL-20260818-018" }
+      },
+      "phase_review": { "status": "passed", "cycle": 1, "auditor_agent": "a09864a28b11e98e7", "latest_audit": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-audit/phase-audit.md", "latest_remediation": null, "findings": [], "approval_ref": "MFL-20260818-019" }
+    },
+    "phase-3": {
+      "status": "approved",
+      "tasks": {
+        "phase-3-branding-discovery": { "status": "accepted", "task_type": "discovery", "spec_path": "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-3/phase-3-branding-discovery/discovery-spec.md" },
+        "phase-3-branding-renderers": { "status": "accepted", "task_type": "implementation", "last_verdict": "PASS" },
+        "phase-3-branding-route-settings": { "status": "accepted", "task_type": "implementation", "last_verdict": "PASS" }
+      },
+      "phase_review": { "status": "passed", "cycle": 1, "latest_audit": "apps/web/lib/__tests__/branding-route.test.ts + report-markdown.test.ts", "latest_remediation": null, "findings": [] }
+    },
+    "phase-4": {
+      "status": "approved",
+      "tasks": {
+        "phase-4-workspaces": { "status": "accepted", "task_type": "implementation", "last_verdict": "PASS" }
+      },
+      "phase_review": { "status": "passed", "cycle": 1, "latest_audit": "workspace CRUD/scoping typecheck + full web suite", "latest_remediation": null, "findings": [] }
+    },
+    "phase-5": {
+      "status": "approved",
+      "tasks": {
+        "phase-5-public-report-portal": { "status": "accepted", "task_type": "implementation", "last_verdict": "PASS" }
+      },
+      "phase_review": { "status": "passed", "cycle": 1, "latest_audit": "public-report-core.test.ts + full web suite", "latest_remediation": null, "findings": [] }
+    },
+    "phase-6": {
+      "status": "approved",
+      "tasks": {
+        "phase-6-verification-docs": { "status": "accepted", "task_type": "verification", "last_verdict": "PASS" }
+      },
+      "phase_review": { "status": "passed", "cycle": 1, "latest_audit": "web typecheck, package typechecks, 607 web tests, diff check", "latest_remediation": null, "findings": [] }
+    }
+  }
+}

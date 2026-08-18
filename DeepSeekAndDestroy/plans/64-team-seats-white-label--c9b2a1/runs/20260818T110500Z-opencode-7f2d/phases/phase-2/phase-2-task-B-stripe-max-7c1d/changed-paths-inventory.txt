@@ -1,0 +1,61 @@
+﻿ M AGENTS.md
+ M apps/web/AGENTS.md
+ M apps/web/app/(dashboard)/scans/[id]/page.tsx
+ D apps/web/app/api/reports/[id]/content/route.ts
+ M apps/web/app/api/scans/[id]/findings/[findingId]/route.ts
+ M apps/web/app/api/scans/[id]/route.ts
+ M apps/web/app/api/sites/[id]/route.ts
+ M apps/web/components/scan-result.tsx
+ M apps/web/lib/__tests__/findings-patch-route.test.ts
+ M apps/web/lib/__tests__/report-content-route.test.ts
+ M apps/web/lib/scan-progress-client.ts
+ M apps/web/lib/sites-core.ts
+ M apps/worker/AGENTS.md
+ M apps/worker/src/checks/__tests__/registry.test.ts
+ M apps/worker/src/checks/registry.ts
+ M apps/worker/src/env.ts
+ M apps/worker/src/queues/__tests__/aggregate.test.ts
+ M apps/worker/src/queues/__tests__/dispatcher.test.ts
+ M apps/worker/src/queues/aggregate.ts
+ M apps/worker/src/queues/boot.ts
+ M docs/FEATURES.md
+ M docs/ROADMAP.md
+ M docs/plans/61-compliance-pillar.md
+ M docs/plans/62-crux-field-data.md
+ M docs/plans/63-mcp-expansion.md
+ M packages/db/AGENTS.md
+ M packages/db/src/index.ts
+ M packages/mcp-server/AGENTS.md
+ M packages/mcp-server/README.md
+ M packages/mcp-server/package.json
+ M packages/mcp-server/src/__tests__/mcp.test.ts
+ M packages/mcp-server/src/client.ts
+ M packages/mcp-server/src/server.ts
+ M packages/scan-core/AGENTS.md
+ M packages/scan-core/src/index.ts
+ M packages/shared/AGENTS.md
+ M packages/shared/src/check-catalog.ts
+ M packages/shared/src/findings.ts
+ M packages/shared/src/index.ts
+ M packages/shared/src/plans.ts
+ M packages/shared/src/scans.ts
+ M pnpm-lock.yaml
+?? .opencode/
+?? DeepSeekAndDestroy/
+?? apps/web/app/api/reports/[scanId]/content/
+?? apps/web/lib/__tests__/sites-get-route.test.ts
+?? apps/worker/src/checks/http/__tests__/crux-field-data.test.ts
+?? apps/worker/src/checks/http/crux-field-data.ts
+?? apps/worker/src/lib/
+?? packages/db/migrations/025_scan_crux.sql
+?? packages/db/migrations/026_team_seats_white_label.sql
+?? packages/scan-core/src/crux.ts
+?? packages/shared/src/__tests__/crux.test.ts
+?? packages/shared/src/__tests__/mcp-tools.test.ts
+?? packages/shared/src/__tests__/plans.test.ts
+?? packages/shared/src/__tests__/report-tokens.test.ts
+?? packages/shared/src/branding.ts
+?? packages/shared/src/crux.ts
+?? packages/shared/src/mcp-tools.ts
+?? packages/shared/src/report-tokens.ts
+?? packages/shared/src/workspaces.ts

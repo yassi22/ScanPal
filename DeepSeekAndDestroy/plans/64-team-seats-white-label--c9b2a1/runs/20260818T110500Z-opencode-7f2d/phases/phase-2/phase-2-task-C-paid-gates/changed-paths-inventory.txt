@@ -1,0 +1,23 @@
+# Changed paths — phase-2-task-C-paid-gates
+# All paths repo-relative to C:/Users/Yassin/Desktop/scanpal/ScanPal
+# Format: <status> <path>
+# status = MODIFIED (existing file edited) | NEW (file created by this task)
+
+MODIFIED packages/shared/src/plans.ts
+MODIFIED packages/shared/src/__tests__/plans.test.ts
+MODIFIED apps/web/app/(dashboard)/billing/page.tsx
+MODIFIED apps/web/components/billing-manager.tsx
+MODIFIED apps/web/app/api/threats/route.ts
+MODIFIED apps/web/app/api/threats/events/route.ts
+MODIFIED apps/web/app/api/sites/[id]/honeypot/route.ts
+MODIFIED apps/web/app/api/sites/[id]/schedule/route.ts
+MODIFIED apps/web/app/(dashboard)/threats/page.tsx
+MODIFIED apps/web/app/(dashboard)/sites/page.tsx
+MODIFIED apps/web/lib/__tests__/threats-route.test.ts
+MODIFIED apps/web/lib/__tests__/threats-events-route.test.ts
+MODIFIED apps/web/lib/__tests__/site-honeypot-route.test.ts
+NEW      apps/web/lib/__tests__/site-schedule-route.test.ts
+
+# Deliverable files written by this task (not part of scope diff, listed for completeness):
+NEW      DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-C-paid-gates/changed-paths-inventory.txt
+NEW      DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-C-paid-gates/implementer-report.md

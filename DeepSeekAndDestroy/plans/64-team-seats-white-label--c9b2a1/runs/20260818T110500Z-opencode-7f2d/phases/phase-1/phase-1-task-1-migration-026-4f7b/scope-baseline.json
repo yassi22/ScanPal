@@ -1,0 +1,37 @@
+﻿{
+    "scope":  [
+                  "packages/db/migrations",
+                  "packages/db/src"
+              ],
+    "captured_at":  "2026-08-18T13:16:19.2964282+02:00",
+    "files":  {
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\004_scan_triggers.sql":  "1F7A73C85BEE16E69017F00A6F901B57BD02CB0A15B07175B9BA6C1CCB7F80AE",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\008_api_keys.sql":  "E3E1B46714AF427F27376D21097A29E8A987E1D2D0C6E1B599BBDF3F7D69A720",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\015_reports.sql":  "5DF52E8033E9F67843B9ADF9E791DD3C65E856B5515A253F8EADE7BC3B9ADD0A",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\016_scan_pipeline.sql":  "A54822AE8E0DB5B0FC02526F231A06EA463620FF32382E104B682D158B9D761A",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\001_users_teams_memberships.sql":  "C049372FEAD303DE952A0BF4F046CEC9B2C1F018E18A572D70574D93572BEB00",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\025_scan_crux.sql":  "0BF68E017446412401AC00E3B9BB503114C2CCF649A87D2652E67E6B4C6568FB",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\src\\migrate.ts":  "13B980FD9D1F5CF4D6DED7109F98A889920D8F05A8F0B52F904915A4781D8B1F",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\014_active_tests.sql":  "8FB49EE52AACA1971430E97EE0C4AEA78DE8EDF90F757BB942D5AB89EBBD4577",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\013_scan_cancel.sql":  "851524E4E3B8BA8E80C1C050FE12EB623BCDCD4726D72FBB5A6BEFA42A366865",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\022_compliance_checks.sql":  "6A02CAAD3F1E8D4DCB6C572ECE4F1C109CF628F5664BD242C97658407C1A87BE",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\009_api_keys_prefix_index.sql":  "CAD8E179FD373A786A1457FC6DBB30AEBBDC9D2057AA648BE21489CC7A6C3AB8",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\003_billing.sql":  "B3BABC4416C95B681A86B71025A223D0310F68398C94D0650B7C628FFD7033D2",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\005_scan_progress.sql":  "BEEA556E9EE9F2E8448C3F1DADA085B31CBDAF38FBF8330FEFBE8D1691A9D334",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\002_invitations.sql":  "EA91F05FA457A28E17E6DBA60066F8DD21231C6BF49BB8DD2D5CF69FB4CC5AA4",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\017_scan_routes.sql":  "E9C9B7847D0269763C2633575A63F1B3798B7A4A73C24883472F8663AA5687D0",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\020_on_deploy_triggers.sql":  "4586B39B6754146DCBD2CE33F00EEDC507460FCCFFBDF77E04795B38030F5A3B",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\007_uptime.sql":  "073FB6FF4F43F0AC73F7B2B416A7BA89DAE03B39A1866FDA0E235F7CD2D0AD36",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\023_domain_watch_backfill.sql":  "B21141366B6649775FC1C58D7DEA03227915B2FCC39FD750F3CB3ED1E29515D7",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\006_sites.sql":  "590070A8F64B2465E5659B9CEB80D2B882C7BEEE521846B21D61F3BB09464766",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\021_scan_diff.sql":  "F41A0395DBEFD9B91D9607EAC0F1AEB71FAD44353D968A710FD1BC305BFE525B",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\010_threat_alerts.sql":  "85FB30454881B51693ADDCF68F22CCECEEED9B967A19ABA63E2FF3D37D41A182",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\src\\index.ts":  "18C91A4C8D0CFB6A263F1634EEE7121C39ECDEAE60A931F35243CB049F780EA8",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\018_domain_watchtower.sql":  "18687E1CA6A4661B8432B0A18941304EDC8B1C8E55C96291C494CC6E2591987D",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\012_billing_admin.sql":  "7C3DA64180BDB57DB77C18832B05213FC9F4CC7029A86DE9F9C53EB076520CC6",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\024_rls_policies.sql":  "D5982075484CAE8DFDF274FFFF3D6B9FBA4A49FEC19F63B75AC650DB65739085",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\009_notifications.sql":  "D793832522CBC998EBAB478F9E159D79CF41237E310661ABC42F005B4510D552",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\019_public_status.sql":  "5D04BA9B74C71134B5EA984C0D4EC11CC0E7DB201A93176B78E680FB804C00DF",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\packages\\db\\migrations\\011_webhooks.sql":  "9C88F70787B4875AB6F36CCD91805F7C67930A71F0D6600ACADBC636E612DCFF"
+              }
+}

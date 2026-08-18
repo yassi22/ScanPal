@@ -1,0 +1,72 @@
+{
+  "AGENTS.md": {
+    "path": "AGENTS.md",
+    "sha256": "C0CCB65ABE131E93ABF89BEE189630CD26CB0870188B7447E0300F4B135FFCE1",
+    "summary": "Monorepo root: Next.js webapp (frontend+REST API), BullMQ workers, Postgres/Redis, pnpm workspaces; rules: change code in smallest dir whose AGENTS.md covers feature; cross-cutting changes touch packages/shared (contract) and often packages/scan-core; DB changes via packages/db migrations; commands pnpm lint/typecheck/test; no comments unless requested."
+  },
+  "docs/AGENTS.md": {
+    "path": "docs/AGENTS.md",
+    "sha256": "2D59D610AE8A051ACB1CDF002DDBAAD052B5BAC6E9AF7131AF8E5DF63F33220B",
+    "summary": "Docs conventions: Dutch docs, FEATURES.md canonical numbering (renumbering forbidden), plan status flow (plan → 📝 → 🚧 → ✅); plans point to packages/shared schemas instead of duplicating contracts."
+  },
+  "apps/web/AGENTS.md": {
+    "path": "apps/web/AGENTS.md",
+    "sha256": "25FF463DED95E206F7B46114F35BFA47AC2983CF7757554F985CB6A18FA28FD2",
+    "summary": "Next.js frontend + REST API routes: route table, auth/roles, credit enforcement, SSE contract, enqueue-only scan start."
+  },
+  "apps/worker/AGENTS.md": {
+    "path": "apps/worker/AGENTS.md",
+    "sha256": "55B40107B7BEBF0B0F1184B2202C36E790E99640F6805183D25A93BD83CEFF74",
+    "summary": "BullMQ workers: dispatcher fan-out, check catalog, aggregator/scoring, retry/timeout, Redis locks, checks-tabel, uptime poller."
+  },
+  "packages/db/AGENTS.md": {
+    "path": "packages/db/AGENTS.md",
+    "sha256": "1F709E8094BFEF4128EC7F0F9CA4399EAC1967D5DB51EB3C16A3ADCE32AD5A13",
+    "summary": "Migrations, tables, JSONB requirements, indexes."
+  },
+  "packages/shared/AGENTS.md": {
+    "path": "packages/shared/AGENTS.md",
+    "sha256": "116A094F5BF40B16441BF485E380915D84B2ED48F6434758C50D882B22E3FC1B",
+    "summary": "Single source of truth: check catalog, zod schemas (progress, findings, events), enums, scoring types, pure progress-math."
+  },
+  "packages/scan-core/AGENTS.md": {
+    "path": "packages/scan-core/AGENTS.md",
+    "sha256": "AB4ED00A9FBCFCD2376739166BED5D32AA34F6F78B45A9D70DBCABA5318278AF",
+    "summary": "Shared scan-lifecycle DB-helpers (web + worker): finishScan, setSiteScanState, atomic progress, credits, notifications, dispatcher-enqueue."
+  },
+  "docs/FEATURES.md": {
+    "path": "docs/FEATURES.md",
+    "sha256": "2041AFD4292B3AEDCCB7E2ED1270B8D255865AEC359F3E80AFAF4D9595239167",
+    "summary": "Canonical feature list with numbers, MVP flags, statuses; plan mapping column."
+  },
+  "docs/ROADMAP.md": {
+    "path": "docs/ROADMAP.md",
+    "sha256": "81D82F40A6F1D4230D403083886FEC1F0381817882D2437696D4E7FEA9FEB7C3",
+    "summary": "Phases 0-6 with klaar-als criteria; plan-overzicht table."
+  },
+  "docs/plans/02-team-invites.md": {
+    "path": "docs/plans/02-team-invites.md",
+    "sha256": "10FFF21BC0C0942CC5F2F3854B236927DA0F34723E57F30C0017220B092E3A0B",
+    "summary": "Teams + memberships + rollen; invite-route. Seat-check must be added here (plan 64 step 2)."
+  },
+  "docs/plans/03-pricing-stripe-credits.md": {
+    "path": "docs/plans/03-pricing-stripe-credits.md",
+    "sha256": "207F87E808017FB34DD1BBA1F2FC3610343BC9D63BAF3CB94AECC63AB7FB5CB5",
+    "summary": "Billing + plan-limits; feature-flags seats + white_label on Max-plan (feature 3)."
+  },
+  "docs/plans/10-export.md": {
+    "path": "docs/plans/10-export.md",
+    "sha256": "00D3A7B2CFCB277C53B3B5A00D2417EDA36CFC0EA2FB3AC00FECAC4313894D51",
+    "summary": "Export PDF/MD renderer — must read branding tokens (plan 64 step 3 extension)."
+  },
+  "docs/plans/16-billing-admin.md": {
+    "path": "docs/plans/16-billing-admin.md",
+    "sha256": "F84BE2795E8C7F7B4D93B36EB6E86F61F94FD3DA9585AF53FF504FC3F09E3744",
+    "summary": "Settings + subscription management; branding settings UI lives in settings (plan 64 decision 2)."
+  },
+  "docs/plans/57-public-status-page.md": {
+    "path": "docs/plans/57-public-status-page.md",
+    "sha256": "7072F1D05A43C0184E716F9640296B3A25BF2F6C4097735F354937A62DED7F8C",
+    "summary": "Public status page precedent: public route pattern, noindex, rate limit — reference for portal (plan 64 step 5)."
+  }
+}

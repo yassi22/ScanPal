@@ -1,0 +1,1172 @@
+{
+  "captured_at": "2026-08-18T13:08:02.323982+00:00",
+  "entries": {
+    ".opencode/plugins/dsd-compaction.ts": {
+      "exists": true,
+      "sha256": "1c885a1095f4442bcfc828b0ffc0df161b00d7991030ca612010f70747ebdcdd",
+      "size": 1348
+    },
+    "AGENTS.md": {
+      "exists": true,
+      "sha256": "c0ccb65abe131e93abf89bee189630cd26cb0870188b7447e0300f4b135ffce1",
+      "size": 9312
+    },
+    "DeepSeekAndDestroy/compaction-adapter-installation.md": {
+      "exists": true,
+      "sha256": "da30d6bac41ad150fb07da315e125a903909f775f8dac958bdacab660c7577be",
+      "size": 641
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/HANDOVER.md": {
+      "exists": true,
+      "sha256": "a73e05202e8e3581ffc042d4a07ef402692494b87b74b8e188a553c2aba4bed0",
+      "size": 5211
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/authority-index.json": {
+      "exists": true,
+      "sha256": "2046f256f5decf40cf6c84bac35d9fcbd77d211f209f77b50d879ffb2cd4c43c",
+      "size": 4172
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/effective-configuration.md": {
+      "exists": true,
+      "sha256": "fab26fe492cfd3a82eab2cb8dce5ce5abdcba16a3d2155b14a49923c084dc3b0",
+      "size": 1905
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-audit-2d91.db": {
+      "exists": true,
+      "sha256": "e064a84642bf33303dcf53f174566654aafaf4fb11fc6ddc0e38ab267035e679",
+      "size": 2756608
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-audit-2d91.db-shm": {
+      "exists": true,
+      "sha256": "26bf75afa54f8bd3bdae1ae39741e49c7a2f578623528e7ac7eb495f8f2d6921",
+      "size": 32768
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-audit-2d91.db-wal": {
+      "exists": true,
+      "sha256": "22881ef4512c4effb363689754d14c68be2855b452c1d6c543f45a252388e70f",
+      "size": 4173592
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-survey-a3f1.db": {
+      "exists": true,
+      "sha256": "0cd9ae4fa3a6cf963af61ffe4acb15eabf34dde40dde003b70b605aadecba57d",
+      "size": 3031040
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-survey-a3f1.db-shm": {
+      "exists": true,
+      "sha256": "c59abb5012f3da2180dfc18fcf5ef9054947bc1c5716af51ba1a30871da57423",
+      "size": 32768
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-survey-a3f1.db-wal": {
+      "exists": true,
+      "sha256": "cbd99e00dd88b5a1f06fa94aee1c78c20b78e771734d900aab719b2196cc66e2",
+      "size": 4165352
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-task2-implementer-2.db": {
+      "exists": true,
+      "sha256": "c74c986b55683fb85bd0eceedcab0b0eee1350dcc2bba39f16b58f52e28e22c9",
+      "size": 2088960
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-task2-implementer-2.db-shm": {
+      "exists": true,
+      "sha256": "2d2ccbf31ad30570d7877f8273d0dff3abbd9a56b978d1aaf4591d07e633e7ce",
+      "size": 32768
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-task2-implementer-2.db-wal": {
+      "exists": true,
+      "sha256": "f67df2a029aca722afb165d0485df92a2dba907c4a42fdb7892dc012540738e6",
+      "size": 4157112
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-task2-reviewer-1.db": {
+      "exists": true,
+      "sha256": "febb4deb20c99376ec142b81f86349ef755363d5d91c36724e993eadda5db3d8",
+      "size": 1634304
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-task2-reviewer-1.db-shm": {
+      "exists": true,
+      "sha256": "a699574e53bff5f1c1d7b9894d55f27321508b198776e3a14f9623d12d3bc5d0",
+      "size": 32768
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase1-task2-reviewer-1.db-wal": {
+      "exists": true,
+      "sha256": "5ab5cf0789a492144642601d3bbeaad1b5b42df5926605bbc0b819a5b85ac167",
+      "size": 4152992
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-discovery-6e0b.db": {
+      "exists": true,
+      "sha256": "7f156499a8720cccdf896a5bdcec79cf808104ac3e7fcb484396e650af4aa42a",
+      "size": 2392064
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-discovery-6e0b.db-shm": {
+      "exists": true,
+      "sha256": "bfbd25fe8672e3ffb7f07c79aee2415f6c9de7d6d96c14a8ac3cf9a7c423480a",
+      "size": 32768
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-discovery-6e0b.db-wal": {
+      "exists": true,
+      "sha256": "45eec874c39fbe25bc5f6489f3262ff2aa98fd5db3b0faa451fb88961edf5393",
+      "size": 4169472
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskA-implementer-1.db": {
+      "exists": true,
+      "sha256": "606e8b0571780f7b4e520003253a895af0d772d277d23bf8e4c398b02eefb469",
+      "size": 1552384
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskA-implementer-1.db-shm": {
+      "exists": true,
+      "sha256": "7c59bf9b326609a62622df2909fd6640bdd89bc27eda5be0449e994fb4a1d861",
+      "size": 32768
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskA-implementer-1.db-wal": {
+      "exists": true,
+      "sha256": "03a59880fe8e0949e28f1cac1964a1e9d59f6d922546506f0766dbb3dd997e8b",
+      "size": 4144752
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskA-reviewer-1.db": {
+      "exists": true,
+      "sha256": "0b4425d876bb6f63a18eba0ffe2b1d62c18d04956414de72d0fab17f85a00faa",
+      "size": 2281472
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskA-reviewer-1.db-shm": {
+      "exists": true,
+      "sha256": "e52483ed026227a88976c5fd3b1e9b5abc87a5ffabdfde91491ef92935231ecd",
+      "size": 32768
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskA-reviewer-1.db-wal": {
+      "exists": true,
+      "sha256": "a4b3903075160f3c37f62299f22c49dece970226ffd9b5d0e9277a5dd3aa5c5c",
+      "size": 4148872
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskB-implementer-1.db": {
+      "exists": true,
+      "sha256": "8a07f987826ca518532f152f14d70400d2ea24bdbad9411b138ffb3b37ff1aae",
+      "size": 4464640
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskB-implementer-1.db-shm": {
+      "exists": true,
+      "sha256": "84a144dfa0b0594e9d2f213d11ce7c59274afea5c16437304019b2cd93e59433",
+      "size": 32768
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskB-implementer-1.db-wal": {
+      "exists": true,
+      "sha256": "1355ef089bbbf766ae4bb15e70684b9623b32987f1bbe4c286185c2c1a1e15c0",
+      "size": 4231272
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskB-reviewer-1.db": {
+      "exists": true,
+      "sha256": "a85613f012600096f23e57c909615b4c52f39de5eab2e7cf2b66ade7920d4686",
+      "size": 1998848
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskB-reviewer-1.db-shm": {
+      "exists": true,
+      "sha256": "08e2e0254612b6736d1fbccca63550e70cdceb35f612ceeea4d58d6776e0edff",
+      "size": 32768
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/ephemeral-db/phase2-taskB-reviewer-1.db-wal": {
+      "exists": true,
+      "sha256": "345772381f0af1e778755a5006e6be980f5454354ede8fa5f09255f9e55455ec",
+      "size": 4152992
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/major-findings-and-fixes.md": {
+      "exists": true,
+      "sha256": "83ff0ae2888bec2aff27c85ce7d59f8404b96f2475b68b2f06e3e8b8d4c24b2a",
+      "size": 36196
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/out-of-scope-defects.md": {
+      "exists": true,
+      "sha256": "329dabff6c855bf5240db5c245940e37abf762e5161ef3bccaf21f36299867b2",
+      "size": 1370
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/current-state-audit.md": {
+      "exists": true,
+      "sha256": "793b1423e3c419b06e520b3fe82ec59956af181774f31360b0594b40fb63538f",
+      "size": 14005
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-audit-2d91/task.md": {
+      "exists": true,
+      "sha256": "9bfd03dad8d01f802290d5fcf6e0256b37e5b2a2ac9d9fb1f998048ae9a2f34b",
+      "size": 10519
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-survey-whole-plan-a3f1/report.md": {
+      "exists": true,
+      "sha256": "c6ade3ddc8f5b0e12697e818af11691247b61206012233a01bb02e62479ee667",
+      "size": 18323
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-survey-whole-plan-a3f1/task.md": {
+      "exists": true,
+      "sha256": "e62e9ad484798ba4ec267b9d3bb2965efaec2c33efcce05fd939bd9ccd6ed410",
+      "size": 12793
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-1-migration-026-4f7b/changed-paths-inventory.txt": {
+      "exists": true,
+      "sha256": "8d478caa866eb67033b49197151b4dca0c39c1b59f313a9c803d7b5e41fe439e",
+      "size": 2066
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-1-migration-026-4f7b/implementer-report.md": {
+      "exists": true,
+      "sha256": "f3441875e52ccc208cc3d30dafbebe0f858bd07534926598d06846601b00e1c2",
+      "size": 10223
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-1-migration-026-4f7b/implementer.pid": {
+      "exists": true,
+      "sha256": "ada5e8042454d048bf0c8203961b2c0510a0f474efca1a9015b31f822284e562",
+      "size": 6
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-1-migration-026-4f7b/review-1.md": {
+      "exists": true,
+      "sha256": "b0f38bbd1f05f7f74930c680684b41873133310ef3d726f8e06f5414f79938a0",
+      "size": 12708
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-1-migration-026-4f7b/review-task-1.md": {
+      "exists": true,
+      "sha256": "b84cd3e6a83a09824e172bba6806f6b3c16deb170bebe5f058a1018605c10f1e",
+      "size": 13896
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-1-migration-026-4f7b/reviewer.pid": {
+      "exists": true,
+      "sha256": "94a43f4da5b2944dd583c033f45f37263bf71b37b1cea964340fa19dae86aa78",
+      "size": 7
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-1-migration-026-4f7b/scope-baseline.json": {
+      "exists": true,
+      "sha256": "4e86a2affb56545059e20da10c599e371d4c03089b092cf47e2698d18e87dc37",
+      "size": 5345
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-1-migration-026-4f7b/task.md": {
+      "exists": true,
+      "sha256": "37d257287dd0eba5974535fb359b6823be3d3f77b7c36e041370becabf34b7d8",
+      "size": 17301
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-2-shared-schemas-9c2e/changed-paths-after.txt": {
+      "exists": true,
+      "sha256": "cb4906d47341c1e40d5348a8cc782d89405915a053a0cd7ac44f4dc785d2ffa7",
+      "size": 4244
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-2-shared-schemas-9c2e/changed-paths-inventory.txt": {
+      "exists": true,
+      "sha256": "aac51688151b8947124bf40be9c02615b53aa9ab466282a679608a6bde84af10",
+      "size": 2124
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-2-shared-schemas-9c2e/implementer-report.md": {
+      "exists": true,
+      "sha256": "bdf31c7859116887d9375bedcb9db57db310c9a2fedffb1b97b6f5242dd3a46c",
+      "size": 8645
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-2-shared-schemas-9c2e/implementer.pid": {
+      "exists": true,
+      "sha256": "7b2cf003efa93b6802ce11b08a1ac448d99830f2167f87edfd24e765ec7002e3",
+      "size": 7
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-2-shared-schemas-9c2e/review-1.md": {
+      "exists": true,
+      "sha256": "a56d4c415045199dbe1b49f052b5fca323c6e09b2917369f9517f107d8ec74a0",
+      "size": 9787
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-2-shared-schemas-9c2e/review-task-1.md": {
+      "exists": true,
+      "sha256": "d48b3450449fc4bb19cb69f3a68d64e9581d6cd64278b5ed9665ab6dfee1b3fd",
+      "size": 13914
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-2-shared-schemas-9c2e/reviewer.pid": {
+      "exists": true,
+      "sha256": "aaae951e0d2427fcd08645a593a3dfe0d9d778537f447b0ff036deb3792fcce8",
+      "size": 7
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-2-shared-schemas-9c2e/scope-baseline.json": {
+      "exists": true,
+      "sha256": "825e0c05428360952ecd4ed665b0c554d6f31fe9ab1dc57efdd62d6bc9756f88",
+      "size": 15071
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-1-task-2-shared-schemas-9c2e/task.md": {
+      "exists": true,
+      "sha256": "e9074b9217c9b2e17776773c1a293a31b42d2f90f08be88fecd5c01135375de7",
+      "size": 18422
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-1/phase-audit.md": {
+      "exists": true,
+      "sha256": "17dcf6ffdaab5293f5075f5cac4214f882f635f64d4e7e35458650fce1eabc33",
+      "size": 15029
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-billing-discovery-6e0b/discovery-spec.md": {
+      "exists": true,
+      "sha256": "568f9cd6ed38b1d830f5f07e7fd35b979fe81eb0d1abe07efeefefa3b50653e8",
+      "size": 24959
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-billing-discovery-6e0b/report.md": {
+      "exists": true,
+      "sha256": "82f1d615e9468b607ce9939bc8e19f6d23525a870a392ae67b077bf636541f60",
+      "size": 8685
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-billing-discovery-6e0b/task.md": {
+      "exists": true,
+      "sha256": "bbe38de363041ff83b6dbf7653d9e4139c12f40a256b4cd6d99bbeb38568712d",
+      "size": 12256
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-A-plans-max-3b8a/changed-paths-inventory.txt": {
+      "exists": true,
+      "sha256": "491123249da75e95cddf06da3bbd2615849751b40eff0141afbbfa817438fff5",
+      "size": 2295
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-A-plans-max-3b8a/implementer-report.md": {
+      "exists": true,
+      "sha256": "a58ae41bcfc8d004c2293ae4778fbbd11d101a6105342dfe0539ea69978d0582",
+      "size": 7302
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-A-plans-max-3b8a/implementer.pid": {
+      "exists": true,
+      "sha256": "989c7ca524bea29b9d5e629203aebc6870173114f825bf5dfb78fb57898057c1",
+      "size": 6
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-A-plans-max-3b8a/review-1.md": {
+      "exists": true,
+      "sha256": "de58c8a500fcb087df2b9d87113e474a33146b3af7ada416a4f55493f0078d10",
+      "size": 9841
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-A-plans-max-3b8a/review-task-1.md": {
+      "exists": true,
+      "sha256": "5ac48a1a719549db61ce03012b9e60b74205fa75b7f2824928beb9c09df8525c",
+      "size": 12656
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-A-plans-max-3b8a/reviewer.pid": {
+      "exists": true,
+      "sha256": "072b2f905de844e1bde6b0c09ac28937a07c773a60f4fce584284b903e68a540",
+      "size": 6
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-A-plans-max-3b8a/scope-baseline.json": {
+      "exists": true,
+      "sha256": "6e283cac81ff7f67b439b03aee73b027b5e26927abb20c3b31494c567de798c9",
+      "size": 7878
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-A-plans-max-3b8a/task.md": {
+      "exists": true,
+      "sha256": "15d47a07a8016b7a26bd2016250047245e5adda046df4e2cf45ca83219faf746",
+      "size": 15860
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-B-stripe-max-7c1d/changed-paths-inventory.txt": {
+      "exists": true,
+      "sha256": "b314d355d88aa60f273fd10a901647f8a952d6898c9124b58b7a8476c205d74d",
+      "size": 2376
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-B-stripe-max-7c1d/implementer-report.md": {
+      "exists": true,
+      "sha256": "67230f1a8c29de3640238689ae9508b547cf19a84980876af800d3de7c64fb1b",
+      "size": 10749
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-B-stripe-max-7c1d/implementer.pid": {
+      "exists": true,
+      "sha256": "20f4e6c722d2a3d78914b22072af41ab225fb5d861d4f84943f4f4ddbaf5b73a",
+      "size": 6
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-B-stripe-max-7c1d/review-1.md": {
+      "exists": true,
+      "sha256": "6240b15a68110c2ff471c798353adb4b4b589a1e34836cbccef6c2df5fc38c1d",
+      "size": 7438
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-B-stripe-max-7c1d/review-task-1.md": {
+      "exists": true,
+      "sha256": "611144201c32fe3777afe9b70da9796163b82820babb1843f9c0271ac4c823f9",
+      "size": 12878
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-B-stripe-max-7c1d/reviewer.pid": {
+      "exists": true,
+      "sha256": "27610e6e22afed33b62a318dd9779462d7ef4cb46e8a2ded5d73789bb73e4ae0",
+      "size": 7
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-B-stripe-max-7c1d/scope-baseline.json": {
+      "exists": true,
+      "sha256": "3d6d5ac3ac754abaa75fcad3165ee1735c0b63b6f6c2d6aa02a2ee7a626216ab",
+      "size": 2374
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-B-stripe-max-7c1d/task.md": {
+      "exists": true,
+      "sha256": "7d8399aa34645260674cb0209398c5beb199cbcff140563b2ff249221f4aad6f",
+      "size": 16197
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-C-paid-gates/changed-paths-inventory.txt": {
+      "exists": true,
+      "sha256": "4cf9c813ad379752c5b808f5c5d6c1e5ae31e1bc08591b14d6e429af9747744c",
+      "size": 1381
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-C-paid-gates/implementer-report.md": {
+      "exists": true,
+      "sha256": "0b878f7e7579516c1b0b983fda50015ea5dbf5ac2d2f91fc9f77a15d097f1157",
+      "size": 21008
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-C-paid-gates/review-1.md": {
+      "exists": true,
+      "sha256": "79809aa9af1baa139145ce0a49683339ec3412d80a56150f4f9d278813c6f3f3",
+      "size": 10983
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-C-paid-gates/review-task-1.md": {
+      "exists": true,
+      "sha256": "d6a05be30c5b4bfafd7ae64892ff625ba43b0af656be5333bf4e44488dc78889",
+      "size": 4217
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-C-paid-gates/scope-baseline.json": {
+      "exists": true,
+      "sha256": "5a57895abca56b0bb69b11d344804e332b3cddc3e6858e3c364d0239add418b5",
+      "size": 54946
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-C-paid-gates/scope-baseline.txt": {
+      "exists": true,
+      "sha256": "f23dcfcaa8e208fc84f430070d17ecf5ef9a9057a8f32766b0101749d42745de",
+      "size": 2638
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-C-paid-gates/task.md": {
+      "exists": true,
+      "sha256": "27531c9800acef42ea14d504aca30929f3db18a8170ef4085431272656fa6320",
+      "size": 5629
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-D-invite-seat/changed-paths-inventory.txt": {
+      "exists": true,
+      "sha256": "b29baf70be512061bf722a87c473029e0e1e42c0022b694e83f18502f2b7b68c",
+      "size": 1432
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-D-invite-seat/implementer-report.md": {
+      "exists": true,
+      "sha256": "7c611d0449ff7f8ba2a9a344498c3ce7ff0320c85788652799b7bd275f81b439",
+      "size": 15466
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-D-invite-seat/review-1.md": {
+      "exists": true,
+      "sha256": "7ce90c0247aa139c8adad0ff19554d98dfefb82c89319a78c1f3da4cc145b999",
+      "size": 9711
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-D-invite-seat/review-task-1.md": {
+      "exists": true,
+      "sha256": "c679a86717f69d69c306845995cc07000fd0001f153509172eaeeb1b7d456763",
+      "size": 4580
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-D-invite-seat/scope-baseline.json": {
+      "exists": true,
+      "sha256": "bcd7a61c56d998b7ecdf2c22de979be153bf6920134aa88d1a1bf756fdfc4739",
+      "size": 50843
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-D-invite-seat/task.md": {
+      "exists": true,
+      "sha256": "a8a9d29116edc41625dade79a94aad41701b9aac41bc24140fe39ad62642e72d",
+      "size": 4865
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/phases/phase-2/phase-2-task-E-pricing-ui/task.md": {
+      "exists": true,
+      "sha256": "79b04d6d1d85f1030a384458b67cb98c2e3732678a3b8e6960cd4b214acc7af7",
+      "size": 4185
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/plan/plan-reference.md": {
+      "exists": true,
+      "sha256": "0f2eade4f54aecffddf330b18d554d18c69e6c8b7e679089cd78ea52fcc9ed2f",
+      "size": 721
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/plan/snapshots/0001-intake-64-team-seats-white-label.md": {
+      "exists": true,
+      "sha256": "ba752974c36d89f9e22b47d883fb3e03db901d219088962c2c7f661a8a46a050",
+      "size": 4402
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/run-manifest.md": {
+      "exists": true,
+      "sha256": "109ae669259caab24d9be3edb0c53a6c4e0e03d088f6e4b5e411376bc2e53c42",
+      "size": 708
+    },
+    "DeepSeekAndDestroy/plans/64-team-seats-white-label--c9b2a1/runs/20260818T110500Z-opencode-7f2d/state.json": {
+      "exists": true,
+      "sha256": "5cf7ed3a1f2c641af9431a5f1ab16a78ea953784044fe2fc5aabcf077304585c",
+      "size": 5439
+    },
+    "DeepSeekAndDestroy/tools/check_state.py": {
+      "exists": true,
+      "sha256": "2376a5ff3a54e4b7eccbccd07b36183458826364ad9e99e6b90483e3587d05a0",
+      "size": 7395
+    },
+    "DeepSeekAndDestroy/tools/context_checkpoint.py": {
+      "exists": true,
+      "sha256": "6b8fd9edb4c770266b98dc5f05fb4892ca8a4cee815f2883e37a9f88cdadb0f3",
+      "size": 20867
+    },
+    "apps/web/AGENTS.md": {
+      "exists": true,
+      "sha256": "25ff463ded95e206f7b46114f35bfa47ac2983cf7757554f985cb6a18fa28fd2",
+      "size": 8570
+    },
+    "apps/web/app/(dashboard)/billing/page.tsx": {
+      "exists": true,
+      "sha256": "0fde78d76866a48284d1ac9fbedb2981bdbb28f423014a6600e30fb574d1f257",
+      "size": 5549
+    },
+    "apps/web/app/(dashboard)/scans/[id]/page.tsx": {
+      "exists": true,
+      "sha256": "d103e3b8b564ebc72423838e804ac4655d46b071904a4ad5bb7b295d46c7db96",
+      "size": 2478
+    },
+    "apps/web/app/(dashboard)/sites/page.tsx": {
+      "exists": true,
+      "sha256": "da5c172e8217d7e977d6e8ccdde6478d3b3cc72942657977b491400b29f06db9",
+      "size": 1446
+    },
+    "apps/web/app/(dashboard)/threats/page.tsx": {
+      "exists": true,
+      "sha256": "d5e3b387a12db845cadebf9938b715b1e1d2ab8348a4c723a161d96d18fa9700",
+      "size": 3410
+    },
+    "apps/web/app/api/billing/subscription/route.ts": {
+      "exists": true,
+      "sha256": "ee47b94ea5202ff6fbea733de836e065af5cb2dc7b0931b178459a0cf747a61e",
+      "size": 3721
+    },
+    "apps/web/app/api/invitations/[token]/accept/route.ts": {
+      "exists": true,
+      "sha256": "4b05036539fd0a1b1847e389f504a95de74b24c4a5895c5abf800eb66733f7aa",
+      "size": 1325
+    },
+    "apps/web/app/api/plans/route.ts": {
+      "exists": true,
+      "sha256": "cdd78d0f891b44f96f7e45d54525066c9e693cb8334846545ba014a416312a1b",
+      "size": 316
+    },
+    "apps/web/app/api/reports/[id]/content/route.ts": {
+      "exists": false,
+      "sha256": null,
+      "size": null
+    },
+    "apps/web/app/api/reports/[scanId]/content/route.ts": {
+      "exists": true,
+      "sha256": "e080585ed7132508b936935ffa6adcded9cfac6cee8222b01f63bc2ddb4b686f",
+      "size": 1232
+    },
+    "apps/web/app/api/scans/[id]/findings/[findingId]/route.ts": {
+      "exists": true,
+      "sha256": "ee123c5b2b96a1f814019582eed66dee613c8865b9c0bb63adaacb9bcc911c3c",
+      "size": 4570
+    },
+    "apps/web/app/api/scans/[id]/route.ts": {
+      "exists": true,
+      "sha256": "594dfc1e6038a69249a322ca63c0cf1118e131252772ec706c66a299593a0d72",
+      "size": 2389
+    },
+    "apps/web/app/api/sites/[id]/honeypot/route.ts": {
+      "exists": true,
+      "sha256": "311e1746c88208745e71e609b1b9e2a9cb9a800d8f65a3e3a5d5da3e8e6aa7d3",
+      "size": 2293
+    },
+    "apps/web/app/api/sites/[id]/route.ts": {
+      "exists": true,
+      "sha256": "ea246061cf42ab8d128e51b4a6c301666b595f7c3b339e21b586229763b60235",
+      "size": 4983
+    },
+    "apps/web/app/api/sites/[id]/schedule/route.ts": {
+      "exists": true,
+      "sha256": "8507282dfa2e5ecec66a0d9ca3aab5a50828643f4f34f8e0889fcc0ea03c71f3",
+      "size": 2241
+    },
+    "apps/web/app/api/teams/[teamId]/invitations/route.ts": {
+      "exists": true,
+      "sha256": "9e0b24d2a1b0cd4f5ab40caba8167bf18978057ba9f707c9268057095a0e76dd",
+      "size": 2981
+    },
+    "apps/web/app/api/threats/events/route.ts": {
+      "exists": true,
+      "sha256": "70e5b189eb84ebd74ee826f37b90303e37caaf2ebefa94c2f70b15a35f300499",
+      "size": 2384
+    },
+    "apps/web/app/api/threats/route.ts": {
+      "exists": true,
+      "sha256": "5d3f67515db58c4b22e958cb4033054d99527946269e4d190bdab01611387fff",
+      "size": 1669
+    },
+    "apps/web/components/billing-manager.tsx": {
+      "exists": true,
+      "sha256": "de838436a9fcc0038f228cdceea95e6db900de6da00b37284f7c0012d26f127d",
+      "size": 11164
+    },
+    "apps/web/components/pricing-cards.tsx": {
+      "exists": true,
+      "sha256": "127557421c2e155e59e80714b1bfa14ca1b9e925e6a035787980eb218a4d922c",
+      "size": 6897
+    },
+    "apps/web/components/scan-result.tsx": {
+      "exists": true,
+      "sha256": "b0af1eacd9e9018c0b30509ade67db614e9d95326feebf7caa58779f54841949",
+      "size": 35268
+    },
+    "apps/web/components/team-settings.tsx": {
+      "exists": true,
+      "sha256": "7f243dcb999b98bc161f694de02081c93b91201274ba41acd945694689eff8c9",
+      "size": 11578
+    },
+    "apps/web/lib/__tests__/api-auth.test.ts": {
+      "exists": true,
+      "sha256": "951c8d160b18921b88116ff3c7b2f472e231812d82698993b037e969958e6dee",
+      "size": 12753
+    },
+    "apps/web/lib/__tests__/api-hmac.test.ts": {
+      "exists": true,
+      "sha256": "03c76cd24049a5321f5191c3c8045c9ca2d1f3f6b2f479f38f7d6425e1dce739",
+      "size": 5844
+    },
+    "apps/web/lib/__tests__/api-keys-core.test.ts": {
+      "exists": true,
+      "sha256": "9e5f805f94f12b4744354386bb58ba75f431b8eac6d647be0d108c8490eb1577",
+      "size": 4390
+    },
+    "apps/web/lib/__tests__/api-keys-route.test.ts": {
+      "exists": true,
+      "sha256": "4707708e716a6c1fc229662b6661af6dd682480675c7b0228d855f2f0398aba0",
+      "size": 5383
+    },
+    "apps/web/lib/__tests__/auth-routes.test.ts": {
+      "exists": true,
+      "sha256": "dedbb530d3fc872a6d6a7a6af7d3273b6f16dc9170b2e65cb1073d5517de6508",
+      "size": 9934
+    },
+    "apps/web/lib/__tests__/authz-matrix.test.ts": {
+      "exists": true,
+      "sha256": "325b8e2ca53cc96fa6fb75a23b490010a6dfcc2670e3f48cbc08fd87bd4ba5e5",
+      "size": 10251
+    },
+    "apps/web/lib/__tests__/billing-core.test.ts": {
+      "exists": true,
+      "sha256": "71edbb3b3d66012c43631e2e77094d60215c9da267a64636e3ca6efefe8542b5",
+      "size": 12969
+    },
+    "apps/web/lib/__tests__/billing-routes.test.ts": {
+      "exists": true,
+      "sha256": "ede5b531788308d80d5aac489f00e574d06934c6b18ad5437d0c2c7b5ed50d00",
+      "size": 11241
+    },
+    "apps/web/lib/__tests__/billing.test.ts": {
+      "exists": true,
+      "sha256": "fe897e3207f599f74d1ab013103c146e053e8f106c759358cdf469f52eafd47d",
+      "size": 9582
+    },
+    "apps/web/lib/__tests__/credits.test.ts": {
+      "exists": true,
+      "sha256": "733774faba13213ca9ce9c9b0996199d35ff9f5780e126526900079dbc5c582a",
+      "size": 13546
+    },
+    "apps/web/lib/__tests__/deploy-webhook-setup-route.test.ts": {
+      "exists": true,
+      "sha256": "2675216d551de7aa0925942ab580d246aeb84e77e4d2a156e7cd92b56e593050",
+      "size": 3685
+    },
+    "apps/web/lib/__tests__/deploy-webhooks-github-route.test.ts": {
+      "exists": true,
+      "sha256": "c4290c669eb88bc890e92fbeb4ef9e715447be0d64e99741e608edfcf2373684",
+      "size": 6108
+    },
+    "apps/web/lib/__tests__/deploy-webhooks-vercel-route.test.ts": {
+      "exists": true,
+      "sha256": "a8d14c1b990ffe3562dff240eb554f047b2646b112fb40cf198a1634e1b1262c",
+      "size": 3850
+    },
+    "apps/web/lib/__tests__/deploy-webhooks.test.ts": {
+      "exists": true,
+      "sha256": "f8b50e2790aaf9375d0f43c0e01b58ab23f152188a4bccabeccf54b60f2e681c",
+      "size": 7515
+    },
+    "apps/web/lib/__tests__/diff-route.test.ts": {
+      "exists": true,
+      "sha256": "f3c30915daeffd42fe5fa94dbed3816d47fb684e202e9179fe17706b6f7f5d0f",
+      "size": 4775
+    },
+    "apps/web/lib/__tests__/finding-status.test.ts": {
+      "exists": true,
+      "sha256": "ec00ec5f26e0450473da5d7cec35f76a6006e286fefca558513504427a90cefa",
+      "size": 3113
+    },
+    "apps/web/lib/__tests__/findings-core.test.ts": {
+      "exists": true,
+      "sha256": "f15c2bca3557aadb5ad7a5dd0e8a9598de999166d41a95de8639104dfacef48c",
+      "size": 6569
+    },
+    "apps/web/lib/__tests__/findings-patch-route.test.ts": {
+      "exists": true,
+      "sha256": "7a391168d640c909b94652a412040118a5f4d6f5a8d840a041f5d309fc20640c",
+      "size": 8526
+    },
+    "apps/web/lib/__tests__/findings-route.test.ts": {
+      "exists": true,
+      "sha256": "82f11fa8d8c9deaa2ad9a65b865f243de7eef982582e88779771411b56bebeba",
+      "size": 4070
+    },
+    "apps/web/lib/__tests__/fix-prompt-finding-route.test.ts": {
+      "exists": true,
+      "sha256": "a8c2160a08b8fa5496c9f19a4a8f5c7fb67af496a15228740e3337b67973ce04",
+      "size": 4533
+    },
+    "apps/web/lib/__tests__/fix-prompt-route.test.ts": {
+      "exists": true,
+      "sha256": "a16a5af7d102aaeeca3da17d22749106a5326ebb549ffee72d3fe90a9a3148db",
+      "size": 4519
+    },
+    "apps/web/lib/__tests__/honeypot-route.test.ts": {
+      "exists": true,
+      "sha256": "af3289c265a614fd272b62013744bde39d93a4d0dabfe1258b2e235dc4dafc61",
+      "size": 4375
+    },
+    "apps/web/lib/__tests__/invitation-accept-route.test.ts": {
+      "exists": true,
+      "sha256": "7dc93e50e4b2d8a0204998eb05b1c554b637b14ca44d551fadf618a72cfe9a64",
+      "size": 2285
+    },
+    "apps/web/lib/__tests__/invitations-route.test.ts": {
+      "exists": true,
+      "sha256": "d6a2c7fa5b5f50c6e67dcf110865befc2bb3972602e21085a3485a5e953226c2",
+      "size": 5197
+    },
+    "apps/web/lib/__tests__/invites-core.test.ts": {
+      "exists": true,
+      "sha256": "55d1734561f35763a61184601e451410c08ca4f1a45053819e1beb353f74f3ed",
+      "size": 21539
+    },
+    "apps/web/lib/__tests__/notifications-routes.test.ts": {
+      "exists": true,
+      "sha256": "8cad6bd1060c1dd6cd5e1c30e02eac8438c7df5c27eaa2bfd5a2f6ffd8b7c6a4",
+      "size": 8762
+    },
+    "apps/web/lib/__tests__/public-status-core.test.ts": {
+      "exists": true,
+      "sha256": "f66ae3d7f7b903fd4fcd862e021be7b322939a78780f15d1fee288dd13a2c951",
+      "size": 8511
+    },
+    "apps/web/lib/__tests__/public-status-route.test.ts": {
+      "exists": true,
+      "sha256": "2d59064ec384a5d163840d8162d1bd3fd74d4f4e25b2ac942c402655cc0097ee",
+      "size": 3686
+    },
+    "apps/web/lib/__tests__/rate-limit.test.ts": {
+      "exists": true,
+      "sha256": "dfb1c5dfd72569534f97e3cc53c15bbab1023f3b32fb413c9293ff2db2f25970",
+      "size": 1955
+    },
+    "apps/web/lib/__tests__/report-content-route.test.ts": {
+      "exists": true,
+      "sha256": "b65f754523e73e62fab816e47304d0837ca4490f5d63def52ed4ed7de75409ec",
+      "size": 2707
+    },
+    "apps/web/lib/__tests__/report-data.test.ts": {
+      "exists": true,
+      "sha256": "cb56a9516aeb0971038f19af2bcea82689663f27e20f2cfce1608fe0bb1b021b",
+      "size": 3448
+    },
+    "apps/web/lib/__tests__/report-fixtures.ts": {
+      "exists": true,
+      "sha256": "57eb64a01ec8f84bc6673964f324df936752fab2290f0b7597ee887777326272",
+      "size": 1490
+    },
+    "apps/web/lib/__tests__/report-markdown.test.ts": {
+      "exists": true,
+      "sha256": "2e8c5b94e4ab68810c4a381b71a25b6e7ae939e509c4d7da1c4dcba4089bfc6f",
+      "size": 3936
+    },
+    "apps/web/lib/__tests__/report-pdf.test.ts": {
+      "exists": true,
+      "sha256": "df8eb08478e136b7129ac15ca899608afde9b8a22d8e8bd26ee58b24bf53986b",
+      "size": 1343
+    },
+    "apps/web/lib/__tests__/report-store.test.ts": {
+      "exists": true,
+      "sha256": "dc45fdbf44e44629ebc4acc77e1b33558f9795c217cc3b338912d953012b14df",
+      "size": 3719
+    },
+    "apps/web/lib/__tests__/reports-list-route.test.ts": {
+      "exists": true,
+      "sha256": "4ac04e03ff4ae71f2c43776be70a53c25926c5d725eff2b1407ce4d5a7664b8e",
+      "size": 3942
+    },
+    "apps/web/lib/__tests__/reports-route.test.ts": {
+      "exists": true,
+      "sha256": "bc9d1b02e3a2cb9c45fa852eda84ce9a74eb8217549cc0ff0662f2dc2d4db686",
+      "size": 5316
+    },
+    "apps/web/lib/__tests__/scan-cancel-route.test.ts": {
+      "exists": true,
+      "sha256": "7bdc50085fe2b74c636f3684f82dab0f050961b9b59f3350d62819af621c8524",
+      "size": 5285
+    },
+    "apps/web/lib/__tests__/scan-notify.test.ts": {
+      "exists": true,
+      "sha256": "e6c4ccefaeee76d90ad397290a7dba5d85c7e9fea2c79de30e44de3d5f8752a9",
+      "size": 3616
+    },
+    "apps/web/lib/__tests__/scan-progress-client.test.ts": {
+      "exists": true,
+      "sha256": "c10d560d495154227c32221098790e1d61393376d3bcfe9aa594c97f244f35bb",
+      "size": 6402
+    },
+    "apps/web/lib/__tests__/scan-progress.test.ts": {
+      "exists": true,
+      "sha256": "850f839d07d5754e6669db1910269f04431f50914d8d873c88bc48612b2bfb78",
+      "size": 7421
+    },
+    "apps/web/lib/__tests__/scans-core.test.ts": {
+      "exists": true,
+      "sha256": "b87dedec9e96aeba7c6044974aabbb336e817d27e2b331250b5f27ce46a7735c",
+      "size": 28991
+    },
+    "apps/web/lib/__tests__/scans-route.test.ts": {
+      "exists": true,
+      "sha256": "a70f956c1b6c184b40ab3691b97ddfc5575df5faaf52c6ef33f2f455533fc891",
+      "size": 4642
+    },
+    "apps/web/lib/__tests__/schedule.test.ts": {
+      "exists": true,
+      "sha256": "18a36c58902ea702ee48dff6c04854eb8891d57557dafa53224eade1c80f1e53",
+      "size": 2275
+    },
+    "apps/web/lib/__tests__/site-honeypot-route.test.ts": {
+      "exists": true,
+      "sha256": "7f6ef4099a83cd54371a343df26c18223f5815356d154cbf712ef055ae1182c7",
+      "size": 4562
+    },
+    "apps/web/lib/__tests__/site-schedule-route.test.ts": {
+      "exists": true,
+      "sha256": "fe14d3efd51a19439df604cc81fcedf4f394cfbce91353a9106dc6187b788223",
+      "size": 4707
+    },
+    "apps/web/lib/__tests__/site-validation.test.ts": {
+      "exists": true,
+      "sha256": "59095de7b120a19606902ae8928b820c4d9b76949843933b70eb435dc25a6e4c",
+      "size": 7932
+    },
+    "apps/web/lib/__tests__/sites-core.test.ts": {
+      "exists": true,
+      "sha256": "f69689deccf5647c8321ad3624c120e86dca57faf69c8727abc23bfcab9fe0bb",
+      "size": 12961
+    },
+    "apps/web/lib/__tests__/sites-delete-route.test.ts": {
+      "exists": true,
+      "sha256": "ceb8ced6ee890b5f715051a6c15951f6b81f9b87690d928711d8f1619ea8cacc",
+      "size": 3619
+    },
+    "apps/web/lib/__tests__/sites-get-route.test.ts": {
+      "exists": true,
+      "sha256": "7b54ce8c3591f8a023963949ba8cd0a53c58198a8ac3cf3b534784bb750dc45d",
+      "size": 3459
+    },
+    "apps/web/lib/__tests__/sites-public-status-route.test.ts": {
+      "exists": true,
+      "sha256": "02d75339aa336ec63e0349eadd3eddeb3426c7301bce27a193a752886cc79975",
+      "size": 5194
+    },
+    "apps/web/lib/__tests__/stream-route.test.ts": {
+      "exists": true,
+      "sha256": "0cb5b7d5a4d158303340b361a1a5e8c7f399c85bb17310fc709ae38b19152692",
+      "size": 7481
+    },
+    "apps/web/lib/__tests__/team-core.test.ts": {
+      "exists": true,
+      "sha256": "0469733d1fd26b6450dbe97ac8736a65fce48b54ae71e9a9a8235a523ed82bc3",
+      "size": 5009
+    },
+    "apps/web/lib/__tests__/threat-rules.test.ts": {
+      "exists": true,
+      "sha256": "de0856746e58a78fb2030810fb0cf70617614eb2b4a0f70f4f47a378e39bbbd4",
+      "size": 5674
+    },
+    "apps/web/lib/__tests__/threats-core.test.ts": {
+      "exists": true,
+      "sha256": "0a818292251684691d1dbd36337f4f6ddc880837d053fab4ce302c30ddc2c994",
+      "size": 9890
+    },
+    "apps/web/lib/__tests__/threats-events-route.test.ts": {
+      "exists": true,
+      "sha256": "9f4a9d7d9d1767ba3df522efa0b7b6f21c01660abb15d7776188e242b309438b",
+      "size": 4201
+    },
+    "apps/web/lib/__tests__/threats-route.test.ts": {
+      "exists": true,
+      "sha256": "a227086d607079bebcaf67bbf67d9e21259fde77f8f094181d7645d3b473f59a",
+      "size": 3777
+    },
+    "apps/web/lib/__tests__/uptime-core.test.ts": {
+      "exists": true,
+      "sha256": "227953f7407dcc71c9f00ae07402be528d135391efffc6af6c916f4ed6a811cd",
+      "size": 14027
+    },
+    "apps/web/lib/__tests__/uptime-format.test.ts": {
+      "exists": true,
+      "sha256": "803dda12243eabf98d69a59f88dd811e21a9857d79af7e819ac216c84b83362d",
+      "size": 2833
+    },
+    "apps/web/lib/__tests__/uptime-route.test.ts": {
+      "exists": true,
+      "sha256": "8241ff6ff85f7994d5012b15b6668c56ddc1333a6ecfe15249af1f9e78693abf",
+      "size": 4103
+    },
+    "apps/web/lib/__tests__/uptime-site-route.test.ts": {
+      "exists": true,
+      "sha256": "69f72e45a9d0d247d59f396771893964478b24890f1cf5d0e38e3cc7c561f9f7",
+      "size": 5937
+    },
+    "apps/web/lib/__tests__/webhooks-core.test.ts": {
+      "exists": true,
+      "sha256": "99b4e9aab93ac372b66e06dc6039dff4187caa1acd0f144d8418e10b319551a3",
+      "size": 7569
+    },
+    "apps/web/lib/__tests__/webhooks-route.test.ts": {
+      "exists": true,
+      "sha256": "4ba5caeac445cff9cf1500145fce57f3b8df7a2268dfd9bfe099866b26be87ca",
+      "size": 11064
+    },
+    "apps/web/lib/billing-core.ts": {
+      "exists": true,
+      "sha256": "a078360a5b5c05a6a5a95624820d0b0bf136513968a02a3a42084f74ddfabffb",
+      "size": 6591
+    },
+    "apps/web/lib/billing.ts": {
+      "exists": true,
+      "sha256": "58c3e8b89764e8bb2494ca8be1ec84d0c2345c43ca1605ca48ba128443d9d1f0",
+      "size": 9394
+    },
+    "apps/web/lib/env.ts": {
+      "exists": true,
+      "sha256": "3f2489a4214cb478bf10afe605f7c23593bef1422552faf27496eea27cd3766f",
+      "size": 2557
+    },
+    "apps/web/lib/invites-core.ts": {
+      "exists": true,
+      "sha256": "2b1d3a9de06de7bf6c8c39e03a793ea57b4ce73cc8cdbd689341b85226010231",
+      "size": 10620
+    },
+    "apps/web/lib/scan-progress-client.ts": {
+      "exists": true,
+      "sha256": "127388a09fe8df12e0f448acab9f66a2bbdb6aeed106d1cede06214cb4840e1a",
+      "size": 6315
+    },
+    "apps/web/lib/sites-core.ts": {
+      "exists": true,
+      "sha256": "50eb26bc0fb7e74dad03edc427f08351c2c8a6249c29b1350e3a74720f1f795d",
+      "size": 6180
+    },
+    "apps/worker/AGENTS.md": {
+      "exists": true,
+      "sha256": "55b40107b7bebf0b0f1184b2202c36e790e99640f6805183d25a93bd83ceff74",
+      "size": 6672
+    },
+    "apps/worker/src/checks/__tests__/registry.test.ts": {
+      "exists": true,
+      "sha256": "a262298951c53528bd641d1cb4fec812779345db61976e7c18cfa058a0ab8c8f",
+      "size": 2944
+    },
+    "apps/worker/src/checks/http/__tests__/crux-field-data.test.ts": {
+      "exists": true,
+      "sha256": "3b87f455d04cdf137c8bc30b8ad9ad81e10df871462a0da8d612601bd7738fef",
+      "size": 4024
+    },
+    "apps/worker/src/checks/http/crux-field-data.ts": {
+      "exists": true,
+      "sha256": "a0c147e00e9f561934b2deb1305e15a03e31d8029942ebc41f07f1eb97c9ff44",
+      "size": 3645
+    },
+    "apps/worker/src/checks/registry.ts": {
+      "exists": true,
+      "sha256": "64d4849e2bc4d481b0d0d69c952af64ccb73bbaf29434c0764159944f1340b25",
+      "size": 7112
+    },
+    "apps/worker/src/env.ts": {
+      "exists": true,
+      "sha256": "c6f8d53eec68a5fde388c67690e9ac086bc91d1edafcc3dc0944da235a679013",
+      "size": 1319
+    },
+    "apps/worker/src/lib/__tests__/crux.test.ts": {
+      "exists": true,
+      "sha256": "b6078f4766e2dc6e157aacefbbf63b220d971bde3fde63034482ae7519a066bc",
+      "size": 7625
+    },
+    "apps/worker/src/lib/crux.ts": {
+      "exists": true,
+      "sha256": "353fbcd87192ade15b0ae9524c951dfd862982f693eb369e8d198e4e69c07990",
+      "size": 6291
+    },
+    "apps/worker/src/queues/__tests__/aggregate.test.ts": {
+      "exists": true,
+      "sha256": "efeea8b0b5b55e0fd0c4fa17d707f8a2d956d2f6552b9fd6e74c94fc478bbfaa",
+      "size": 9672
+    },
+    "apps/worker/src/queues/__tests__/dispatcher.test.ts": {
+      "exists": true,
+      "sha256": "0e139ce31864865a16531376134d92c562252706b1ac8f9e56ec133cf56eca87",
+      "size": 3510
+    },
+    "apps/worker/src/queues/aggregate.ts": {
+      "exists": true,
+      "sha256": "233e73fcd6dfd1acb250de716847f1cc1b35ca963a88fe8d090c51a1abbcf405",
+      "size": 10432
+    },
+    "apps/worker/src/queues/boot.ts": {
+      "exists": true,
+      "sha256": "c79ffd921d09eb2aa27320f5e0296f0fb0d94ab19ad81c670012791e0247baa8",
+      "size": 5023
+    },
+    "docs/FEATURES.md": {
+      "exists": true,
+      "sha256": "2041afd4292b3aedccb7e2ed1270b8d255865aec359f3e80afaf4d9595239167",
+      "size": 10011
+    },
+    "docs/ROADMAP.md": {
+      "exists": true,
+      "sha256": "81d82f40a6f1d4230d403083886fec1f0381817882d2437696d4e7fea9feb7c3",
+      "size": 10829
+    },
+    "docs/plans/61-compliance-pillar.md": {
+      "exists": true,
+      "sha256": "38d9ecf7c48842d533eb2a214341f0c1590277f01081847c92f3e84694f50729",
+      "size": 4991
+    },
+    "docs/plans/62-crux-field-data.md": {
+      "exists": true,
+      "sha256": "5ac70e99c0c8e6ac1b9a5c8b09f599787d715ebda2ba17b9df5775b2e1b7cbea",
+      "size": 4418
+    },
+    "docs/plans/63-mcp-expansion.md": {
+      "exists": true,
+      "sha256": "d5eb7d2d4066caff5c82b9ad151acf9c95ea69a7c9915f88a915b6efec058d0f",
+      "size": 6005
+    },
+    "packages/db/AGENTS.md": {
+      "exists": true,
+      "sha256": "1f709e8094bfef4128ec7f0f9ca4399eac1967d5db51eb3c16a3adce32ad5a13",
+      "size": 3286
+    },
+    "packages/db/migrations/025_scan_crux.sql": {
+      "exists": true,
+      "sha256": "0bf68e017446412401ac00e3b9bb503114c2ccf649a87d2652e67e6b4c6568fb",
+      "size": 507
+    },
+    "packages/db/migrations/026_team_seats_white_label.sql": {
+      "exists": true,
+      "sha256": "6cb514e5ddd43bf125073f02ca908413cea92108b1f44c8dccb420f470d40e3a",
+      "size": 2460
+    },
+    "packages/db/src/index.ts": {
+      "exists": true,
+      "sha256": "55c4922e0e356930249bf16f538edcca37e27e79852e1e7929c0906f9ed43efc",
+      "size": 7182
+    },
+    "packages/mcp-server/AGENTS.md": {
+      "exists": true,
+      "sha256": "373141370fe9ef0cae2d0502e150b3b63917442de44c6128f7d1b2f403b71a28",
+      "size": 5361
+    },
+    "packages/mcp-server/README.md": {
+      "exists": true,
+      "sha256": "f380ab8ffda464fd966aad5c310e737b5d968624ff821a9e72ad1d5920861787",
+      "size": 4520
+    },
+    "packages/mcp-server/package.json": {
+      "exists": true,
+      "sha256": "a3f0d5b42e20ea2b6c2dc7e35d1e5746e2d6d0f9853ec28774fd0a50fbeb41e1",
+      "size": 551
+    },
+    "packages/mcp-server/src/__tests__/mcp.test.ts": {
+      "exists": true,
+      "sha256": "858999d571f12354ddc2e7221186a8f6bef787d7f29d4a346d792f0ce75b5378",
+      "size": 10420
+    },
+    "packages/mcp-server/src/client.ts": {
+      "exists": true,
+      "sha256": "6ea026af0bb875234812cedf4d1bf541eac1183ccd7bdfee68d5855f48ec08dd",
+      "size": 3932
+    },
+    "packages/mcp-server/src/server.ts": {
+      "exists": true,
+      "sha256": "a662601634a6416ebce9ee71b6f45fb77af9156f764792e5f030703065a963e1",
+      "size": 3463
+    },
+    "packages/scan-core/AGENTS.md": {
+      "exists": true,
+      "sha256": "ab4ed00a9fbcfcd2376739166bed5d32aa34f6f78b45a9d70dbcaba5318278af",
+      "size": 2683
+    },
+    "packages/scan-core/src/crux.ts": {
+      "exists": true,
+      "sha256": "0f46a7329d633aee1484df5d39066869154668c5272438210b18e9300ca3071c",
+      "size": 1837
+    },
+    "packages/scan-core/src/index.ts": {
+      "exists": true,
+      "sha256": "f56b83bfba63037fedd4a69b568b523db138b6167a863ad7134ff7d16eb6836e",
+      "size": 371
+    },
+    "packages/shared/AGENTS.md": {
+      "exists": true,
+      "sha256": "116a094f5bf40b16441bf485e380915d84b2ed48f6434758c50d882b22e3fc1b",
+      "size": 3592
+    },
+    "packages/shared/src/__tests__/crux.test.ts": {
+      "exists": true,
+      "sha256": "62e58a84577893bae5715e1830336a7f4ae38920ab14557810f5df0837c99a48",
+      "size": 4249
+    },
+    "packages/shared/src/__tests__/mcp-tools.test.ts": {
+      "exists": true,
+      "sha256": "4717a728316a0fbf580df8c37eae151d3c4ea8e00161df9b8f9401ae7cf6ae58",
+      "size": 5481
+    },
+    "packages/shared/src/__tests__/plans.test.ts": {
+      "exists": true,
+      "sha256": "45204af99c3234da3cc24331636c54fd0ae18ced1a40c6a11d52c3d4c330a56b",
+      "size": 3718
+    },
+    "packages/shared/src/__tests__/report-tokens.test.ts": {
+      "exists": true,
+      "sha256": "d6cd925f48cbba24bf749353cdcbf2e615cea9255ce600096242b52bcf508e57",
+      "size": 4020
+    },
+    "packages/shared/src/branding.ts": {
+      "exists": true,
+      "sha256": "03ebcc1118969988e72c51fdfc21a429d889ecfb04ef76b7d81def0b7b715a1b",
+      "size": 833
+    },
+    "packages/shared/src/check-catalog.ts": {
+      "exists": true,
+      "sha256": "02e9ec501a34c6381743177d9e7e9c8ba59364e7df8c43cf0743f593a550b064",
+      "size": 8436
+    },
+    "packages/shared/src/crux.ts": {
+      "exists": true,
+      "sha256": "3ff4ea0e7ed1aca6a064014db2066efdd8562fdb776f300797d80be772a2d8e7",
+      "size": 4290
+    },
+    "packages/shared/src/findings.ts": {
+      "exists": true,
+      "sha256": "69cfdc95a2eef645abe9c771c33301bf65a0c077053e2941b597a169622ef764",
+      "size": 31427
+    },
+    "packages/shared/src/index.ts": {
+      "exists": true,
+      "sha256": "d9f5d3e3dc42917862f7116ce283613cdf0af60e71d109caddef7133bb4e11a4",
+      "size": 4833
+    },
+    "packages/shared/src/mcp-tools.ts": {
+      "exists": true,
+      "sha256": "a6f1da56c0de0b95336624fc27f3b7521f87234f95641852857e91da2386e355",
+      "size": 9267
+    },
+    "packages/shared/src/plans.ts": {
+      "exists": true,
+      "sha256": "72dba7b79eab98637db6a3be73007f4b12cb9db68bc3c3a9e68de1012bb2e454",
+      "size": 4044
+    },
+    "packages/shared/src/report-tokens.ts": {
+      "exists": true,
+      "sha256": "ef59f7a81649aadb0ee8c7bcd34c363fb1defa24dcb83690c7ca9cec1cbc768e",
+      "size": 1357
+    },
+    "packages/shared/src/scans.ts": {
+      "exists": true,
+      "sha256": "c6f284fc7729253c25fdcd5dabb5b6fcfa2629471176ac01dceb2d52ac36fc44",
+      "size": 3874
+    },
+    "packages/shared/src/workspaces.ts": {
+      "exists": true,
+      "sha256": "28ecb71d796e7c61fa13ccf9a5edf81268c668d0dd12c54826b62cfd61600f25",
+      "size": 919
+    },
+    "pnpm-lock.yaml": {
+      "exists": true,
+      "sha256": "5bb3a8d789a5cfd774c1bdc6705bc2adc89dd8bd715d120c274973aa1512bc42",
+      "size": 216493
+    }
+  },
+  "format": "deepseek-and-destroy-scope-snapshot-v1",
+  "project_root": "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal"
+}

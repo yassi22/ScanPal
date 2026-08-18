@@ -1,0 +1,23 @@
+﻿{
+    "scope":  [
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\env.ts",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\billing.ts",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\billing-core.ts",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\app\\api\\billing\\subscription\\route.ts",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\__tests__\\billing.test.ts",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\__tests__\\billing-core.test.ts",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\__tests__\\billing-routes.test.ts",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\.env.example"
+              ],
+    "captured_at":  "2026-08-18T14:04:56.2002161+02:00",
+    "files":  {
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\__tests__\\billing-routes.test.ts":  "1ABF5EF42CFB72BE63A989B2272D693A93AD1891F20607DAB187AF15BDF53FBB",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\billing-core.ts":  "6D5C90C41AE458BC4F9255338C15DDBEC25A9F6662D2FB8A8978BA93FE8A6416",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\.env.example":  "6C81367FBE863CF01C69519A8DC58A7ECE4EA7917A0B189CF9155C51BF183508",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\env.ts":  "5507F33A8ED5F4F9F8D5814DF1828B270B268AB919764DD0102D65CECD76D00A",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\app\\api\\billing\\subscription\\route.ts":  "763FAE8466DEE68024D8532CAE23DF0A8CCEE8DA0A6398C7B3B1BA710B8AAA24",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\__tests__\\billing-core.test.ts":  "639D555C3E1571CF03C2D6F02CFAE1C39685856CA1CBF464F38269C4818F9083",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\billing.ts":  "609B1F1302627BD286D35385051678481A81ADA4E8FA5B6D9238B29C5F1E436C",
+                  "C:\\Users\\Yassin\\Desktop\\scanpal\\ScanPal\\apps\\web\\lib\\__tests__\\billing.test.ts":  "443B59C6E6327575F5A11E3AEA8E2B9AD00F0D19135A798CA431910A9F3BC8EA"
+              }
+}

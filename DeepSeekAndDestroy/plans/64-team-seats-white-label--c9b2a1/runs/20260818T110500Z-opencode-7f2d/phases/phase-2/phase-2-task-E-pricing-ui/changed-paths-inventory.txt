@@ -1,0 +1,14 @@
+# Changed paths — phase-2-task-E-pricing-ui (Implementer, Sonnet 5)
+# Captured after implementation, before verification report write.
+# Format: <path> — <change type> — <one-line reason>
+
+apps/web/components/pricing-cards.tsx — MODIFIED — grid md:grid-cols-2 -> md:grid-cols-3; genericized plan.id==="pro" highlight to isFeatured=plan.id==="max" (card border + unauthenticated CTA button style); genericized busy==="pro"/"Upgrade naar Pro" to busy===plan.id/`Upgrade naar ${plan.name}`; the existing "Maximaal {maxMembers} teamleden" row now shows "{seats} betaalde seats" when plan.features.seats is non-null (replaces, does not duplicate, the members row — avoids two people-count rows on the Max card); added a white_label feature row (existing uptime/github rows kept intact, unchanged).
+
+apps/web/app/(dashboard)/billing/page.tsx — MODIFIED — made the isPaid copy branch (~:66-69) plan-aware: added a plan.id==="max" branch showing seats (plan.features.seats ?? plan.maxMembers) + white-label copy; pro still gets the original "uptime & GitHub-scans" copy via the isPaid branch; free copy unchanged. Did NOT touch the isPaid/isOwner computation or the BillingManager gate props (task-C logic, lines ~34-36, ~90-94) — only the JSX text branch was edited.
+
+apps/web/lib/__tests__/plans-route.test.ts — ADDED — new route test for GET /api/plans asserting 3 plans (free, pro, max) are returned, and that max has features.seats===3 and features.white_label===true, while free/pro have seats===null and white_label===false. No mocks required (route has no auth/DB dependency).
+
+# Files verified but NOT changed (per task instruction — feature props already drive them generically):
+# apps/web/app/(dashboard)/sites/page.tsx — uses isPaidPlan(plan.id) and plan.features.* already (task-C); no max-specific copy needed.
+# apps/web/app/(dashboard)/sites/[id]/page.tsx — uses plan.features.onDeploy only; no plan-identity copy at all.
+# packages/shared/src/plans.ts — NOT modified (plan data already contains max/planList/isPaidPlan from task-A/task-C; out of scope per task instructions).

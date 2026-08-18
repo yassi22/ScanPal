@@ -26,3 +26,8 @@ npm-debug.log*
 
 # test
 coverage/
+
+# local DeepSeekAndDestroy run state
+DeepSeekAndDestroy/**/ephemeral-db/
+DeepSeekAndDestroy/**/*.log
+DeepSeekAndDestroy/**/*.pid
