@@ -12,7 +12,10 @@ function ctx(url = "https://example.com/") {
 }
 
 function makeRunner(result: BrowserRunResult): BrowserRunner {
-  return { captureVitals: vi.fn().mockResolvedValue(result) };
+  return {
+    captureVitals: vi.fn().mockResolvedValue(result),
+    runAxe: vi.fn().mockResolvedValue({ ok: false, error: "not-used" }),
+  };
 }
 
 beforeEach(() => {

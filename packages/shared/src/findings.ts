@@ -56,6 +56,10 @@ import {
   type CwvEvidence,
 } from "./browser-vitals";
 import {
+  axeEvidenceSchema,
+  type AxeEvidence,
+} from "./accessibility";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -109,6 +113,7 @@ export const findingSchema = z.object({
       gitleaksEvidenceSchema,
       osvEvidenceSchema,
       cwvEvidenceSchema,
+      axeEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -261,6 +266,7 @@ export type InlineCheckLike = {
     | GitleaksEvidence
     | OsvEvidence
     | CwvEvidence
+    | AxeEvidence
     | string
     | null;
 };
@@ -286,6 +292,7 @@ export function evidenceText(
     | GitleaksEvidence
     | OsvEvidence
     | CwvEvidence
+    | AxeEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -362,6 +369,11 @@ export function evidenceText(
     }
     if (evidence.kind === "core-web-vitals") {
       return `lcp=${evidence.lcp_ms}(${evidence.ratings.lcp}) cls=${evidence.cls}(${evidence.ratings.cls}) inp=${evidence.inp_ms}(${evidence.ratings.inp})`;
+    }
+    if (evidence.kind === "accessibility") {
+      return evidence.samples
+        .map((s) => `${s.impact}:${s.id} (${s.node_count} node(s)) ${s.help}`)
+        .join(" | ");
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -462,6 +474,10 @@ const ISSUE_TITLES: Record<
   "core-web-vitals": {
     warn: "Core Web Vitals komen niet volledig in orde (needs improvement)",
     fail: "Een of meer Core Web Vitals zijn arm (poor)",
+  },
+  accessibility: {
+    warn: "axe-core vond matige toegankelijkheidsissues",
+    fail: "axe-core vond kritieke toegankelijkheidsissues",
   },
   cors: {
     warn: "CORS laat arbitraire origins toe",
@@ -596,6 +612,8 @@ const REMEDIATION: Record<string, string> = {
     "Update de kwetsbare dependencies naar een niet-kwetsbare versie (zie het advisory-id in de evidence). Bij een onbeperkt advisary zonder patch: pin de versie, pas mitigaties toe of vervang de dependency. Voeg OSV-Scanner toe aan de CI voor continue controle.",
   "core-web-vitals":
     "Optimaliseer LCP (verlaag de largest render-time: pre-load van kritische resources, CDN, lazy-load niet-kritieke media), CLS (reserveer ruimte voor media/ad-banners, vermijd layout-shift door late inserts) en INP (verdeel lange taken, gebruik requestIdleCallback, optimaliseer interactie-handlers). Meet met Lighthouse / PageSpeed Insights / CrUX-field data.",
+  accessibility:
+    "Los de axe-core-violations op: voeg ontbrekende alt-attributen, labels, ARIA-roles, heading-volgorde, color-contrast en focus-management toe. Behandel critical/serious-issues als blockers; voeg axe toe aan de CI om regressie te voorkomen. Valideer met echte toetsenbord/schermlezer-tests.",
 };
 
 /**

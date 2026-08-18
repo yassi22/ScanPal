@@ -13,7 +13,14 @@ export type BrowserRunResult =
   | { ok: true; metrics: CwvMetrics }
   | { ok: false; error: string };
 
+/** Resultaat van een axe-run: ruwe axe `violations[]`-array (ongeformatteerd). */
+export type AxeRunResult =
+  | { ok: true; violations: unknown }
+  | { ok: false; error: string };
+
 export type BrowserRunner = {
   /** Draait één page-load en vangt CWV-metrics. */
   captureVitals(url: string): Promise<BrowserRunResult>;
+  /** Draait axe-core op de pagina en retourneert de violations[]-array. */
+  runAxe(url: string): Promise<AxeRunResult>;
 };

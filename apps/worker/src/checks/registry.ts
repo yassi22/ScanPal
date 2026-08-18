@@ -30,6 +30,7 @@ import { semgrepCheck } from "./github/semgrep";
 import { gitleaksCheck } from "./github/gitleaks";
 import { osvScannerCheck } from "./github/osv-scanner";
 import { createCoreWebVitalsCheck } from "./browser/core-web-vitals";
+import { createAccessibilityCheck } from "./browser/accessibility";
 import type { BrowserRunner } from "./browser/runner";
 
 /**
@@ -97,6 +98,8 @@ export function buildRegistry(
     browser: [
       // Feature 41: Core Web Vitals (LCP/CLS/INP) via Playwright.
       toImplemented(createCoreWebVitalsCheck(browserRunner)),
+      // Feature 42: Accessibility (axe-core) via Playwright.
+      toImplemented(createAccessibilityCheck(browserRunner)),
     ],
     // Features 46–49 vullen de github-worker.
     github: [

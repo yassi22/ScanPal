@@ -35,7 +35,10 @@ function fakeCrawlQueue() {
 }
 
 const rateLimit = {} as never;
-const mockRunner: BrowserRunner = { captureVitals: () => Promise.resolve({ ok: false, error: "mock" }) };
+const mockRunner: BrowserRunner = {
+  captureVitals: () => Promise.resolve({ ok: false, error: "mock" }),
+  runAxe: () => Promise.resolve({ ok: false, error: "mock" }),
+};
 const registry = buildRegistry(rateLimit, mockRunner);
 
 describe("createDispatcherProcessor (plan 54)", () => {

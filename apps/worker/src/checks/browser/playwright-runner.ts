@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
-import type { BrowserRunner, BrowserRunResult } from "./runner";
+import { AxeBuilder } from "@axe-core/playwright";
+import type { BrowserRunner, BrowserRunResult, AxeRunResult } from "./runner";
 import type { CwvMetrics } from "@scanpal/shared";
 
 /**
@@ -69,6 +70,24 @@ export function createPlaywrightRunner(): BrowserRunner {
           inp_ms: inp !== null ? Math.round(inp) : null,
         };
         return { ok: true, metrics };
+      } catch (err) {
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      } finally {
+        await browser?.close().catch(() => {});
+      }
+    },
+    async runAxe(url): Promise<AxeRunResult> {
+      let browser;
+      try {
+        browser = await chromium.launch({ headless: true });
+        const ctx = await browser.newContext();
+        const page = await ctx.newPage();
+        await page.goto(url, { waitUntil: "networkidle", timeout: 30_000 });
+        const results = await new AxeBuilder({ page }).analyze();
+        return { ok: true, violations: results.violations };
       } catch (err) {
         return {
           ok: false,

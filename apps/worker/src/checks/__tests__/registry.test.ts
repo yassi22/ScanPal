@@ -3,7 +3,10 @@ import { buildRegistry, skeletonTotals } from "../registry";
 import type { BrowserRunner } from "../browser/runner";
 
 const rateLimit = {} as never;
-const mockRunner: BrowserRunner = { captureVitals: () => Promise.resolve({ ok: false, error: "mock" }) };
+const mockRunner: BrowserRunner = {
+  captureVitals: () => Promise.resolve({ ok: false, error: "mock" }),
+  runAxe: () => Promise.resolve({ ok: false, error: "mock" }),
+};
 
 describe("skeletonTotals (progress-skelet)", () => {
   it("telt de eerste http-checks zonder actieve tests", () => {
@@ -17,10 +20,11 @@ describe("skeletonTotals (progress-skelet)", () => {
     // onder categorie compliance. stack-detection (plan 40) is category seo →
     // telt mee onder seo. redirects-mixed + subresources (plan 32/34) zijn
     // category http. structured-data + security-txt (plan 39/37) zijn category seo.
-    // Feature 41: core-web-vitals draait in de browser-worker (aeo) → aeo 1->2.
+    // Feature 41: core-web-vitals draait in de browser-worker (aeo) → aeo 1->2;
+    // feature 42 voegt accessibility toe (aeo 2->3).
     expect(totals.http).toBe(22);
     expect(totals.seo).toBe(5);
-    expect(totals.aeo).toBe(2);
+    expect(totals.aeo).toBe(3);
     expect(totals.compliance).toBe(5);
     // Categorieën zonder queue-owner krijgen geen key (initialProgressDetails
     // default naar 0).
