@@ -27,6 +27,8 @@ import { securityTxtCheck } from "./http/security-txt";
 import { miniCrawlCheck } from "./http/mini-crawl";
 import { repoHealthCheck } from "./github/repo-health";
 import { semgrepCheck } from "./github/semgrep";
+import { gitleaksCheck } from "./github/gitleaks";
+import { osvScannerCheck } from "./github/osv-scanner";
 
 /**
  * Geïmplementeerde check per queue (plan 27, besluit 8). `outputCheckIds`
@@ -96,6 +98,10 @@ export function buildRegistry(rateLimit: RateLimiter): Record<QueueName, Impleme
       toImplemented(repoHealthCheck),
       // Feature 46: Semgrep SAST via Docker (read-only repo-mount).
       toImplemented(semgrepCheck),
+      // Feature 47: Gitleaks secrets-scan via Docker.
+      toImplemented(gitleaksCheck),
+      // Feature 48: OSV-Scanner dependency-vulns via Docker.
+      toImplemented(osvScannerCheck),
     ],
   };
 }
