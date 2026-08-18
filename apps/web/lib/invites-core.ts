@@ -42,7 +42,6 @@ export type PendingInvitation = {
   team_id: string;
   email: string;
   role: UserRole;
-  token: string;
   expires_at: Date | string;
   created_at: Date | string;
 };
@@ -247,7 +246,7 @@ export async function listPendingInvitations(
   teamId: string,
 ): Promise<PendingInvitation[]> {
   const result = await db.query(
-    `select id, team_id, email, role, token, expires_at, created_at
+    `select id, team_id, email, role, expires_at, created_at
      from invitations
      where team_id = $1 and accepted_at is null and expires_at > now()
      order by created_at asc`,

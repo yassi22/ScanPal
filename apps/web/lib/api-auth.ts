@@ -14,7 +14,9 @@ import { getPlanForTeam } from "./credits";
 import {
   HMAC_SIGNATURE_HEADER,
   HMAC_TIMESTAMP_HEADER,
+  canonicalQueryString,
   canonicalRequestString,
+  deriveHmacSigningSecret,
   isTimestampValid,
   parseHmacAuth,
   requestBodyHash,
@@ -98,15 +100,20 @@ async function requireHmacApiKey(
   if (!isTimestampValid(timestamp)) return { ok: false, status: 401 };
 
   const bodyHash = await requestBodyHash(request);
-  const path = new URL(request.url).pathname;
+  const url = new URL(request.url);
+  const path = url.pathname;
+  const query = canonicalQueryString(url.search);
   const canonical = canonicalRequestString(
     request.method,
     path,
+    query,
     timestamp,
     bodyHash,
   );
-  // key_hash = sha256(fullKey) — hergebruikt als HMAC-secret (geen migratie).
-  if (!verifyHmacSignature(row.key_hash, canonical, signature)) {
+  // Signing-secret wordt domein-gescheiden afgeleid uit key_hash (pass-the-hash
+  // fix): key_hash zelf is nooit voldoende om een signature te forgen.
+  const secret = deriveHmacSigningSecret(row.key_hash);
+  if (!verifyHmacSignature(secret, canonical, signature)) {
     return { ok: false, status: 401 };
   }
 

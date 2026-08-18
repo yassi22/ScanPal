@@ -106,8 +106,8 @@ export async function createSite(
     const label = input.label?.trim() || null;
 
     const inserted = await client.query(
-      `insert into sites (team_id, url, github_repo, label)
-       values ($1, $2, $3, $4)
+      `insert into sites (team_id, url, github_repo, label, next_domain_check_at)
+       values ($1, $2, $3, $4, now())
        returning ${SITE_COLUMNS}`,
       [input.teamId, canonicalUrl, githubRepo, label],
     );

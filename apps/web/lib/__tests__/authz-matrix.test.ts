@@ -247,24 +247,42 @@ describe("owner-only routes (member → 403, anon → 401)", () => {
   });
 });
 
-describe("member-routes (lid → 200, anon → 401)", () => {
-  it("GET /api/teams/[id]/invitations: lid → 200", async () => {
+describe("owner-routes (owner → 200, member → 403, anon → 401)", () => {
+  it("GET /api/teams/[id]/invitations: owner → 200, member → 403", async () => {
+    ownerMock.mockResolvedValue({
+      ok: true,
+      user: { id: "owner-1" },
+      membership: { team_id: TEAM_ID, user_id: "owner-1", role: "owner", status: "accepted" },
+    } as never);
     listInvitesMock.mockResolvedValue([] as never);
-    const response = await invitationsListGET(
+    const asOwner = await invitationsListGET(
       new NextRequest(`http://localhost/api/teams/${TEAM_ID}/invitations`),
       teamParams(),
     );
-    expect(response.status).toBe(200);
+    expect(asOwner.status).toBe(200);
+
+    ownerMock.mockResolvedValue({
+      ok: false,
+      status: 403,
+    } as never);
+    const asMember = await invitationsListGET(
+      new NextRequest(`http://localhost/api/teams/${TEAM_ID}/invitations`),
+      teamParams(),
+    );
+    expect(asMember.status).toBe(403);
   });
 
   it("GET /api/teams/[id]/invitations: anon → 401", async () => {
-    memberMock.mockResolvedValue({ ok: false, status: 401 } as never);
+    ownerMock.mockResolvedValue({ ok: false, status: 401 } as never);
     const response = await invitationsListGET(
       new NextRequest(`http://localhost/api/teams/${TEAM_ID}/invitations`),
       teamParams(),
     );
     expect(response.status).toBe(401);
   });
+});
+
+describe("member-routes (lid → 200, anon → 401)", () => {
 
   it("GET /api/teams/[id]/members: lid → 200, anon → 401", async () => {
     listMembersMock.mockResolvedValue([] as never);

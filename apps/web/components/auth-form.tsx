@@ -4,9 +4,20 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+/**
+ * Open-redirect-hardening (client): alleen relatieve paden; `//x`, absolute
+ * URL's en externe schemes → fallback. Spiegel van de server-side `safeNext`
+ * in de auth-callback-route, voor de hash-flow (implicit grant).
+ */
+function safeNext(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+  return raw;
+}
+
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = safeNext(searchParams.get("next"));
   const oauthError = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);

@@ -4,15 +4,17 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 /**
  * Feature 25 — HMAC-request-signing naast bearer-auth (plan 14, uitgesteld).
- * De client tekent een canonieke string (method + path + timestamp + body-hash)
- * met als secret `sha256(apiKey)` (= `key_hash` in de DB, hergebruikt als
- * HMAC-secret zodat geen migratie nodig is). De server leest `key_hash` uit de
- * DB en verifieert de signature timing-safe. De full key wordt nooit over de
- * draad gestuurd — alleen prefix + timestamp + signature.
+ * De client tekent een canonieke string (method + path + gesorteerde query +
+ * timestamp + body-hash) met een *afgeleid* secret:
  *
- * Client-afleiding van het secret:
- *   secret = sha256(fullApiKey)   // hex
- * De server gebruikt dezelfde sha256 (opgeslagen als `key_hash`).
+ *   key_hash   = sha256(fullApiKey)                // opgeslagen in de DB
+ *   signing_secret = sha256(DERIVATION_PREFIX + ":" + key_hash)
+ *
+ * De DB slaat alleen `key_hash` op; het HMAC-secret wordt er domein-
+ * gescheiden uit afgeleid met een server-side constante (`API_HMAC_SIGNING_
+ * SECRET`, env). Wie alleen de DB/backup leest kan daardoor géén geldige
+ * signatures forgen (pass-the-hash fix): hij mist de derivatie-secret.
+ * Clients die de full key bezitten kunnen het secret wél afleiden.
  */
 
 export const HMAC_AUTH_SCHEME = "HMAC";
@@ -20,18 +22,43 @@ export const HMAC_SIGNATURE_HEADER = "X-Signature";
 export const HMAC_TIMESTAMP_HEADER = "X-Timestamp";
 /** Max skew tussen client-klok en server (seconden). */
 export const HMAC_TIMESTAMP_TOLERANCE_SECONDS = 300;
+/** Server-side derivatie-constante; anders dan de key-hash in de DB. */
+export const HMAC_SIGNING_SECRET_ENV = "API_HMAC_SIGNING_SECRET";
+
+/**
+ * Afgeleid HMAC-secret uit `key_hash` (sha256 van de full key). De client
+ * berekent: sha256(API_HMAC_SIGNING_SECRET + ":" + sha256(fullApiKey)).
+ * Een DB-leak alleen is onvoldoende om requests te forgen.
+ */
+export function deriveHmacSigningSecret(keyHash: string): string {
+  const domain = process.env[HMAC_SIGNING_SECRET_ENV] ?? "scanpal-api-hmac-v1";
+  return sha256Hex(`${domain}:${keyHash}`);
+}
+
+/**
+ * Canonieke query-string: `?a=1&b=2` → `a=1&b=2` met gesorteerde paren.
+ * Géén parameter mag het verschil maken tussen twee requests met dezelfde
+ * signature (anders blijft een geldige GET-signature ook voor
+ * `?site_id=…`-varianten geldig binnen het replay-venster).
+ */
+export function canonicalQueryString(search: string): string {
+  const raw = search.replace(/^\?/, "");
+  if (!raw) return "";
+  return raw.split("&").sort().join("&");
+}
 
 /**
  * Canonieke request-string die de client tekent en de server herberekent:
- * `METHOD\nPATH\nTIMESTAMP\nBODY_HASH` (alles hex/body-hash lowercase).
+ * `METHOD\nPATH\nQUERY\nTIMESTAMP\nBODY_HASH` (alles hex/body-hash lowercase).
  */
 export function canonicalRequestString(
   method: string,
   path: string,
+  query: string,
   timestamp: string,
   bodyHash: string,
 ): string {
-  return `${method.toUpperCase()}\n${path}\n${timestamp}\n${bodyHash}`;
+  return `${method.toUpperCase()}\n${path}\n${query}\n${timestamp}\n${bodyHash}`;
 }
 
 /** sha256 van een string, hex-output. */

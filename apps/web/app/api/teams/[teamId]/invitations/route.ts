@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { inviteInputSchema } from "@scanpal/shared";
-import { requireOwner, requireTeamMember } from "@/lib/authz";
+import { requireOwner } from "@/lib/authz";
 import { pool } from "@/lib/db";
 import {
   createInvitation,
@@ -71,7 +71,9 @@ export async function GET(
   { params }: { params: Promise<{ teamId: string }> },
 ) {
   const { teamId } = await params;
-  const auth = await requireTeamMember(teamId);
+  // Owner-only: invite-tokens (en de genodigde e-mails) mogen niet naar
+  // gewone teamleden lekken; de lijst bevat sowieso nooit tokens.
+  const auth = await requireOwner(teamId);
   if (!auth.ok) {
     return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
   }

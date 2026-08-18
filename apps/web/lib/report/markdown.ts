@@ -22,6 +22,17 @@ function esc(text: string): string {
 }
 
 /**
+ * Kiest een code-fence die langer is dan elke backtick-run in de inhoud, zodat
+ * ```-fences in evidence/fix-prompts het markdown-rapport niet corrumperen
+ * (vanaf de eerste finding met backticks).
+ */
+function fenceFor(text: string): string {
+  const runs = text.match(/`+/g)?.map((m) => m.length) ?? [];
+  const max = runs.length > 0 ? Math.max(...runs) : 0;
+  return "`".repeat(Math.max(3, max + 1));
+}
+
+/**
  * Markdown-renderer (Engels, besluit 13): koppen, meta-tabel, overall score,
  * per-categorie-tabel, summary en findings per ernst met description,
  * remediatie + evidence (via `evidenceText`), "… and N more" en een footer.
@@ -84,7 +95,8 @@ export function renderMarkdown(input: ReportRenderData): string {
       lines.push("", "**Remediation:**", "", finding.remediation, "");
       const evidence = evidenceText(finding.evidence);
       if (evidence) {
-        lines.push("", "**Evidence:**", "", "```", evidence, "```", "");
+        const fence = fenceFor(evidence);
+        lines.push("", "**Evidence:**", "", fence, evidence, fence, "");
       }
     }
     if (extra > 0) {
@@ -104,7 +116,8 @@ export function renderMarkdown(input: ReportRenderData): string {
       "",
     );
     input.prompts.forEach((prompt, index) => {
-      lines.push("", `### Fix prompt ${index + 1}`, "", "```", prompt, "```", "");
+      const fence = fenceFor(prompt);
+      lines.push("", `### Fix prompt ${index + 1}`, "", fence, prompt, fence, "");
     });
   }
 

@@ -196,14 +196,14 @@ export function ReportDocument({ input }: { input: ReportRenderData }) {
         })}
 
         {input.prompts && input.prompts.length > 0 && (
-          <View wrap={false}>
+          <View>
             <Text style={styles.section}>Fix Prompts</Text>
             <Text style={styles.block}>
               Copy-paste prompts for an AI editor (Cursor/Claude/Windsurf) to
               fix the findings above.
             </Text>
             {input.prompts.map((prompt, index) => (
-              <View key={index} wrap={false}>
+              <View key={index}>
                 <Text style={styles.findingTitle}>Fix prompt {index + 1}</Text>
                 <Text style={styles.evidence}>{prompt}</Text>
               </View>

@@ -17,7 +17,6 @@ type PendingInvitation = {
   team_id: string;
   email: string;
   role: "owner" | "member";
-  token: string;
   expires_at: string;
   created_at: string;
 };

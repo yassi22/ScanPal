@@ -148,7 +148,7 @@ function fakePool() {
       return { rowCount: rows.length, rows };
     }
 
-    if (text.startsWith("select id, team_id, email, role, token, expires_at, created_at")) {
+    if (text.startsWith("select id, team_id, email, role, expires_at, created_at from invitations")) {
       const [teamId] = params as [string];
       const rows = invitations
         .filter((i) => i.team_id === teamId && i.accepted_at === null)
@@ -157,7 +157,6 @@ function fakePool() {
           team_id: i.team_id,
           email: i.email,
           role: i.role,
-          token: i.token,
           expires_at: i.expires_at,
           created_at: i.created_at,
         }));

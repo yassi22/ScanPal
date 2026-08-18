@@ -4,7 +4,9 @@ vi.mock("server-only", () => ({}));
 
 import {
   HMAC_TIMESTAMP_TOLERANCE_SECONDS,
+  canonicalQueryString,
   canonicalRequestString,
+  deriveHmacSigningSecret,
   isTimestampValid,
   parseHmacAuth,
   requestBodyHash,
@@ -14,18 +16,38 @@ import {
 } from "@/lib/api-hmac";
 
 const SECRET = "abc123secret";
-const CANONICAL = "GET\n/api/scans\n1700000000\ne3b0c44298fc1c149afbf4c8996fb924";
+const CANONICAL = "GET\n/api/scans\n\n1700000000\ne3b0c44298fc1c149afbf4c8996fb924";
 
 describe("api-hmac (feature 25)", () => {
   describe("canonicalRequestString", () => {
-    it("bouwt METHOD\\nPATH\\nTIMESTAMP\\nBODY_HASH", () => {
-      expect(canonicalRequestString("get", "/api/scans", "1700000000", "hash123")).toBe(
-        "GET\n/api/scans\n1700000000\nhash123",
-      );
+    it("bouwt METHOD\\nPATH\\nQUERY\\nTIMESTAMP\\nBODY_HASH", () => {
+      expect(
+        canonicalRequestString("get", "/api/scans", "", "1700000000", "hash123"),
+      ).toBe("GET\n/api/scans\n\n1700000000\nhash123");
     });
 
     it("uppercase-t de method", () => {
-      expect(canonicalRequestString("post", "/x", "1", "h")).toBe("POST\n/x\n1\nh");
+      expect(canonicalRequestString("post", "/x", "", "1", "h")).toBe(
+        "POST\n/x\n\n1\nh",
+      );
+    });
+  });
+
+  describe("canonicalQueryString", () => {
+    it("sorteert paren en stript de leading `?`", () => {
+      expect(canonicalQueryString("?b=2&a=1")).toBe("a=1&b=2");
+      expect(canonicalQueryString("")).toBe("");
+      expect(canonicalQueryString("?site_id=abc&page=2")).toBe("page=2&site_id=abc");
+    });
+  });
+
+  describe("deriveHmacSigningSecret", () => {
+    it("is deterministisch maar ≠ key_hash (pass-the-hash fix)", () => {
+      const keyHash = sha256Hex("sp_live_secretfullkey");
+      const secret = deriveHmacSigningSecret(keyHash);
+      expect(secret).not.toBe(keyHash);
+      expect(deriveHmacSigningSecret(keyHash)).toBe(secret);
+      expect(deriveHmacSigningSecret(sha256Hex("ander"))).not.toBe(secret);
     });
   });
 

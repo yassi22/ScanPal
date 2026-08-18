@@ -8,7 +8,9 @@ import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { findApiKey, findApiKeyByPrefix, hashApiKey, recordApiKeyUsage } from "@/lib/api-keys-core";
 import {
+  canonicalQueryString,
   canonicalRequestString,
+  deriveHmacSigningSecret,
   sha256Hex,
   signHmacRequest,
 } from "@/lib/api-hmac";
@@ -58,10 +60,11 @@ function bearerRequest(key: string): Request {
 /** Feature 25 — bouw een HMAC-request met geldige signature. */
 function hmacRequest(
   prefix: string,
-  secret: string,
+  keyHash: string,
   overrides: {
     method?: string;
     path?: string;
+    query?: string;
     body?: string;
     timestamp?: string;
     signature?: string;
@@ -71,19 +74,26 @@ function hmacRequest(
 ): Request {
   const method = overrides.method ?? "GET";
   const path = overrides.path ?? "/api/scans";
+  const query = canonicalQueryString(overrides.query ?? "");
   const timestamp = overrides.timestamp ?? String(Math.floor(Date.now() / 1000));
   const bodyHash =
     method === "GET" || method === "HEAD" || method === "DELETE"
       ? sha256Hex("")
       : sha256Hex(overrides.body ?? "");
-  const canonical = canonicalRequestString(method, path, timestamp, bodyHash);
+  const canonical = canonicalRequestString(method, path, query, timestamp, bodyHash);
+  const secret = deriveHmacSigningSecret(keyHash);
   const signature = overrides.signature ?? signHmacRequest(secret, canonical);
   const headers: Record<string, string> = {
     Authorization: `HMAC ${prefix}`,
   };
   if (!overrides.omitTimestamp) headers["X-Timestamp"] = timestamp;
   if (!overrides.omitSignature) headers["X-Signature"] = signature;
-  return new Request(`http://localhost${path}`, { method, headers, body: overrides.body });
+  const url = `${path}${overrides.query ?? ""}`;
+  return new Request(`http://localhost${url}`, {
+    method,
+    headers,
+    body: overrides.body,
+  });
 }
 
 function makeKeyRow(overrides: Record<string, unknown> = {}) {
@@ -292,10 +302,11 @@ describe("requireTeam", () => {
         method: "POST",
         body: JSON.stringify({ url: "https://other.com" }),
         signature: signHmacRequest(
-          "hashed:sp_live_abc",
+          deriveHmacSigningSecret("hashed:sp_live_abc"),
           canonicalRequestString(
             "POST",
             "/api/scans",
+            "",
             String(Math.floor(Date.now() / 1000)),
             sha256Hex(JSON.stringify({ url: "https://example.com" })),
           ),
@@ -303,6 +314,22 @@ describe("requireTeam", () => {
       }),
     );
 
+    expect(result).toEqual({ ok: false, status: 401 });
+  });
+
+  it("HMAC GET-signature is gebonden aan de query-string (geen hergebruik voor ?site_id=…)", async () => {
+    findPrefixMock.mockResolvedValue(makeKeyRow() as never);
+
+    const legit = hmacRequest("sp_live_abc", "hashed:sp_live_abc", {
+      query: "?page=1",
+    });
+    const hijacked = hmacRequest("sp_live_abc", "hashed:sp_live_abc", {
+      query: "?site_id=team-9&page=1",
+      timestamp: legit.headers.get("X-Timestamp") ?? undefined,
+      signature: legit.headers.get("X-Signature") ?? undefined,
+    });
+
+    const result = await requireTeam(hijacked);
     expect(result).toEqual({ ok: false, status: 401 });
   });
 });

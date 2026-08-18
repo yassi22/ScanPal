@@ -24,8 +24,11 @@ export const dynamic = "force-dynamic";
  * (`x-hub-signature-256`, HMAC-SHA256 met het per-site secret) + eventheader
  * `x-github-event`. Events: push op de default branch + deployment_status
  * success. Geen match → 200 (geen 404-leak); ongeldige handtekening → 401;
- * scan gestart → 202. De scan wordt pas gestart als élke gematched site met
- * haar eigen secret heeft geverifieerd (één mismatch → 401, niets start).
+ * scan gestart → 202. De signature wordt per site met haar eigen secret
+ * geverifieerd: alleen sites waarvan het secret de payload tekent starten een
+ * scan — een andere tenant die hetzelfde repo-volgende secret registreert kan
+ * zo nooit de scans van het slachtoffer blokkeren (cross-tenant DoS fix).
+ * Als géén enkele site verifieert → 401 (geen existence-leak).
  */
 export async function POST(request: NextRequest) {
   const eventHeader = request.headers.get("x-github-event");
@@ -76,6 +79,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
+  // Per-site verificatie met het eigen secret; sites die niet verifiëren
+  // (andere tenant, oud secret) worden overgeslagen, niet blokkerend.
+  const verified: typeof sites = [];
   for (const site of sites) {
     let secret: string;
     try {
@@ -84,15 +90,19 @@ export async function POST(request: NextRequest) {
         site.github_webhook_secret as string,
       );
     } catch {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      continue;
     }
-    if (!verifyHmacSignature(secret, rawBody, signature)) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    if (verifyHmacSignature(secret, rawBody, signature)) {
+      verified.push(site);
     }
   }
 
+  if (verified.length === 0) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
   const scans: { site_id: string; scan_id: string }[] = [];
-  for (const site of sites) {
+  for (const site of verified) {
     const outcome = await startDeployScan(pool, {
       siteId: site.id,
       teamId: site.team_id,
