@@ -242,19 +242,20 @@ export function createCrawlProcessor(
     }
 
     // 5. fan-out (plan 54, besluit 1): pas nu de checks draaien, met de routes
-    //    in de DB. Job-names idempotent ({scanId}:{queue}); aggregate parent.
+    //    in de DB. Job-ids idempotent ({scanId}-{queue}, geen ':' — BullMQ
+    //    verbiedt ':' in custom job ids); aggregate parent.
     const includeGithub = Boolean(scan.github_repo);
     const children = [
       {
         name: "http",
         queueName: QUEUES.http,
-        opts: { jobId: `${scanId}:http` },
+        opts: { jobId: `${scanId}-http` },
         data: { scanId },
       },
       {
         name: "browser",
         queueName: QUEUES.browser,
-        opts: { jobId: `${scanId}:browser` },
+        opts: { jobId: `${scanId}-browser` },
         data: { scanId },
       },
       ...(includeGithub
@@ -262,7 +263,7 @@ export function createCrawlProcessor(
             {
               name: "github",
               queueName: QUEUES.github,
-              opts: { jobId: `${scanId}:github` },
+              opts: { jobId: `${scanId}-github` },
               data: { scanId },
             },
           ]
