@@ -26,14 +26,14 @@ export function DomainWatchtowerCard({ siteId }: Props) {
     let active = true;
     fetch(`/api/sites/${siteId}/domain?limit=20`)
       .then(async (r) => {
-        if (!r.ok) throw new Error("ophalen mislukt");
+        if (!r.ok) throw new Error("Unable to load domain signals.");
         return (await r.json()) as Response;
       })
       .then((json) => {
         if (active) setData(json);
       })
       .catch((err) => {
-        if (active) setError(err instanceof Error ? err.message : "fout");
+        if (active) setError(err instanceof Error ? err.message : "Unable to load domain signals.");
       });
     return () => {
       active = false;
@@ -42,21 +42,21 @@ export function DomainWatchtowerCard({ siteId }: Props) {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-        <h2 className="text-lg font-semibold">Domein</h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Domein-status niet beschikbaar: {error}
+      <section className="site-detail-section domain-watchtower">
+        <h2>Domain</h2>
+        <p className="site-detail-message is-error">
+          Domain status is unavailable: {error}
         </p>
-      </div>
+      </section>
     );
   }
 
   if (!data) {
     return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-        <h2 className="text-lg font-semibold">Domein</h2>
-        <p className="mt-2 text-sm text-slate-500">Laden…</p>
-      </div>
+      <section className="site-detail-section domain-watchtower">
+        <h2>Domain</h2>
+        <p className="site-detail-message" role="status">Loading domain signals…</p>
+      </section>
     );
   }
 
@@ -66,88 +66,81 @@ export function DomainWatchtowerCard({ siteId }: Props) {
   const neverChecked = !status.last_checked_at;
 
   return (
-    <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Domein</h2>
+    <section className="site-detail-section domain-watchtower">
+      <div className="site-detail-section-heading">
+        <div>
+          <h2>Domain</h2>
+          <p>Registration, certificate and DNS posture.</p>
+        </div>
         {status.last_checked_at && (
-          <span className="text-xs text-slate-500">
-            laatst gemeten {formatDateTime(status.last_checked_at)}
+          <span>
+            Measured {formatDateTime(status.last_checked_at)}
           </span>
         )}
       </div>
 
       {neverChecked ? (
-        <p className="text-sm text-slate-400">
-          Nog geen domein-meting. Start een scan of wacht op de dagelijkse watch.
+        <p className="site-detail-message">
+          No domain measurement yet. Start a scan or wait for the daily watch.
         </p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="domain-metric-grid">
             <Card
-              label="Domein verloopt"
-              value={expiryDays === null ? "onbekend" : `over ${expiryDays} d`}
+              label="Domain expiry"
+              value={expiryDays === null ? "Unknown" : `In ${expiryDays} days`}
               tone={countdownTone(expiryDays, 30)}
-              sub={status.domain_registrar ? `registrar: ${status.domain_registrar}` : "registrar onbekend"}
+              sub={status.domain_registrar ? `Registrar: ${status.domain_registrar}` : "Registrar unknown"}
             />
             <Card
-              label="TLS-certificaat verloopt"
-              value={tlsDays === null ? "onbekend" : `over ${tlsDays} d`}
+              label="TLS certificate expiry"
+              value={tlsDays === null ? "Unknown" : `In ${tlsDays} days`}
               tone={countdownTone(tlsDays, 14)}
-              sub={status.tls_expiry ? formatDateTime(status.tls_expiry) : "niet gemeten"}
+              sub={status.tls_expiry ? formatDateTime(status.tls_expiry) : "Not measured"}
             />
             <Card
               label="DNSSEC"
-              value={status.dnssec_enabled === null ? "onbekend" : status.dnssec_enabled ? "aan" : "uit"}
+              value={status.dnssec_enabled === null ? "Unknown" : status.dnssec_enabled ? "Enabled" : "Disabled"}
               tone={status.dnssec_enabled ? "ok" : status.dnssec_enabled === false ? "warn" : "neutral"}
             />
             <Card
               label="CAA"
-              value={status.caa_present === null ? "onbekend" : status.caa_present ? "aanwezig" : "afwezig"}
+              value={status.caa_present === null ? "Unknown" : status.caa_present ? "Present" : "Missing"}
               tone={status.caa_present ? "ok" : "neutral"}
             />
           </div>
 
           {status.nameservers && status.nameservers.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-slate-400">Nameservers</p>
-              <ul className="mt-1 flex flex-wrap gap-1.5">
+            <div className="domain-nameservers">
+              <h3>Nameservers</h3>
+              <ul>
                 {status.nameservers.map((ns) => (
-                  <li
-                    key={ns}
-                    className="rounded-md bg-slate-800/60 px-2 py-0.5 font-mono text-xs text-slate-300"
-                  >
-                    {ns}
-                  </li>
+                  <li key={ns}><code>{ns}</code></li>
                 ))}
               </ul>
             </div>
           )}
 
-          <div>
-            <h3 className="text-sm font-semibold text-slate-300">
-              Wijzigingsgeschiedenis
-            </h3>
+          <div className="domain-history">
+            <h3>Change history</h3>
             {events.length === 0 ? (
-              <p className="mt-1 text-xs text-slate-500">
-                Geen wijzigingen gedetecteerd sinds de eerste meting.
+              <p>
+                No changes detected since the first measurement.
               </p>
             ) : (
-              <ul className="mt-2 space-y-1.5">
+              <ul>
                 {events.map((e) => (
-                  <li
-                    key={e.id}
-                    className="flex items-start justify-between gap-3 rounded-md bg-slate-800/30 px-3 py-1.5 text-xs"
-                  >
-                    <span className="text-slate-300">
-                      <span className="font-medium text-slate-200">{eventLabel(e.field)}</span>
+                  <li key={e.id}>
+                    <span>
+                      <strong>{eventLabel(e.field)}</strong>
                       {": "}
-                      <span className="text-slate-400">{e.old_value ?? "—"}</span>
+                      <span>{e.old_value ?? "—"}</span>
                       {" → "}
-                      <span className="text-slate-200">{e.new_value ?? "—"}</span>
+                      <span>{e.new_value ?? "—"}</span>
                     </span>
-                    <span className="shrink-0 text-slate-500">
+                    <time dateTime={e.checked_at}>
                       {formatDateTime(e.checked_at)}
-                    </span>
+                    </time>
                   </li>
                 ))}
               </ul>
@@ -155,7 +148,7 @@ export function DomainWatchtowerCard({ siteId }: Props) {
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -170,19 +163,11 @@ function Card({
   sub?: string;
   tone: "ok" | "warn" | "bad" | "neutral";
 }) {
-  const toneClass =
-    tone === "ok"
-      ? "text-emerald-400"
-      : tone === "warn"
-        ? "text-amber-400"
-        : tone === "bad"
-          ? "text-red-400"
-          : "text-slate-300";
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
-      <p className="text-xs font-semibold text-slate-400">{label}</p>
-      <p className={`mt-1 text-lg font-bold ${toneClass}`}>{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
+    <div className={`domain-metric is-${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {sub && <small>{sub}</small>}
     </div>
   );
 }
@@ -202,7 +187,7 @@ function countdownTone(days: number | null, warnDays: number): "ok" | "warn" | "
 }
 
 function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString("nl-NL", {
+  return new Date(value).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -215,7 +200,7 @@ function eventLabel(field: string): string {
     domain_expiry: "Expiry",
     domain_registrar: "Registrar",
     dnssec_enabled: "DNSSEC",
-    caa_present: "CAA aanwezig",
+    caa_present: "CAA presence",
     tls_expiry: "TLS-expiry",
     nameservers: "Nameservers",
     caa_records: "CAA-records",

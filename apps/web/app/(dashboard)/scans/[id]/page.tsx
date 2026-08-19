@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
 import { cruxDataSchema } from "@scanpal/shared";
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { summarizeFindings } from "@/lib/scan-progress";
 import type { ScanViewState } from "@/lib/use-scan-progress";
 import { ScanResultView } from "@/components/scan-result";
+import { getDashboardContext } from "@/lib/dashboard-context";
 
 export const dynamic = "force-dynamic";
 
@@ -17,19 +15,8 @@ export default async function ScanPage({
 }) {
   const { id } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const result = await ensureUserTeam(pool, {
-    id: user.id,
-    email: user.email ?? "",
-    name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-    avatar_url: user.user_metadata?.avatar_url ?? null,
-    auth_provider: user.app_metadata?.provider ?? null,
-  });
+  const result = await getDashboardContext();
+  const user = result.authUser;
 
   const scan = await pool.query(
     `select s.id, s.site_id, s.status, s.progress, s.progress_details, s.score,

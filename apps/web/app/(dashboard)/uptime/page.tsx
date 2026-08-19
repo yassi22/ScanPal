@@ -1,24 +1,12 @@
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { listUptimeSummaries } from "@/lib/uptime-core";
 import { UptimeList } from "@/components/uptime/uptime-list";
+import { getDashboardContext } from "@/lib/dashboard-context";
 
 export const dynamic = "force-dynamic";
 
 export default async function UptimePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const result = await ensureUserTeam(pool, {
-    id: user?.id ?? "",
-    email: user?.email ?? "",
-    name: user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? null,
-    avatar_url: user?.user_metadata?.avatar_url ?? null,
-    auth_provider: user?.app_metadata?.provider ?? null,
-  });
+  const result = await getDashboardContext();
 
   const summaries = await listUptimeSummaries(pool, result.team.id);
 

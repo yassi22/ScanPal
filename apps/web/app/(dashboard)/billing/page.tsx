@@ -1,6 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
+import { getDashboardContext } from "@/lib/dashboard-context";
 import { getTeamUsage } from "@/lib/credits";
 import { getSubscriptionView } from "@/lib/billing";
 import { plans, isPaidPlan } from "@scanpal/shared";
@@ -25,18 +24,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default async function BillingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const result = await ensureUserTeam(pool, {
-    id: user?.id ?? "",
-    email: user?.email ?? "",
-    name: user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? null,
-    avatar_url: user?.user_metadata?.avatar_url ?? null,
-    auth_provider: user?.app_metadata?.provider ?? null,
-  });
+  const result = await getDashboardContext();
 
   const [usage, subscription] = await Promise.all([
     getTeamUsage(pool, result.team.id),

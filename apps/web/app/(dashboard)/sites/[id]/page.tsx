@@ -1,28 +1,35 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowSquareOut,
+  ChartLineUp,
+  CheckCircle,
+  ClockCounterClockwise,
+} from "@phosphor-icons/react/dist/ssr";
 import type { ScanTrendPoint } from "@scanpal/shared";
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { getScanTrend } from "@/lib/scans-core";
 import { getPlanForTeam } from "@/lib/credits";
+import { getCompletedScoreHistory } from "@/lib/site-score-history";
 import { ScanTrendChart } from "@/components/scan-trend-chart";
 import { DomainWatchtowerCard } from "@/components/domain-watchtower-card";
 import { PublicStatusToggle } from "@/components/public-status-toggle";
 import { DeployWebhookCard } from "@/components/deploy-webhook-card";
 import { getMembershipWorkspace } from "@/lib/workspace-scope";
+import { getDashboardContext } from "@/lib/dashboard-context";
 
 export const dynamic = "force-dynamic";
 
-function scoreColor(score: number): string {
-  if (score >= 80) return "bg-emerald-500/15 text-emerald-400";
-  if (score >= 50) return "bg-amber-500/15 text-amber-400";
-  return "bg-red-500/15 text-red-400";
+function scoreTone(score: number): string {
+  if (score >= 80) return "is-good";
+  if (score >= 50) return "is-watch";
+  return "is-risk";
 }
 
 function formatDateTime(value: string | null): string {
   if (!value) return "—";
-  return new Date(value).toLocaleString("nl-NL", {
+  return new Date(value).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -31,11 +38,11 @@ function formatDateTime(value: string | null): string {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  completed: "Klaar",
-  failed: "Mislukt",
-  canceled: "Geannuleerd",
-  running: "Bezig",
-  queued: "In wachtrij",
+  completed: "Complete",
+  failed: "Failed",
+  canceled: "Canceled",
+  running: "Running",
+  queued: "Queued",
 };
 
 export default async function SiteDetailPage({
@@ -45,19 +52,8 @@ export default async function SiteDetailPage({
 }) {
   const { id } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const result = await ensureUserTeam(pool, {
-    id: user.id,
-    email: user.email ?? "",
-    name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-    avatar_url: user.user_metadata?.avatar_url ?? null,
-    auth_provider: user.app_metadata?.provider ?? null,
-  });
+  const result = await getDashboardContext();
+  const user = result.authUser;
 
   const scope =
     result.membership.role === "owner"
@@ -84,163 +80,145 @@ export default async function SiteDetailPage({
   }));
 
   const recent = [...trendPoints].reverse().slice(0, 10);
-  const latest = trendPoints[trendPoints.length - 1] ?? null;
-  const previous = trendPoints.length >= 2 ? trendPoints[trendPoints.length - 2] : null;
-  const delta =
-    latest?.score !== null &&
-    latest?.score !== undefined &&
-    previous?.score !== null &&
-    previous?.score !== undefined
-      ? latest.score - previous.score
-      : null;
+  const { completedPoints, latest: latestCompleted, previous, delta } =
+    getCompletedScoreHistory(trendPoints);
+  const deltaLabel =
+    delta === null
+      ? "Not enough scan history"
+      : delta > 0
+        ? `Improved by ${delta} points`
+        : delta < 0
+          ? `Dropped by ${Math.abs(delta)} points`
+          : "No score change";
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link
-          href="/sites"
-          className="text-sm text-slate-400 transition hover:text-slate-200"
-        >
-          ← Sites
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold">
-          {site.label ?? site.url}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">{site.url}</p>
-      </div>
+    <div className="dashboard-home site-detail-page" data-design-direction="luminous-technical-calm">
+      <header className="site-detail-header">
+        <div className="site-detail-heading">
+          <Link href="/sites" className="site-detail-back-link">
+            <ArrowLeft size={16} aria-hidden="true" />
+            Back to sites
+          </Link>
+          <h1>{site.label ?? site.url}</h1>
+          <a href={site.url} target="_blank" rel="noreferrer" className="site-detail-url">
+            {site.url}
+            <ArrowSquareOut size={14} aria-hidden="true" />
+          </a>
+        </div>
+        {latestCompleted && (
+          <Link href={`/scans/${latestCompleted.id}`} className="site-detail-primary-action">
+            View latest report
+            <ArrowSquareOut size={16} aria-hidden="true" />
+          </Link>
+        )}
+      </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-          <p className="text-xs font-semibold text-slate-400">Laatste score</p>
-          <p className="mt-2 text-3xl font-bold">
+      <section className="site-score-overview" aria-labelledby="site-score-heading">
+        <div className="site-score-lead">
+          <span className="site-score-icon" aria-hidden="true">
+            <ChartLineUp size={22} />
+          </span>
+          <div>
+            <p id="site-score-heading">Latest website health</p>
             {site.last_scan_score !== null ? (
-              <span
-                className={`inline-flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold ${scoreColor(site.last_scan_score)}`}
-              >
-                {site.last_scan_score}
-              </span>
+              <strong className={`site-detail-score ${scoreTone(site.last_scan_score)}`}>
+                {site.last_scan_score}<small>/100</small>
+              </strong>
             ) : (
-              <span className="text-slate-600">—</span>
+              <strong className="site-detail-score is-empty">Not scanned</strong>
             )}
-          </p>
+          </div>
         </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-          <p className="text-xs font-semibold text-slate-400">Vorige score</p>
-          <p className="mt-2 text-3xl font-bold">
-            {previous?.score !== null && previous?.score !== undefined ? (
-              <span
-                className={`inline-flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold ${scoreColor(previous.score)}`}
-              >
-                {previous.score}
-              </span>
-            ) : (
-              <span className="text-slate-600">—</span>
-            )}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-          <p className="text-xs font-semibold text-slate-400">Verschil</p>
-          <p className="mt-2 text-3xl font-bold">
-            {delta === null ? (
-              <span className="text-slate-600">—</span>
-            ) : delta > 0 ? (
-              <span className="text-emerald-400">+{delta}</span>
-            ) : delta < 0 ? (
-              <span className="text-red-400">{delta}</span>
-            ) : (
-              <span className="text-slate-400">±0</span>
-            )}
-          </p>
-        </div>
+        <dl className="site-score-history">
+          <div>
+            <dt>Previous score</dt>
+            <dd>{previous?.score ?? "—"}</dd>
+          </div>
+          <div>
+            <dt>Trend</dt>
+            <dd className={delta !== null && delta < 0 ? "is-risk" : delta !== null && delta > 0 ? "is-good" : ""}>
+              {deltaLabel}
+            </dd>
+          </div>
+          <div>
+            <dt>Completed scans</dt>
+            <dd>{completedPoints.length}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <div className="site-detail-stack">
+        <ScanTrendChart points={trendPoints} />
+        <DomainWatchtowerCard siteId={site.id} />
+        <PublicStatusToggle siteId={site.id} initialSlug={site.public_status_slug} />
+        <DeployWebhookCard
+          siteId={site.id}
+          githubRepo={site.github_repo}
+          configured={site.github_webhook_configured}
+          onDeployEnabled={plan.features.onDeploy}
+        />
       </div>
 
-      <ScanTrendChart points={trendPoints} />
-
-      <DomainWatchtowerCard siteId={site.id} />
-
-      <PublicStatusToggle siteId={site.id} initialSlug={site.public_status_slug} />
-
-      <DeployWebhookCard
-        siteId={site.id}
-        githubRepo={site.github_repo}
-        configured={site.github_webhook_configured}
-        onDeployEnabled={plan.features.onDeploy}
-      />
-
-      <div>
-        <h2 className="text-lg font-semibold">Recente scans</h2>
+      <section className="site-recent-scans" aria-labelledby="recent-scans-heading">
+        <div className="site-section-heading">
+          <div>
+            <h2 id="recent-scans-heading">Recent scans</h2>
+            <p>Open a completed scan to review its evidence and remediation steps.</p>
+          </div>
+          <ClockCounterClockwise size={22} aria-hidden="true" />
+        </div>
         {recent.length === 0 ? (
-          <div className="mt-3 rounded-2xl border border-dashed border-slate-700 p-8 text-center">
-            <p className="text-sm text-slate-400">
-              Nog geen voltooide scans. Start een scan vanaf de sites-pagina.
-            </p>
+          <div className="site-recent-empty">
+            <CheckCircle size={22} aria-hidden="true" />
+            <p>No scans yet. Start the first scan from the sites overview.</p>
           </div>
         ) : (
-          <div className="mt-3 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50">
-            <table className="w-full min-w-[560px] text-left text-sm">
+          <div className="site-scan-table-wrap">
+            <table className="site-scan-table">
               <thead>
-                <tr className="border-b border-slate-800 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 font-medium">Scan</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 font-medium">Score</th>
-                  <th className="px-5 py-3 font-medium">Trigger</th>
-                  <th className="px-5 py-3 font-medium">Datum</th>
-                  <th className="px-5 py-3 font-medium text-right">Actie</th>
+                <tr>
+                  <th>Scan</th>
+                  <th>Status</th>
+                  <th>Score</th>
+                  <th>Trigger</th>
+                  <th>Date</th>
+                  <th><span className="sr-only">Action</span></th>
                 </tr>
               </thead>
               <tbody>
                 {recent.map((scan) => (
-                  <tr
-                    key={scan.id}
-                    className="border-b border-slate-800/60 last:border-b-0"
-                  >
-                    <td className="px-5 py-4 font-mono text-xs text-slate-400">
-                      {scan.id.slice(0, 8)}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={
-                          scan.status === "completed"
-                            ? "text-emerald-400"
-                            : scan.status === "failed"
-                              ? "text-red-400"
-                              : "text-slate-400"
-                        }
-                      >
+                  <tr key={scan.id}>
+                    <td data-label="Scan"><code>{scan.id.slice(0, 8)}</code></td>
+                    <td data-label="Status">
+                      <span className={`site-scan-status is-${scan.status}`}>
                         {STATUS_LABELS[scan.status] ?? scan.status}
                       </span>
                     </td>
-                    <td className="px-5 py-4">
+                    <td data-label="Score">
                       {scan.score !== null ? (
-                        <span
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${scoreColor(scan.score)}`}
-                        >
-                          {scan.score}
-                        </span>
+                        <strong className={`site-table-score ${scoreTone(scan.score)}`}>{scan.score}</strong>
                       ) : (
-                        <span className="text-slate-600">—</span>
+                        <span>—</span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-slate-400">
+                    <td data-label="Trigger">
                       {scan.trigger === "manual"
-                        ? "Handmatig"
+                        ? "Manual"
                         : scan.trigger === "deploy"
                           ? "Deploy"
-                          : "Gepland"}
+                          : "Scheduled"}
                     </td>
-                    <td className="px-5 py-4 text-slate-400">
+                    <td data-label="Date">
                       {formatDateTime(scan.completed_at ?? scan.created_at)}
                     </td>
-                    <td className="px-5 py-4 text-right">
+                    <td data-label="Action">
                       {scan.status === "completed" ? (
-                        <Link
-                          href={`/scans/${scan.id}`}
-                          className="text-xs font-semibold text-brand underline-offset-2 hover:underline"
-                        >
-                          Bekijk
+                        <Link href={`/scans/${scan.id}`} className="site-table-action">
+                          View report
+                          <ArrowSquareOut size={14} aria-hidden="true" />
                         </Link>
                       ) : (
-                        <span className="text-xs text-slate-600">—</span>
+                        <span>—</span>
                       )}
                     </td>
                   </tr>
@@ -249,7 +227,12 @@ export default async function SiteDetailPage({
             </table>
           </div>
         )}
-      </div>
+      </section>
+
+      <footer className="dashboard-page-footer">
+        <span>Signals are measured per scan and may change over time.</span>
+        <span>ScanPal · Site dossier</span>
+      </footer>
     </div>
   );
 }

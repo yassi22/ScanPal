@@ -39,11 +39,13 @@ export function DeployWebhookCard({
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data?.error ?? "Instellen mislukt");
+        setError(data?.error ?? "Unable to configure the deploy webhook. Try again.");
         return;
       }
       setUrl(data?.url ?? null);
       setSecret(data?.secret ?? null);
+    } catch {
+      setError("The webhook service could not be reached. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -61,120 +63,112 @@ export function DeployWebhookCard({
 
   if (!onDeployEnabled) {
     return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <section className="site-detail-section deploy-webhook-card">
+        <div className="site-detail-action-heading">
           <div>
-            <h2 className="text-lg font-semibold">On-deploy triggers</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Scan automatisch bij elke deployment (GitHub push of
-              deployment-status, Vercel deploy). Alleen beschikbaar op Pro.
+            <h2>On-deploy scans</h2>
+            <p>
+              Start a scan after a GitHub push, deployment status or Vercel
+              deployment. Available on Pro.
             </p>
           </div>
           <Link
             href="/billing"
-            className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-brand/90"
+            className="site-detail-primary-action"
           >
-            Upgrade naar Pro
+            Upgrade to Pro
           </Link>
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-      <h2 className="text-lg font-semibold">On-deploy triggers</h2>
-      <p className="mt-1 text-sm text-slate-400">
-        Scan automatisch bij elke deployment. Koppel een GitHub-repo voor push
-        + deployment-status, of koppel Vercel voor deployment.completed.
+    <section className="site-detail-section deploy-webhook-card">
+      <h2>On-deploy scans</h2>
+      <p className="site-detail-section-copy">
+        Start a scan automatically after a deployment. Connect GitHub for push
+        and deployment status events, or Vercel for deployment.completed.
       </p>
 
-      <div className="mt-4 space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-300">GitHub</h3>
+      <div className="deploy-provider-list">
+        <div className="deploy-provider">
+          <h3>GitHub</h3>
           {!githubRepo ? (
-            <p className="mt-1 text-xs text-slate-500">
-              Koppel eerst een GitHub-repo (site-instellingen) om de webhook te
-              gebruiken.
+            <p>
+              Connect a GitHub repository in the site settings before enabling
+              this webhook.
             </p>
           ) : (
             <>
-              <p className="mt-1 text-xs text-slate-400">
-                Voeg een webhook toe in GitHub (Settings → Webhooks) met deze
-                URL. Events: <span className="font-mono">push</span> en{" "}
-                <span className="font-mono">deployment_status</span>. Push telt
-                alleen op de default branch.
+              <p>
+                Add a webhook in GitHub under Settings → Webhooks. Subscribe to{" "}
+                <code>push</code> and <code>deployment_status</code>. Push events
+                only count on the default branch.
               </p>
-              <div className="mt-2 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
-                <code className="flex-1 truncate text-xs text-slate-300">
-                  {webhookUrl}
-                </code>
+              <div className="site-detail-code-row">
+                <code>{webhookUrl}</code>
                 <button
                   type="button"
                   onClick={() => void copy(webhookUrl, "url")}
-                  className="shrink-0 rounded-md border border-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-300 transition hover:border-slate-500"
+                  className="site-detail-code-action"
                 >
-                  {copied === "url" ? "Gekopieerd" : "Kopiëren"}
+                  {copied === "url" ? "Copied" : "Copy"}
                 </button>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="deploy-secret-actions">
                 <button
                   type="button"
                   onClick={() => void setup()}
                   disabled={busy}
-                  className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-500 disabled:opacity-50"
+                  className="site-detail-secondary-action"
                 >
                   {busy
-                    ? "Bezig…"
+                    ? "Working…"
                     : configured
-                      ? "Secret roteren"
-                      : "Secret genereren"}
+                      ? "Rotate secret"
+                      : "Generate secret"}
                 </button>
                 {secret && (
-                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2">
-                    <code className="min-w-0 flex-1 truncate font-mono text-xs text-amber-300">
-                      {secret}
-                    </code>
+                  <div className="deploy-secret-value">
+                    <code>{secret}</code>
                     <button
                       type="button"
                       onClick={() => void copy(secret, "secret")}
-                      className="shrink-0 rounded-md border border-amber-500/40 px-2.5 py-1 text-xs font-semibold text-amber-300 transition hover:border-amber-400"
+                      className="site-detail-code-action"
                     >
-                      {copied === "secret" ? "Gekopieerd" : "Kopiëren"}
+                      {copied === "secret" ? "Copied" : "Copy"}
                     </button>
                   </div>
                 )}
               </div>
               {secret && (
-                <p className="mt-2 text-xs text-amber-400">
-                  Dit secret wordt maar één keer getoond — vul het direct in als
-                  GitHub-secret.
+                <p className="site-detail-message is-warning">
+                  This secret is shown once. Add it to GitHub immediately.
                 </p>
               )}
               {configured && !secret && (
-                <p className="mt-2 text-xs text-emerald-400">
-                  Webhook geconfigureerd. Een nieuwe webhook in GitHub vervangt
-                  het secret.
+                <p className="site-detail-message is-success">
+                  Webhook configured. Rotating it replaces the GitHub secret.
                 </p>
               )}
             </>
           )}
         </div>
 
-        <div className="border-t border-slate-800 pt-4">
-          <h3 className="text-sm font-semibold text-slate-300">Vercel</h3>
-          <p className="mt-1 text-xs text-slate-400">
-            Maak in Vercel (Project → Settings → Webhooks) een webhook op{" "}
-            <code className="font-mono">{webhookUrl}</code> voor{" "}
-            <span className="font-mono">deployment.completed</span>, met als
-            secret de <span className="font-mono">VERCEL_WEBHOOK_SECRET</span>{" "}
-            env-variabele. De payload-URL matcht de site op hostname.
+        <div className="deploy-provider">
+          <h3>Vercel</h3>
+          <p>
+            In Project → Settings → Webhooks, send{" "}
+            <code>deployment.completed</code> to <code>{webhookUrl}</code> and use{" "}
+            <code>VERCEL_WEBHOOK_SECRET</code> as the secret. The payload URL
+            matches this site by hostname.
           </p>
         </div>
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-    </div>
+      {error && <p className="site-detail-message is-error" role="alert">{error}</p>}
+    </section>
   );
 }

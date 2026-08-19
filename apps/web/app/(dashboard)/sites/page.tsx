@@ -1,30 +1,18 @@
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { listSitesWithStatus, toSiteJson } from "@/lib/sites-core";
 import { getPlanForTeam } from "@/lib/credits";
 import { SitesManager } from "@/components/sites-manager";
 import { isPaidPlan } from "@scanpal/shared";
 import { getMembershipWorkspace } from "@/lib/workspace-scope";
+import { getDashboardContext } from "@/lib/dashboard-context";
 
 export default async function SitesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const result = await ensureUserTeam(pool, {
-    id: user?.id ?? "",
-    email: user?.email ?? "",
-    name: user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? null,
-    avatar_url: user?.user_metadata?.avatar_url ?? null,
-    auth_provider: user?.app_metadata?.provider ?? null,
-  });
+  const result = await getDashboardContext();
 
   const scope =
     result.membership.role === "owner"
       ? { role: "owner", workspaceId: null }
-      : await getMembershipWorkspace(pool, { teamId: result.team.id, userId: result.user?.id ?? "" });
+      : await getMembershipWorkspace(pool, { teamId: result.team.id, userId: result.user.id });
 
   const [sites, plan] = await Promise.all([
     listSitesWithStatus(

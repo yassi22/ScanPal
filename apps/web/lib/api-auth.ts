@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getSessionUser } from "./supabase/server";
-import { ensureUserTeam } from "./team";
+import { getOrCreateUserTeam } from "./team";
 import { pool } from "./db";
 import {
   findApiKey,
@@ -29,7 +29,7 @@ import {
  *   prefix-lookup, timing-safe signature-verificatie, replay-bescherming.
  * - `Authorization: Bearer sp_...` → sha256-lookup, revoked/expired-check,
  *   rate limiting (per key én per team), fire-and-forget usage-tracking.
- * - Anders: Supabase-sessie → ensureUserTeam.
+ * - Anders: Supabase-sessie → read-only teamcontext, met bootstrap-fallback.
  * De auth-mode is hier swappable (bearer + HMAC nu). Team-scoping doen de
  * routes zelf via `ctx.teamId` (non-member → 404).
  */
@@ -64,23 +64,13 @@ export async function requireTeam(
   const user = await getSessionUser();
   if (!user) return { ok: false, status: 401 };
 
-  const result = await ensureUserTeam(pool, {
+  const result = await getOrCreateUserTeam(pool, {
     id: user.id,
     email: user.email ?? "",
     name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
     avatar_url: user.user_metadata?.avatar_url ?? null,
     auth_provider: user.app_metadata?.provider ?? null,
   });
-
-  let workspaceId = result.membership.workspace_id;
-  if (result.membership.role !== "owner") {
-    const membership = await pool.query<{ role: string; workspace_id: string | null }>(
-      `select role, workspace_id from memberships
-       where team_id = $1 and user_id = $2 and status = 'accepted'`,
-      [result.team.id, user.id],
-    );
-    workspaceId = membership.rows[0]?.workspace_id ?? null;
-  }
 
   return {
     ok: true,
@@ -90,7 +80,7 @@ export async function requireTeam(
         type: "session",
         userId: user.id,
         role: result.membership.role,
-        workspaceId,
+        workspaceId: result.membership.workspace_id,
       },
     },
   };
@@ -195,7 +185,7 @@ export async function requireSessionTeam(): Promise<SessionTeamResult> {
   const user = await getSessionUser();
   if (!user) return { ok: false, status: 401 };
 
-  const result = await ensureUserTeam(pool, {
+  const result = await getOrCreateUserTeam(pool, {
     id: user.id,
     email: user.email ?? "",
     name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
@@ -218,7 +208,7 @@ export async function requireSessionOwner(): Promise<SessionOwnerResult> {
   const user = await getSessionUser();
   if (!user) return { ok: false, status: 401 };
 
-  const result = await ensureUserTeam(pool, {
+  const result = await getOrCreateUserTeam(pool, {
     id: user.id,
     email: user.email ?? "",
     name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,

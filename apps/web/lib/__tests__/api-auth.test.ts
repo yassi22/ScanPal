@@ -4,7 +4,7 @@ import {
   requireTeam,
 } from "@/lib/api-auth";
 import { getSessionUser } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
+import { getOrCreateUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { findApiKey, findApiKeyByPrefix, hashApiKey, recordApiKeyUsage } from "@/lib/api-keys-core";
 import {
@@ -22,7 +22,7 @@ vi.mock("@/lib/supabase/server", () => ({
   getSessionUser: vi.fn(),
 }));
 vi.mock("@/lib/team", () => ({
-  ensureUserTeam: vi.fn(),
+  getOrCreateUserTeam: vi.fn(),
 }));
 vi.mock("@/lib/db", () => ({
   pool: { query: vi.fn() },
@@ -41,7 +41,7 @@ vi.mock("@/lib/credits", () => ({
 }));
 
 const getUserMock = vi.mocked(getSessionUser);
-const ensureTeamMock = vi.mocked(ensureUserTeam);
+const teamContextMock = vi.mocked(getOrCreateUserTeam);
 const findKeyMock = vi.mocked(findApiKey);
 const findPrefixMock = vi.mocked(findApiKeyByPrefix);
 const hashKeyMock = vi.mocked(hashApiKey);
@@ -116,7 +116,7 @@ describe("requireTeam", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getUserMock.mockResolvedValue(USER as never);
-    ensureTeamMock.mockResolvedValue({
+    teamContextMock.mockResolvedValue({
       team: { id: "team-1", name: "Team 1" },
       membership: { team_id: "team-1", user_id: "user-1", role: "owner", status: "accepted" },
       user: { id: "user-1", email: "a@b.c", onboarding_completed_at: null },
@@ -338,7 +338,7 @@ describe("requireSessionOwner", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getUserMock.mockResolvedValue(USER as never);
-    ensureTeamMock.mockResolvedValue({
+    teamContextMock.mockResolvedValue({
       team: { id: "team-1", name: "Team 1" },
       membership: { team_id: "team-1", user_id: "user-1", role: "owner", status: "accepted" },
       user: { id: "user-1", email: "a@b.c", onboarding_completed_at: null },
@@ -356,7 +356,7 @@ describe("requireSessionOwner", () => {
   });
 
   it("403 voor een member", async () => {
-    ensureTeamMock.mockResolvedValue({
+    teamContextMock.mockResolvedValue({
       team: { id: "team-1", name: "Team 1" },
       membership: { team_id: "team-1", user_id: "user-2", role: "member", status: "accepted" },
       user: { id: "user-2", email: "b@c.d", onboarding_completed_at: null },

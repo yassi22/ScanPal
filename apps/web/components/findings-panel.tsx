@@ -518,6 +518,8 @@ export function FindingsPanel({ scanId, legacy }: Props) {
               key={severity}
               type="button"
               onClick={() => toggleSeverity(severity)}
+              aria-pressed={filters.severity === severity}
+              aria-label={`Filter op ${SEVERITY_LABELS[severity]}: ${counts[severity]} bevindingen`}
               className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                 filters.severity === severity
                   ? "ring-1 ring-brand/60"
@@ -531,6 +533,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
 
         <div className="flex flex-wrap items-center gap-3">
           <select
+            aria-label="Filter findings op categorie"
             value={filters.category ?? ""}
             onChange={(event) =>
               setFilters((prev) => ({
@@ -549,6 +552,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
           </select>
 
           <select
+            aria-label="Filter findings op status"
             value={filters.status ?? ""}
             onChange={(event) =>
               setFilters((prev) => ({
@@ -568,6 +572,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
 
           {(data?.key_types.length ?? 0) > 0 && (
             <select
+              aria-label="Filter findings op key-type"
               value={filters.keyType ?? ""}
               onChange={(event) =>
                 setFilters((prev) => ({
@@ -588,6 +593,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
 
           {(data?.routes.length ?? 0) > 0 && (
             <select
+              aria-label="Filter findings op route"
               value={filters.routeUrl ?? ""}
               onChange={(event) =>
                 setFilters((prev) => ({
@@ -608,6 +614,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
 
           <input
             type="search"
+            aria-label="Zoek in findings"
             value={filters.q}
             onChange={(event) =>
               setFilters((prev) => ({ ...prev, q: event.target.value }))
@@ -641,6 +648,8 @@ export function FindingsPanel({ scanId, legacy }: Props) {
             >
               <button
                 type="button"
+                aria-expanded={expanded}
+                aria-controls={`finding-details-${finding.id}`}
                 onClick={() => {
                   setExpandedId(expanded ? null : finding.id);
                   setIgnoreTarget(null);
@@ -680,7 +689,10 @@ export function FindingsPanel({ scanId, legacy }: Props) {
               </button>
 
               {expanded && (
-                <div className="space-y-4 border-t border-slate-800 px-4 py-4">
+                <div
+                  id={`finding-details-${finding.id}`}
+                  className="space-y-4 border-t border-slate-800 px-4 py-4"
+                >
                   <p className="text-sm text-slate-300">{finding.description}</p>
                   {finding.evidence && (
                     <div className="space-y-2">

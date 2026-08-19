@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { ensureUserTeam } from "@/lib/team";
+import { pool } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -21,8 +23,22 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data.user) {
+      await ensureUserTeam(
+        pool,
+        {
+          id: data.user.id,
+          email: data.user.email ?? "",
+          name:
+            data.user.user_metadata?.full_name ??
+            data.user.user_metadata?.name ??
+            null,
+          avatar_url: data.user.user_metadata?.avatar_url ?? null,
+          auth_provider: data.user.app_metadata?.provider ?? null,
+        },
+        { recordLogin: true },
+      );
       return NextResponse.redirect(new URL(next, origin));
     }
   }

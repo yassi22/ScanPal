@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ScanPal site dossier preview</title>
+    <link rel="stylesheet" href="http://127.0.0.1:3000/_next/static/css/app/layout.css" />
+  </head>
+  <body>
+    <div class="dashboard-light-shell">
+      <header class="dashboard-topbar">
+        <div class="dashboard-topbar-inner">
+          <a href="#" class="dashboard-brand">ScanPal</a>
+          <div class="dashboard-topbar-actions">
+            <span class="dashboard-team-name">Studio Noord</span>
+            <span class="dashboard-team-avatar">SN</span>
+          </div>
+          <button class="dashboard-mobile-toggle"><span>Menu</span></button>
+        </div>
+      </header>
+      <div class="dashboard-frame">
+        <aside class="dashboard-sidebar">
+          <nav class="dashboard-sidebar-nav">
+            <span class="dashboard-sidebar-label">Workspace</span>
+            <a class="dashboard-nav-link" href="#">Dashboard</a>
+            <a class="dashboard-nav-link is-active" href="#">Sites</a>
+            <a class="dashboard-nav-link" href="#">Reports</a>
+            <a class="dashboard-nav-link" href="#">Uptime</a>
+            <a class="dashboard-nav-link" href="#">Threats</a>
+            <a class="dashboard-nav-link" href="#">Team</a>
+            <a class="dashboard-nav-link" href="#">Billing</a>
+          </nav>
+          <div class="dashboard-sidebar-footer"><div><strong>Website health, made clear.</strong><span>Evidence before noise.</span></div></div>
+        </aside>
+        <main class="dashboard-main">
+          <div class="dashboard-home site-detail-page">
+            <header class="site-detail-header">
+              <div class="site-detail-heading">
+                <a href="#" class="site-detail-back-link">← Back to sites</a>
+                <h1>meridianintel.nl</h1>
+                <a href="#" class="site-detail-url">https://meridianintel.nl ↗</a>
+              </div>
+              <a href="#" class="site-detail-primary-action">View latest report ↗</a>
+            </header>
+
+            <section class="site-score-overview">
+              <div class="site-score-lead">
+                <span class="site-score-icon">↗</span>
+                <div>
+                  <p>Latest website health</p>
+                  <strong class="site-detail-score is-watch">68<small>/100</small></strong>
+                </div>
+              </div>
+              <dl class="site-score-history">
+                <div><dt>Previous score</dt><dd>61</dd></div>
+                <div><dt>Trend</dt><dd class="is-good">Improved by 7 points</dd></div>
+                <div><dt>Completed scans</dt><dd>12</dd></div>
+              </dl>
+            </section>
+
+            <div class="site-detail-stack">
+              <section class="site-detail-section site-trend-panel">
+                <div class="site-trend-heading">
+                  <div><h2>Score trend</h2><p>Health signals across completed scans.</p></div>
+                  <div class="site-trend-legend">
+                    <span><i class="site-trend-swatch" style="background:#1a1c21"></i>Overall</span>
+                    <span><i class="site-trend-swatch" style="background:#208566"></i>HTTP &amp; security</span>
+                    <span><i class="site-trend-swatch" style="background:#6d5aa6"></i>SEO &amp; content</span>
+                    <span><i class="site-trend-swatch" style="background:#9a6811"></i>AEO &amp; browser</span>
+                  </div>
+                </div>
+                <svg viewBox="0 0 640 220" class="site-trend-chart" role="img" aria-label="Score trend preview">
+                  <g stroke="#e0e3e8" stroke-dasharray="3 3"><line x1="36" x2="624" y1="16" y2="16"/><line x1="36" x2="624" y1="60" y2="60"/><line x1="36" x2="624" y1="104" y2="104"/><line x1="36" x2="624" y1="148" y2="148"/><line x1="36" x2="624" y1="192" y2="192"/></g>
+                  <path d="M36 139 L154 125 L271 132 L389 101 L506 83 L624 72" fill="none" stroke="#1a1c21" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M36 112 L154 105 L271 96 L389 88 L506 78 L624 66" fill="none" stroke="#208566" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M36 155 L154 148 L271 145 L389 128 L506 115 L624 102" fill="none" stroke="#6d5aa6" stroke-width="1.5" stroke-linecap="round"/>
+                  <g fill="#1a1c21"><circle cx="36" cy="139" r="3"/><circle cx="154" cy="125" r="3"/><circle cx="271" cy="132" r="3"/><circle cx="389" cy="101" r="3"/><circle cx="506" cy="83" r="3"/><circle cx="624" cy="72" r="3"/></g>
+                </svg>
+              </section>
+
+              <section class="site-detail-section domain-watchtower">
+                <div class="site-detail-section-heading">
+                  <div><h2>Domain</h2><p>Registration, certificate and DNS posture.</p></div>
+                  <span>Measured 19 Aug, 14:32</span>
+                </div>
+                <div class="domain-metric-grid">
+                  <div class="domain-metric is-ok"><span>Domain expiry</span><strong>In 184 days</strong><small>Registrar: Cloudflare</small></div>
+                  <div class="domain-metric is-warn"><span>TLS certificate expiry</span><strong>In 12 days</strong><small>31 Aug, 09:14</small></div>
+                  <div class="domain-metric is-ok"><span>DNSSEC</span><strong>Enabled</strong></div>
+                  <div class="domain-metric"><span>CAA</span><strong>Present</strong></div>
+                </div>
+                <div class="domain-nameservers"><h3>Nameservers</h3><ul><li><code>amy.ns.cloudflare.com</code></li><li><code>rob.ns.cloudflare.com</code></li></ul></div>
+                <div class="domain-history"><h3>Change history</h3><p>No changes detected since the first measurement.</p></div>
+              </section>
+
+              <section class="site-detail-section public-status-card">
+                <div class="site-detail-action-heading">
+                  <div><h2>Public status page</h2><p>Share live status, uptime and 30/90-day history without a login. Scan scores and findings always stay private.</p></div>
+                  <button class="site-detail-primary-action">Make public</button>
+                </div>
+              </section>
+
+              <section class="site-detail-section deploy-webhook-card">
+                <h2>On-deploy scans</h2>
+                <p class="site-detail-section-copy">Start a scan automatically after a deployment. Connect GitHub or Vercel to keep evidence current.</p>
+                <div class="deploy-provider-list">
+                  <div class="deploy-provider"><h3>GitHub</h3><p>Add a webhook under Settings → Webhooks. Subscribe to <code>push</code> and <code>deployment_status</code>.</p><div class="site-detail-code-row"><code>http://localhost:3000/api/webhooks/github</code><button class="site-detail-code-action">Copy</button></div></div>
+                  <div class="deploy-provider"><h3>Vercel</h3><p>Send <code>deployment.completed</code> to the webhook URL and use <code>VERCEL_WEBHOOK_SECRET</code>.</p></div>
+                </div>
+              </section>
+            </div>
+
+            <section class="site-recent-scans">
+              <div class="site-section-heading"><div><h2>Recent scans</h2><p>Open a completed scan to review its evidence and remediation steps.</p></div></div>
+              <div class="site-scan-table-wrap">
+                <table class="site-scan-table">
+                  <thead><tr><th>Scan</th><th>Status</th><th>Score</th><th>Trigger</th><th>Date</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td data-label="Scan"><code>6d4f8a31</code></td><td data-label="Status"><span class="site-scan-status is-completed">Complete</span></td><td data-label="Score"><strong class="site-table-score is-watch">68</strong></td><td data-label="Trigger">Manual</td><td data-label="Date">19 Aug, 14:32</td><td data-label="Action"><a class="site-table-action" href="#">View report ↗</a></td></tr>
+                    <tr><td data-label="Scan"><code>8aa1b440</code></td><td data-label="Status"><span class="site-scan-status is-failed">Failed</span></td><td data-label="Score">—</td><td data-label="Trigger">Deploy</td><td data-label="Date">18 Aug, 18:41</td><td data-label="Action">—</td></tr>
+                    <tr><td data-label="Scan"><code>21a73c92</code></td><td data-label="Status"><span class="site-scan-status is-completed">Complete</span></td><td data-label="Score"><strong class="site-table-score is-watch">61</strong></td><td data-label="Trigger">Scheduled</td><td data-label="Date">17 Aug, 09:02</td><td data-label="Action"><a class="site-table-action" href="#">View report ↗</a></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <footer class="dashboard-page-footer"><span>Signals are measured per scan and may change over time.</span><span>ScanPal · Site dossier</span></footer>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

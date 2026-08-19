@@ -4,6 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowClockwise,
+  ArrowLeft,
+  DownloadSimple,
+  LinkSimple,
+} from "@phosphor-icons/react";
+import {
   AI_ENGINE_BOTS,
   categoryLabels,
   checksForCategory,
@@ -481,6 +487,12 @@ function scoreColor(score: number): string {
   return "bg-red-500/15 text-red-400";
 }
 
+function scanScoreTone(score: number): string {
+  if (score >= 80) return "is-good";
+  if (score >= 50) return "is-warning";
+  return "is-critical";
+}
+
 function Spinner({ small = false }: { small?: boolean }) {
   return (
     <span
@@ -494,27 +506,27 @@ function Spinner({ small = false }: { small?: boolean }) {
 function StatusBadge({ status }: { status: ScanViewState["status"] }) {
   if (status === "completed") {
     return (
-      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+      <span className="scan-status is-completed">
         Voltooid
       </span>
     );
   }
   if (status === "failed") {
     return (
-      <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400">
+      <span className="scan-status is-failed">
         Mislukt
       </span>
     );
   }
   if (status === "canceled") {
     return (
-      <span className="rounded-full border border-slate-500/30 bg-slate-500/10 px-3 py-1 text-xs font-semibold text-slate-300">
+      <span className="scan-status is-canceled">
         Geannuleerd
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+    <span className="scan-status is-running">
       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
       {status === "queued" ? "In de wachtrij" : "Scannen…"}
     </span>
@@ -538,12 +550,18 @@ function ExportMenu({ scanId }: { scanId: string }) {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500"
+        aria-expanded={open}
+        aria-controls={`scan-export-menu-${scanId}`}
+        className="scan-secondary-button rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500"
       >
+        <DownloadSimple size={17} aria-hidden="true" />
         Exporteren
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-lg">
+        <div
+          id={`scan-export-menu-${scanId}`}
+          className="scan-export-menu absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-lg"
+        >
           <a
             href={`/api/reports/${scanId}?format=pdf${promptParam}`}
             onClick={close}
@@ -605,11 +623,16 @@ function ShareReportButton({ scanId }: { scanId: string }) {
         type="button"
         onClick={share}
         disabled={loading}
-        className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 disabled:opacity-50"
+        className="scan-secondary-button rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 disabled:opacity-50"
       >
+        <LinkSimple size={17} aria-hidden="true" />
         {loading ? "Link maken…" : "Publieke link"}
       </button>
-      {message && <span className="text-xs text-slate-400">{message}</span>}
+      {message && (
+        <span className="text-xs text-slate-400" role="status" aria-live="polite">
+          {message}
+        </span>
+      )}
     </div>
   );
 }
@@ -853,23 +876,42 @@ export function ScanResultView({
     ? state.findings.items
     : []) as Finding[];
   const legacyFindings = Array.isArray(state.findings.checks);
+  const blockingFindings =
+    (state.summary?.critical ?? 0) + (state.summary?.high ?? 0);
+  const completedLabel = state.completedAt
+    ? new Date(state.completedAt).toLocaleString("nl-NL", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+  const scoreHeading =
+    (state.score ?? 0) >= 80
+      ? "Gezonde basis"
+      : (state.score ?? 0) >= 50
+        ? "Verbeteringen aanbevolen"
+        : "Direct aandacht nodig";
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <div className="scan-detail-page">
+      <header className="scan-detail-header">
+        <div className="scan-detail-heading">
           <Link
             href={needsOnboarding ? "/onboarding" : "/sites"}
-            className="text-xs text-slate-500 transition hover:text-slate-300"
+            className="scan-back-link"
           >
-            ← Terug
+            <ArrowLeft size={16} aria-hidden="true" />
+            {needsOnboarding ? "Terug naar onboarding" : "Terug naar sites"}
           </Link>
-          <h1 className="mt-1 text-xl font-bold">
+          <h1>
             {siteLabel ?? hostOf(siteUrl)}
           </h1>
-          <p className="text-sm text-slate-400">{siteUrl}</p>
+          <a className="scan-site-url" href={siteUrl} target="_blank" rel="noreferrer">
+            {siteUrl}
+          </a>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="scan-detail-actions">
           <StatusBadge status={state.status} />
           {state.status === "completed" && (
             <>
@@ -878,120 +920,140 @@ export function ScanResultView({
             </>
           )}
         </div>
-      </div>
+      </header>
 
       {terminal ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+        <div className="scan-terminal-view">
           {state.status === "failed" ? (
-            <div>
-              <h2 className="text-lg font-bold text-red-400">Scan mislukt</h2>
-              <p className="mt-2 text-sm text-slate-400">
+            <section className="scan-state-panel scan-state-panel-error">
+              <h2>Scan mislukt</h2>
+              <p>
                 {state.error ?? "De scan is mislukt. Probeer het opnieuw."}
               </p>
-            </div>
+            </section>
           ) : state.status === "canceled" ? (
-            <div>
-              <h2 className="text-lg font-bold text-slate-300">
-                Scan geannuleerd
-              </h2>
-              <p className="mt-2 text-sm text-slate-400">
+            <section className="scan-state-panel">
+              <h2>Scan geannuleerd</h2>
+              <p>
                 De scan is geannuleerd en de credit is teruggeboekt.
               </p>
-            </div>
+            </section>
           ) : (
             <>
-              <div className="flex flex-wrap items-center gap-5">
-                <div
-                  className={`flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold ${scoreColor(state.score ?? 0)}`}
-                >
-                  {state.score ?? "—"}
+              <section className="scan-result-summary" aria-labelledby="scan-result-heading">
+                <div className="scan-score-block">
+                  <div className={`scan-score-value ${scanScoreTone(state.score ?? 0)}`}>
+                    <strong>{state.score ?? "—"}</strong>
+                    <span>/ 100</span>
+                  </div>
+                  <div>
+                    <h2 id="scan-result-heading">{scoreHeading}</h2>
+                    <p>
+                      {blockingFindings > 0
+                        ? `${blockingFindings} bevinding${blockingFindings === 1 ? "" : "en"} met hoge prioriteit vragen om actie.`
+                        : "Geen kritieke of ernstige bevindingen in deze scan."}
+                    </p>
+                    <a href="#scan-findings" className="scan-primary-link">
+                      Bekijk bevindingen
+                    </a>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">Gezondheidsscore</p>
-                  <p className="text-sm text-slate-400">
-                    Overall score op basis van {findingsItems.length} findings.
-                  </p>
-                  {state.summary && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(Object.keys(SEVERITY_LABELS) as (keyof SeverityCounts)[]).map(
-                        (severity) =>
-                          state.summary![severity] > 0 && (
-                            <span
-                              key={severity}
-                              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${SEVERITY_COLORS[severity]}`}
-                            >
-                              {state.summary![severity]} {SEVERITY_LABELS[severity]}
-                            </span>
-                          ),
-                      )}
-                    </div>
+
+                <dl className="scan-summary-facts">
+                  <div>
+                    <dt>Bevindingen</dt>
+                    <dd>{findingsItems.length}</dd>
+                  </div>
+                  <div>
+                    <dt>Routes</dt>
+                    <dd>{state.routeCount ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt>Afgerond</dt>
+                    <dd>{completedLabel ?? "Zojuist"}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              {state.summary && (
+                <div className="scan-severity-summary" aria-label="Bevindingen per ernst">
+                  {(Object.keys(SEVERITY_LABELS) as (keyof SeverityCounts)[]).map(
+                    (severity) => (
+                      <div key={severity} className={`scan-severity-item is-${severity}`}>
+                        <strong>{state.summary![severity]}</strong>
+                        <span>{SEVERITY_LABELS[severity]}</span>
+                      </div>
+                    ),
                   )}
                 </div>
+              )}
+
+              <section className="scan-category-section" aria-labelledby="scan-category-heading">
+                <div className="scan-section-heading">
+                  <div>
+                    <h2 id="scan-category-heading">Dekking per categorie</h2>
+                    <p>Waar de basis sterk is en waar verbetering het meeste effect heeft.</p>
+                  </div>
+                </div>
+                <div className="scan-category-grid">
+                  {scanCategories.map((category) => (
+                    <CategoryScore key={category} category={category} items={findingsItems} />
+                  ))}
+                </div>
+              </section>
+
+              <div className="scan-evidence-stack">
+                <ActiveTestsSection items={findingsItems} />
+                <DiffPanel scanId={scanId} />
+                <CruxSection items={findingsItems} crux={state.crux} />
+                <EngineMatrixSection items={findingsItems} />
+                <ComplianceSection items={findingsItems} />
               </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                {scanCategories.map((category) => (
-                  <CategoryScore
-                    key={category}
-                    category={category}
-                    items={findingsItems}
-                  />
-                ))}
-              </div>
-
-              <ActiveTestsSection items={findingsItems} />
-
-              <EngineMatrixSection items={findingsItems} />
-
-              <CruxSection items={findingsItems} crux={state.crux} />
-
-              <ComplianceSection items={findingsItems} />
-
-              <DiffPanel scanId={scanId} />
-
-              <div className="mt-6">
+              <div id="scan-findings" className="scan-findings-anchor">
                 <FindingsPanel scanId={scanId} legacy={legacyFindings} />
               </div>
             </>
           )}
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="scan-terminal-actions">
             <button
               type="button"
               onClick={rescan}
               disabled={busy}
-              className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
+              className="scan-rescan-button"
             >
+              <ArrowClockwise size={17} aria-hidden="true" />
               {busy ? "Starten…" : state.status === "failed" ? "Opnieuw proberen" : "Opnieuw scannen"}
             </button>
             {needsOnboarding && (
               <button
                 type="button"
                 onClick={finishOnboarding}
-                className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold transition hover:border-slate-500"
+                className="scan-secondary-button"
               >
                 Naar dashboard
               </button>
             )}
             {actionError && (
-              <span className="text-sm text-red-400">{actionError}</span>
+              <span className="scan-action-error" role="alert">{actionError}</span>
             )}
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="scan-running-view">
           <ProgressView state={state} />
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="scan-cancel-actions">
             {confirmingCancel ? (
               <>
-                <span className="text-sm text-slate-400">
+                <span>
                   De lopende scan annuleren?
                 </span>
                 <button
                   type="button"
                   onClick={cancelScan}
                   disabled={canceling}
-                  className="rounded-lg border border-red-500/40 px-4 py-2.5 text-sm font-semibold text-red-400 transition hover:border-red-500 disabled:opacity-50"
+                  className="scan-danger-button"
                 >
                   {canceling ? "Annuleren…" : "Ja, annuleren"}
                 </button>
@@ -999,7 +1061,7 @@ export function ScanResultView({
                   type="button"
                   onClick={() => setConfirmingCancel(false)}
                   disabled={canceling}
-                  className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-slate-500 disabled:opacity-50"
+                  className="scan-secondary-button"
                 >
                   Nee
                 </button>
@@ -1008,13 +1070,13 @@ export function ScanResultView({
               <button
                 type="button"
                 onClick={() => setConfirmingCancel(true)}
-                className="rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-red-500/50 hover:text-red-400"
+                className="scan-secondary-button"
               >
                 Scan annuleren
               </button>
             )}
             {actionError && (
-              <span className="text-sm text-red-400">{actionError}</span>
+              <span className="scan-action-error" role="alert">{actionError}</span>
             )}
           </div>
         </div>

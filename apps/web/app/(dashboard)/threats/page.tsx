@@ -1,5 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { getPlanForTeam } from "@/lib/credits";
 import { listThreatOverviews, listThreatRules } from "@/lib/threats-core";
@@ -9,6 +7,7 @@ import { ThreatsUpsell } from "@/components/threats/threats-upsell";
 import { RiskBadge } from "@/components/threats/risk-badge";
 import type { ThreatRuleKey } from "@scanpal/shared";
 import { isPaidPlan } from "@scanpal/shared";
+import { getDashboardContext } from "@/lib/dashboard-context";
 
 export const dynamic = "force-dynamic";
 
@@ -25,18 +24,7 @@ const RULE_ADVICE: Record<ThreatRuleKey, string> = {
 };
 
 export default async function ThreatsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const result = await ensureUserTeam(pool, {
-    id: user?.id ?? "",
-    email: user?.email ?? "",
-    name: user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? null,
-    avatar_url: user?.user_metadata?.avatar_url ?? null,
-    auth_provider: user?.app_metadata?.provider ?? null,
-  });
+  const result = await getDashboardContext();
 
   const plan = await getPlanForTeam(pool, result.team.id);
   if (!isPaidPlan(plan.id)) {

@@ -1,23 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { listWebhooks } from "@/lib/webhooks-core";
 import { SettingsNav } from "@/components/settings-nav";
 import { WebhooksSettings } from "@/components/webhooks-settings";
+import { getDashboardContext } from "@/lib/dashboard-context";
 
 export default async function SettingsWebhooksPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const result = await ensureUserTeam(pool, {
-    id: user?.id ?? "",
-    email: user?.email ?? "",
-    name: user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? null,
-    avatar_url: user?.user_metadata?.avatar_url ?? null,
-    auth_provider: user?.app_metadata?.provider ?? null,
-  });
+  const result = await getDashboardContext();
 
   const isOwner = result.membership.role === "owner";
   const webhooks = await listWebhooks(pool, result.team.id);

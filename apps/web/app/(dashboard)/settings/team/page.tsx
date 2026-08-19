@@ -1,5 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { listMembers, listPendingInvitations } from "@/lib/invites-core";
 import { TeamSettings } from "@/components/team-settings";
@@ -9,20 +7,10 @@ import { brandingSchema } from "@scanpal/shared";
 import { listWorkspaces, toWorkspaceJson } from "@/lib/workspaces-core";
 import { WorkspaceManager } from "@/components/workspace-manager";
 import { getMembershipWorkspace } from "@/lib/workspace-scope";
+import { getDashboardContext } from "@/lib/dashboard-context";
 
 export default async function SettingsTeamPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const result = await ensureUserTeam(pool, {
-    id: user?.id ?? "",
-    email: user?.email ?? "",
-    name: user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? null,
-    avatar_url: user?.user_metadata?.avatar_url ?? null,
-    auth_provider: user?.app_metadata?.provider ?? null,
-  });
+  const result = await getDashboardContext();
 
   const workspaceScope =
     result.membership.role === "owner"

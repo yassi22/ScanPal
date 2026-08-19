@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
+import { getOrCreateUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { getTeamUsage } from "@/lib/credits";
 
@@ -12,7 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { team } = await ensureUserTeam(pool, {
+  const { team } = await getOrCreateUserTeam(pool, {
     id: user.id,
     email: user.email ?? "",
     name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,

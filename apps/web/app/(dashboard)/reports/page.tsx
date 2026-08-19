@@ -1,27 +1,14 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { listReports } from "@/lib/report/store";
 import { ReportsList } from "@/components/reports-list";
 import { getMembershipWorkspace } from "@/lib/workspace-scope";
+import { getDashboardContext } from "@/lib/dashboard-context";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const result = await ensureUserTeam(pool, {
-    id: user.id,
-    email: user.email ?? "",
-    name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-    avatar_url: user.user_metadata?.avatar_url ?? null,
-    auth_provider: user.app_metadata?.provider ?? null,
-  });
+  const result = await getDashboardContext();
+  const user = result.authUser;
 
   const scope =
     result.membership.role === "owner"

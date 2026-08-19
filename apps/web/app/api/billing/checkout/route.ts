@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { billingCheckoutSchema } from "@scanpal/shared";
 import { getSessionUser } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
+import { getOrCreateUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { getSubscriptionState } from "@/lib/credits";
 import { createCheckoutSession, BillingNotConfiguredError } from "@/lib/billing";
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { team } = await ensureUserTeam(pool, {
+  const { team } = await getOrCreateUserTeam(pool, {
     id: user.id,
     email: user.email ?? "",
     name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,

@@ -5,7 +5,7 @@ import { GET as callbackGET } from "@/app/api/auth/callback/route";
 import { POST as logoutPOST } from "@/app/api/auth/logout/route";
 import { GET as meGET } from "@/app/api/me/route";
 import { createClient, getSessionUser } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
+import { ensureUserTeam, getOrCreateUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 
 vi.mock("server-only", () => ({}));
@@ -15,6 +15,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 vi.mock("@/lib/team", () => ({
   ensureUserTeam: vi.fn(),
+  getOrCreateUserTeam: vi.fn(),
 }));
 vi.mock("@/lib/db", () => ({
   pool: { query: vi.fn() },
@@ -26,6 +27,7 @@ vi.mock("@/lib/env", () => ({
 const createClientMock = vi.mocked(createClient);
 const getUserMock = vi.mocked(getSessionUser);
 const ensureTeamMock = vi.mocked(ensureUserTeam);
+const teamContextMock = vi.mocked(getOrCreateUserTeam);
 
 const USER = {
   id: "user-1",
@@ -52,11 +54,17 @@ function teamResult(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function mockSupabase(exchangeResult: { error: unknown } | undefined = undefined) {
+function mockSupabase(
+  exchangeResult:
+    | { data?: { user: typeof USER }; error: unknown }
+    | undefined = undefined,
+) {
   const supabase = {
     auth: {
       signInWithOtp: vi.fn(),
-      exchangeCodeForSession: vi.fn().mockResolvedValue(exchangeResult ?? { error: null }),
+      exchangeCodeForSession: vi.fn().mockResolvedValue(
+        exchangeResult ?? { data: { user: USER }, error: null },
+      ),
       signOut: vi.fn().mockResolvedValue({ error: null }),
     },
   };
@@ -72,6 +80,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   getUserMock.mockResolvedValue(USER as never);
   ensureTeamMock.mockResolvedValue(teamResult() as never);
+  teamContextMock.mockResolvedValue(teamResult() as never);
 });
 
 afterEach(() => {
@@ -161,20 +170,31 @@ describe("POST /api/auth/magic-link", () => {
 describe("GET /api/auth/callback", () => {
   it("wisselt de code in en stuurt door naar `next` (relatief)", async () => {
     const supabase = mockSupabase();
-    supabase.auth.exchangeCodeForSession.mockResolvedValue({ error: null });
+    supabase.auth.exchangeCodeForSession.mockResolvedValue({ data: { user: USER }, error: null });
 
     const response = await callbackGET(
       callbackRequest("http://localhost/api/auth/callback?code=abc&next=/dashboard/sites"),
     );
 
     expect(supabase.auth.exchangeCodeForSession).toHaveBeenCalledWith("abc");
+    expect(ensureTeamMock).toHaveBeenCalledWith(
+      pool,
+      {
+        id: "user-1",
+        email: "a@b.nl",
+        name: null,
+        avatar_url: null,
+        auth_provider: null,
+      },
+      { recordLogin: true },
+    );
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost/dashboard/sites");
   });
 
   it("accepteert ook `token` als fallback voor `code`", async () => {
     const supabase = mockSupabase();
-    supabase.auth.exchangeCodeForSession.mockResolvedValue({ error: null });
+    supabase.auth.exchangeCodeForSession.mockResolvedValue({ data: { user: USER }, error: null });
 
     const response = await callbackGET(
       callbackRequest("http://localhost/api/auth/callback?token=xyz"),
@@ -186,7 +206,7 @@ describe("GET /api/auth/callback", () => {
 
   it("open-redirect-hardening: absolute `next`-URL → /dashboard", async () => {
     const supabase = mockSupabase();
-    supabase.auth.exchangeCodeForSession.mockResolvedValue({ error: null });
+    supabase.auth.exchangeCodeForSession.mockResolvedValue({ data: { user: USER }, error: null });
 
     const response = await callbackGET(
       callbackRequest("http://localhost/api/auth/callback?code=abc&next=https://evil.example/phish"),
@@ -198,7 +218,7 @@ describe("GET /api/auth/callback", () => {
 
   it("open-redirect-hardening: protocol-relative `next` (`//`) → /dashboard", async () => {
     const supabase = mockSupabase();
-    supabase.auth.exchangeCodeForSession.mockResolvedValue({ error: null });
+    supabase.auth.exchangeCodeForSession.mockResolvedValue({ data: { user: USER }, error: null });
 
     const response = await callbackGET(
       callbackRequest("http://localhost/api/auth/callback?code=abc&next=//evil.example"),
@@ -209,7 +229,7 @@ describe("GET /api/auth/callback", () => {
 
   it("open-redirect-hardening: lege `next` → /dashboard", async () => {
     const supabase = mockSupabase();
-    supabase.auth.exchangeCodeForSession.mockResolvedValue({ error: null });
+    supabase.auth.exchangeCodeForSession.mockResolvedValue({ data: { user: USER }, error: null });
 
     const response = await callbackGET(
       callbackRequest("http://localhost/api/auth/callback?code=abc&next="),
@@ -258,14 +278,14 @@ describe("GET /api/me", () => {
     getUserMock.mockResolvedValue(null as never);
     const response = await meGET();
     expect(response.status).toBe(401);
-    expect(ensureTeamMock).not.toHaveBeenCalled();
+    expect(teamContextMock).not.toHaveBeenCalled();
   });
 
-  it("nieuwe user → team + owner-membership (idempotent via ensureUserTeam)", async () => {
+  it("nieuwe user → team + owner-membership via de read-first teamcontext", async () => {
     const response = await meGET();
 
     expect(response.status).toBe(200);
-    expect(ensureTeamMock).toHaveBeenCalledWith(pool, {
+    expect(teamContextMock).toHaveBeenCalledWith(pool, {
       id: "user-1",
       email: "a@b.nl",
       name: null,
@@ -280,7 +300,7 @@ describe("GET /api/me", () => {
   });
 
   it("onboarding-completed vlag aan zodra die gezet is", async () => {
-    ensureTeamMock.mockResolvedValue(
+    teamContextMock.mockResolvedValue(
       teamResult({
         user: { id: "user-1", email: "a@b.nl", onboarding_completed_at: new Date("2026-08-16T08:00:00Z") },
       }) as never,
@@ -292,7 +312,7 @@ describe("GET /api/me", () => {
     expect(body.user.onboarding_completed_at).toBe("2026-08-16T08:00:00.000Z");
   });
 
-  it("geeft de naam van de OAuth-provider door aan ensureUserTeam", async () => {
+  it("geeft de naam van de OAuth-provider door aan de teamcontext", async () => {
     getUserMock.mockResolvedValue({
       ...USER,
       user_metadata: { full_name: "Anna Jansen", avatar_url: "https://img/x.png" },
@@ -301,7 +321,7 @@ describe("GET /api/me", () => {
 
     await meGET();
 
-    expect(ensureTeamMock).toHaveBeenCalledWith(pool, {
+    expect(teamContextMock).toHaveBeenCalledWith(pool, {
       id: "user-1",
       email: "a@b.nl",
       name: "Anna Jansen",

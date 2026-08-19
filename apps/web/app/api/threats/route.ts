@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { threatOverviewResponseSchema, isPaidPlan } from "@scanpal/shared";
 import { getSessionUser } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
+import { getOrCreateUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
 import { getPlanForTeam } from "@/lib/credits";
 import { listThreatOverviews } from "@/lib/threats-core";
@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 async function authTeam() {
   const user = await getSessionUser();
   if (!user) return null;
-  const result = await ensureUserTeam(pool, {
+  const result = await getOrCreateUserTeam(pool, {
     id: user.id,
     email: user.email ?? "",
     name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,

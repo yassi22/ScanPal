@@ -49,7 +49,10 @@ function WorkspaceNavigation({
       <span className="dashboard-sidebar-label">Workspace</span>
       {navigation.map((item) => {
         const disabled = needsOnboarding && item.href !== "/dashboard";
-        const active = currentPath === item.href;
+        const active =
+          currentPath === item.href ||
+          (item.href === "/sites" && currentPath.startsWith("/sites/")) ||
+          (item.href === "/reports" && currentPath.startsWith("/scans/"));
         const NavIcon = item.icon;
 
         if (disabled) return null;
@@ -201,7 +204,7 @@ export function DashboardShell(props: DashboardShellProps) {
     "/billing",
   ].some(
     (route) => pathname === route || pathname === `${route}/`,
-  );
+  ) || pathname.startsWith("/sites/") || pathname.startsWith("/scans/");
 
   if (usesWorkspaceShell) {
     return <DashboardHomeShell {...props} />;

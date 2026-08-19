@@ -1,27 +1,16 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { pool } from "@/lib/db";
 import { listNotifications } from "@/lib/notifications-core";
 import { NotificationsList } from "@/components/notifications/notifications-list";
+import { getDashboardContext } from "@/lib/dashboard-context";
 
 export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return (
-      <div className="rounded-2xl border border-dashed border-slate-700 p-10 text-center text-sm text-slate-400">
-        Log in om je meldingen te bekijken.
-      </div>
-    );
-  }
+  const { authUser } = await getDashboardContext();
 
   const initial = await listNotifications(pool, {
-    userId: user.id,
+    userId: authUser.id,
     limit: 20,
     offset: 0,
   });

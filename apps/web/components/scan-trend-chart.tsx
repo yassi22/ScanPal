@@ -8,16 +8,16 @@ type Props = {
   points: ScanTrendPoint[];
 };
 
-const GRID_COLOR = "#1e293b";
-const AXIS_COLOR = "#64748b";
+const GRID_COLOR = "#e0e3e8";
+const AXIS_COLOR = "#6b6f78";
 
-const OVERALL_COLOR = "#60a5fa";
+const OVERALL_COLOR = "#1a1c21";
 const CATEGORY_COLORS: Record<ScanCategory, string> = {
-  http: "#34d399",
-  seo: "#a78bfa",
-  aeo: "#fbbf24",
-  github: "#f472b6",
-  compliance: "#38bdf8",
+  http: "#208566",
+  seo: "#6d5aa6",
+  aeo: "#9a6811",
+  github: "#a45274",
+  compliance: "#2d6fa9",
 };
 
 /**
@@ -108,21 +108,24 @@ export function ScanTrendChart({ points }: Props) {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold">Score-trend</h2>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-          <span className="inline-flex items-center gap-1.5">
+    <section className="site-detail-section site-trend-panel" aria-labelledby="site-trend-heading">
+      <div className="site-trend-heading">
+        <div>
+          <h2 id="site-trend-heading">Score trend</h2>
+          <p>Health signals across completed scans.</p>
+        </div>
+        <div className="site-trend-legend" aria-label="Chart legend">
+          <span>
             <span
-              className="inline-block h-2 w-3 rounded-full"
+              className="site-trend-swatch"
               style={{ backgroundColor: OVERALL_COLOR }}
             />
             Overall
           </span>
           {scanCategories.map((cat) => (
-            <span key={cat} className="inline-flex items-center gap-1.5">
+            <span key={cat}>
               <span
-                className="inline-block h-2 w-3 rounded-full"
+                className="site-trend-swatch"
                 style={{ backgroundColor: CATEGORY_COLORS[cat] }}
               />
               {categoryLabels[cat]}
@@ -132,15 +135,15 @@ export function ScanTrendChart({ points }: Props) {
       </div>
 
       {n === 0 ? (
-        <p className="mt-6 py-10 text-center text-sm text-slate-500">
-          Nog geen voltooide scans voor deze site.
+        <p className="site-trend-empty">
+          No completed scans for this site yet.
         </p>
       ) : (
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="mt-4 w-full"
+          className="site-trend-chart"
           role="img"
-          aria-label="Score-trend per scan"
+          aria-label="Score trend per scan"
         >
           {gridLines.map((line) => (
             <g key={line.label}>
@@ -220,6 +223,6 @@ export function ScanTrendChart({ points }: Props) {
           )}
         </svg>
       )}
-    </div>
+    </section>
   );
 }

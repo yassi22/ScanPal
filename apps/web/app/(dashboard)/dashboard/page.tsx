@@ -10,9 +10,8 @@ import {
   Sparkle,
 } from "@phosphor-icons/react/dist/ssr";
 import type { Finding } from "@scanpal/shared";
-import { createClient } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
 import { pool } from "@/lib/db";
+import { getDashboardContext } from "@/lib/dashboard-context";
 import { getPlanForTeam } from "@/lib/credits";
 import { listSitesWithStatus, type SiteRowWithStatus } from "@/lib/sites-core";
 import { listScanHistory, type ScanHistoryRow } from "@/lib/scans-core";
@@ -157,22 +156,8 @@ function getFocusState({
 }
 
 export default async function DashboardHomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const result = user
-    ? await ensureUserTeam(pool, {
-        id: user.id,
-        email: user.email ?? "",
-        name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-        avatar_url: user.user_metadata?.avatar_url ?? null,
-        auth_provider: user.app_metadata?.provider ?? null,
-      })
-    : null;
-
-  if (!result || !user) return null;
+  const result = await getDashboardContext();
+  const user = result.authUser;
 
   const plan = await getPlanForTeam(pool, result.team.id);
   const needsOnboarding = result.user.onboarding_completed_at === null;
