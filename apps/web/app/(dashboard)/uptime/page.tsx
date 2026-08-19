@@ -23,14 +23,26 @@ export default async function UptimePage() {
   const summaries = await listUptimeSummaries(pool, result.team.id);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Uptime</h1>
-      <p className="mt-1 text-sm text-slate-400">
-        Status van je sites — elke 60 seconden gecontroleerd, storing na twee
-        mislukte checks.
-      </p>
+    <div className="dashboard-home uptime-page" data-design-direction="luminous-technical-calm">
+      <header className="dashboard-page-heading uptime-page-heading">
+        <div>
+          <h1>Know when a site goes quiet.</h1>
+          <p>
+            Availability is checked every 60 seconds. ScanPal confirms an
+            outage after two failed checks, so a single network wobble stays noise.
+          </p>
+        </div>
+        <span className="dashboard-plan-chip">
+          {summaries.length} {summaries.length === 1 ? "endpoint" : "endpoints"}
+        </span>
+      </header>
 
       <UptimeList initial={summaries} />
+
+      <footer className="dashboard-page-footer">
+        <span>Automatic refresh every 30 seconds.</span>
+        <span>ScanPal · Availability</span>
+      </footer>
     </div>
   );
 }

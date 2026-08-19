@@ -3,6 +3,21 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  ArrowSquareOut,
+  CalendarBlank,
+  CheckCircle,
+  GithubLogo,
+  GlobeHemisphereWest,
+  PencilSimple,
+  Play,
+  Plus,
+  Pulse,
+  ShieldCheck,
+  Trash,
+  WarningCircle,
+  X,
+} from "@phosphor-icons/react";
+import {
   addSiteInputSchema,
   detectGithubRepoFromUrl,
   type SiteWithStatus,
@@ -61,9 +76,18 @@ const SCHEDULE_LABELS: Record<string, string> = {
 };
 
 function scoreColor(score: number): string {
-  if (score >= 80) return "bg-emerald-500/15 text-emerald-400";
-  if (score >= 50) return "bg-amber-500/15 text-amber-400";
-  return "bg-red-500/15 text-red-400";
+  if (score >= 80) return "is-good";
+  if (score >= 50) return "is-watch";
+  return "is-risk";
+}
+
+function scanStatus(status: string | null): { label: string; tone: string } {
+  if (status === "queued" || status === "running") {
+    return { label: "Scanning", tone: "is-info" };
+  }
+  if (status === "completed") return { label: "Complete", tone: "is-success" };
+  if (status === "failed") return { label: "Failed", tone: "is-danger" };
+  return { label: "Not scanned", tone: "is-neutral" };
 }
 
 export function SitesManager({
@@ -343,389 +367,204 @@ export function SitesManager({
     }
   }
 
+  const runningCount = sites.filter((site) => ACTIVE_SCAN.has(site.last_scan_status ?? "")).length;
+  const onlineCount = sites.filter((site) => site.uptime_state === "up").length;
+
   return (
-    <div className="mt-8 space-y-8">
+    <div className="sites-manager">
       {(formError || notice) && (
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm ${
-            formError
-              ? "border-red-500/30 bg-red-500/10 text-red-400"
-              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-          }`}
-        >
-          {formError ?? notice}
+        <div className={`workspace-alert ${formError ? "is-error" : "is-success"}`} role={formError ? "alert" : "status"}>
+          {formError ? <WarningCircle size={18} aria-hidden="true" /> : <CheckCircle size={18} aria-hidden="true" />}
+          <span>{formError ?? notice}</span>
         </div>
       )}
 
       {duplicate && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-          <span className="font-medium">{hostOf(duplicate.url)}</span> staat al op
-          je lijst.{" "}
-          <button
-            type="button"
-            onClick={() => scanSite(duplicate)}
-            disabled={busyId === duplicate.id}
-            className="font-semibold underline underline-offset-2 hover:text-amber-300 disabled:opacity-50"
-          >
-            {busyId === duplicate.id ? "Starten…" : "Toch scannen"}
+        <div className="workspace-alert is-warning" role="status">
+          <WarningCircle size={18} aria-hidden="true" />
+          <span><strong>{hostOf(duplicate.url)}</strong> is already in this workspace.</span>
+          <button type="button" onClick={() => scanSite(duplicate)} disabled={busyId === duplicate.id}>
+            {busyId === duplicate.id ? "Starting…" : "Scan anyway"}
           </button>
         </div>
       )}
 
-      <form
-        onSubmit={submit}
-        className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6"
-      >
-        <h2 className="font-semibold">Website toevoegen</h2>
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-medium text-slate-300">Website URL</span>
-            <input
-              type="text"
-              required
-              value={url}
-              onChange={(e) => onChangeUrl(e.target.value)}
-              placeholder="voorbeeld.nl"
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none transition focus:border-brand"
-            />
-            {showErrors && fieldErrors.url && (
-              <span className="mt-1 block text-xs text-red-400">
-                {fieldErrors.url}
-              </span>
-            )}
-            {repoHint && (
-              <span className="mt-1 block text-xs text-amber-400">
-                {repoHint}
-              </span>
-            )}
-          </label>
-          <label className="block">
-            <span className="flex items-center gap-2 text-sm font-medium text-slate-300">
-              GitHub-repo
-              {!githubEnabled && (
-                <span className="rounded-full border border-brand/40 bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">
-                  Pro
-                </span>
-              )}
-            </span>
-            <input
-              type="text"
-              value={githubRepo}
-              onChange={(e) => onChangeGithub(e.target.value)}
-              disabled={!githubEnabled}
-              placeholder="owner/repo"
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none transition focus:border-brand disabled:cursor-not-allowed disabled:opacity-50"
-            />
-            <span className="mt-1 block text-xs text-slate-500">
-              {githubEnabled
-                ? "bijv. owner/repo of https://github.com/owner/repo"
-                : "Beschikbaar op Pro: scan repositories op geheimen en kwetsbaarheden."}
-            </span>
-            {showErrors && fieldErrors.github_repo && (
-              <span className="mt-1 block text-xs text-red-400">
-                {fieldErrors.github_repo}
-              </span>
-            )}
-          </label>
-        </div>
-        <label className="mt-4 block">
-          <span className="text-sm font-medium text-slate-300">
-            Label (optioneel)
-          </span>
-          <input
-            type="text"
-            value={label}
-            onChange={(e) => onChangeLabel(e.target.value)}
-            placeholder="bijv. Productie-webshop"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none transition focus:border-brand"
-          />
-          {showErrors && fieldErrors.label && (
-            <span className="mt-1 block text-xs text-red-400">
-              {fieldErrors.label}
-            </span>
-          )}
-        </label>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="mt-5 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
-        >
-          {submitting ? "Toevoegen…" : "Site toevoegen"}
-        </button>
-      </form>
+      <div className="sites-setup-grid">
+        <form onSubmit={submit} className="site-add-panel">
+          <div className="site-add-heading">
+            <span><Plus size={19} aria-hidden="true" /></span>
+            <div>
+              <h2>Add a property</h2>
+              <p>Connect a public website. Add its repository when your plan supports source checks.</p>
+            </div>
+          </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Sites</h2>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
-          <input
-            type="checkbox"
-            checked={activeTests}
-            disabled={!activeTestsEnabled}
-            onChange={(e) => {
-              if (!activeTestsEnabled) {
-                setUpsell({
-                  plan: "pro",
-                  error:
-                    "Actieve vulnerability-tests zijn alleen beschikbaar op Pro.",
-                });
-                return;
-              }
-              setActiveTests(e.target.checked);
-            }}
-            className="h-4 w-4 rounded border-slate-700 bg-slate-900 accent-brand disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          Actieve tests (Pro)
-          {!activeTestsEnabled && (
-            <span className="rounded-full border border-brand/40 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand">
-              Pro
-            </span>
-          )}
-        </label>
+          <div className="site-form-grid">
+            <label className="site-field is-wide">
+              <span>Website URL</span>
+              <input type="text" required value={url} onChange={(event) => onChangeUrl(event.target.value)} placeholder="example.com" />
+              {showErrors && fieldErrors.url && <small className="is-error">{fieldErrors.url}</small>}
+              {repoHint && <small className="is-warning">{repoHint}</small>}
+            </label>
+            <label className="site-field">
+              <span>Workspace label <small>Optional</small></span>
+              <input type="text" value={label} onChange={(event) => onChangeLabel(event.target.value)} placeholder="Production store" />
+              {showErrors && fieldErrors.label && <small className="is-error">{fieldErrors.label}</small>}
+            </label>
+            <label className="site-field">
+              <span>GitHub repository {!githubEnabled && <small className="site-pro-badge">Pro</small>}</span>
+              <input type="text" value={githubRepo} onChange={(event) => onChangeGithub(event.target.value)} disabled={!githubEnabled} placeholder="owner/repo" />
+              {showErrors && fieldErrors.github_repo && <small className="is-error">{fieldErrors.github_repo}</small>}
+            </label>
+          </div>
+
+          <div className="site-add-footer">
+            <p><ShieldCheck size={16} aria-hidden="true" /> The first scan can be started after the property is saved.</p>
+            <button type="submit" disabled={submitting} className="dashboard-primary-button">
+              <Plus size={17} aria-hidden="true" /> {submitting ? "Adding…" : "Add property"}
+            </button>
+          </div>
+        </form>
+
+        <aside className="sites-pulse-panel" aria-label="Workspace site summary">
+          <div className="sites-pulse-heading">
+            <span><Pulse size={19} aria-hidden="true" /></span>
+            <h2>Workspace pulse</h2>
+          </div>
+          <dl>
+            <div><dt>Properties</dt><dd>{sites.length}</dd></div>
+            <div><dt>Online now</dt><dd>{onlineCount}</dd></div>
+            <div><dt>Scanning</dt><dd>{runningCount}</dd></div>
+          </dl>
+          <p>Availability and scan status update automatically while this page is open.</p>
+        </aside>
       </div>
 
-      {sites.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 p-10 text-center">
-          <p className="font-medium">Nog geen sites</p>
-          <p className="mt-1 text-sm text-slate-400">
-            Voeg je eerste website hierboven toe om te beginnen met scannen.
-          </p>
+      <section className="sites-inventory">
+        <div className="sites-inventory-heading">
+          <div>
+            <h2>Properties</h2>
+            <p>Security posture, scan cadence, and availability at a glance.</p>
+          </div>
+          <label className="active-tests-control">
+            <input
+              type="checkbox"
+              checked={activeTests}
+              disabled={!activeTestsEnabled}
+              onChange={(event) => {
+                if (!activeTestsEnabled) {
+                  setUpsell({ plan: "pro", error: "Active vulnerability tests are available on Pro." });
+                  return;
+                }
+                setActiveTests(event.target.checked);
+              }}
+            />
+            <span>Active tests</span>
+            {!activeTestsEnabled && <small>Pro</small>}
+          </label>
         </div>
-      ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50">
-          <table className="w-full min-w-[860px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-800 text-xs uppercase tracking-wide text-slate-500">
-                <th className="px-5 py-3 font-medium">Site</th>
-                <th className="px-5 py-3 font-medium">GitHub-repo</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Score</th>
-                <th className="px-5 py-3 font-medium">Laatste scan</th>
-                <th className="px-5 py-3 font-medium">Schema</th>
-                <th className="px-5 py-3 font-medium">Volgende run</th>
-                <th className="px-5 py-3 font-medium">Uptime</th>
-                <th className="px-5 py-3 font-medium text-right">Acties</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sites.map((site) => (
-                <tr
-                  key={site.id}
-                  className="border-b border-slate-800/60 last:border-b-0"
-                >
-                  <td className="px-5 py-4">
+
+        {sites.length === 0 ? (
+          <div className="sites-empty-state">
+            <span><GlobeHemisphereWest size={24} aria-hidden="true" /></span>
+            <div><strong>No properties yet</strong><p>Add your first website above, then start a scan when you are ready.</p></div>
+          </div>
+        ) : (
+          <div className="site-card-list">
+            {sites.map((site) => {
+              const status = scanStatus(site.last_scan_status);
+              return (
+                <article key={site.id} className="site-operation-card">
+                  <div className="site-identity">
+                    <span className="site-icon"><GlobeHemisphereWest size={21} aria-hidden="true" /></span>
                     {editingId === site.id ? (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={editLabel}
-                          onChange={(e) => setEditLabel(e.target.value)}
-                          placeholder="Label"
-                          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-brand"
-                        />
-                        <input
-                          type="text"
-                          value={editRepo}
-                          onChange={(e) => setEditRepo(e.target.value)}
-                          placeholder="owner/repo"
-                          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm outline-none focus:border-brand"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => saveEdit(site)}
-                            disabled={busyId === site.id}
-                            className="rounded-md bg-brand px-3 py-1 text-xs font-semibold text-slate-950 hover:bg-brand/90 disabled:opacity-50"
-                          >
-                            Opslaan
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingId(null)}
-                            className="rounded-md border border-slate-700 px-3 py-1 text-xs hover:border-slate-500"
-                          >
-                            Annuleren
-                          </button>
+                      <div className="site-edit-fields">
+                        <input type="text" value={editLabel} onChange={(event) => setEditLabel(event.target.value)} placeholder="Label" aria-label={`Label for ${site.url}`} />
+                        <input type="text" value={editRepo} onChange={(event) => setEditRepo(event.target.value)} placeholder="owner/repo" aria-label={`GitHub repository for ${site.url}`} />
+                        <div>
+                          <button type="button" onClick={() => saveEdit(site)} disabled={busyId === site.id}>Save</button>
+                          <button type="button" onClick={() => setEditingId(null)}>Cancel</button>
                         </div>
                       </div>
                     ) : (
-                      <>
-                        <Link
-                          href={`/sites/${site.id}`}
-                          className="font-medium text-slate-200 transition hover:text-brand"
-                        >
-                          {site.label ?? hostOf(site.url)}
-                        </Link>
-                        <p className="text-xs text-slate-500">{site.url}</p>
-                      </>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    {site.github_repo ? (
-                      <a
-                        href={`https://github.com/${site.github_repo}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-block rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-300 transition hover:border-brand hover:text-brand"
-                      >
-                        {site.github_repo}
-                      </a>
-                    ) : (
-                      <span className="text-slate-600">—</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    {!site.last_scan_status && (
-                      <span className="text-slate-500">Nog niet gescand</span>
-                    )}
-                    {site.last_scan_status === "queued" && (
-                      <span className="inline-flex items-center gap-2 text-brand">
-                        <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
-                        Scannen…
-                      </span>
-                    )}
-                    {site.last_scan_status === "running" && (
-                      <span className="inline-flex items-center gap-2 text-brand">
-                        <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
-                        Scannen…
-                      </span>
-                    )}
-                    {site.last_scan_status === "completed" && (
-                      <span className="text-emerald-400">Klaar</span>
-                    )}
-                    {site.last_scan_status === "failed" && (
-                      <span className="text-red-400">Scan mislukt</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    {site.last_scan_score !== null ? (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${scoreColor(site.last_scan_score)}`}
-                        >
-                          {site.last_scan_score}
-                        </span>
-                        {site.last_scan_id && (
-                          <Link
-                            href={`/scans/${site.last_scan_id}`}
-                            className="text-xs text-slate-400 underline-offset-2 hover:text-brand hover:underline"
-                          >
-                            Bekijk
-                          </Link>
+                      <div>
+                        <Link href={`/sites/${site.id}`}>{site.label ?? hostOf(site.url)}</Link>
+                        <span>{site.url}</span>
+                        {site.github_repo && (
+                          <a href={`https://github.com/${site.github_repo}`} target="_blank" rel="noreferrer" className="site-repository">
+                            <GithubLogo size={13} aria-hidden="true" /> {site.github_repo} <ArrowSquareOut size={11} aria-hidden="true" />
+                          </a>
                         )}
                       </div>
-                    ) : (
-                      <span className="text-slate-600">—</span>
                     )}
-                  </td>
-                  <td className="px-5 py-4 text-slate-400">
-                    {formatDate(site.last_scanned_at)}
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={site.scan_frequency}
-                        onChange={(e) => changeSchedule(site, e.target.value)}
-                        disabled={busyId === site.id}
-                        aria-label={`Schema voor ${site.url}`}
-                        className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-200 outline-none transition focus:border-brand disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <option value="none">Geen</option>
-                        <option value="daily">Dagelijks</option>
-                        <option value="weekly">Wekelijks</option>
+                  </div>
+
+                  <div className="site-signal-group">
+                    <div className="site-signal">
+                      <span>Latest scan</span>
+                      <strong className={`site-status ${status.tone}`}>{status.label}</strong>
+                      <small>{formatDate(site.last_scanned_at)}</small>
+                    </div>
+                    <div className="site-signal">
+                      <span>Security score</span>
+                      {site.last_scan_score !== null ? (
+                        <strong className={`site-score ${scoreColor(site.last_scan_score)}`}>{site.last_scan_score}</strong>
+                      ) : <strong>—</strong>}
+                      {site.last_scan_id && <Link href={`/scans/${site.last_scan_id}`}>View evidence</Link>}
+                    </div>
+                    <div className="site-signal">
+                      <span>Availability</span>
+                      {site.uptime_state === "up" ? (
+                        <Link href={`/uptime/${site.id}`} className="site-uptime is-up">Online</Link>
+                      ) : site.uptime_state === "down" ? (
+                        <Link href={`/uptime/${site.id}`} className="site-uptime is-down">Offline</Link>
+                      ) : <strong>—</strong>}
+                    </div>
+                  </div>
+
+                  <div className="site-cadence">
+                    <label>
+                      <CalendarBlank size={15} aria-hidden="true" />
+                      <span>Cadence</span>
+                      <select value={site.scan_frequency} onChange={(event) => changeSchedule(site, event.target.value)} disabled={busyId === site.id} aria-label={`Scan cadence for ${site.url}`}>
+                        <option value="none">Manual</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
                       </select>
-                      {!schedulingEnabled && (
-                        <span className="rounded-full border border-brand/40 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold text-brand">
-                          Pro
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-xs text-slate-400">
-                    {site.scan_frequency !== "none"
-                      ? formatDateTime(site.next_scan_at)
-                      : "—"}
-                  </td>
-                  <td className="px-5 py-4">
-                    {site.uptime_state === "up" ? (
-                      <Link
-                        href={`/uptime/${site.id}`}
-                        className="text-emerald-400 underline-offset-2 hover:underline"
-                      >
-                        Online
-                      </Link>
-                    ) : site.uptime_state === "down" ? (
-                      <Link
-                        href={`/uptime/${site.id}`}
-                        className="text-red-400 underline-offset-2 hover:underline"
-                      >
-                        Offline
-                      </Link>
-                    ) : (
-                      <span className="text-slate-600">—</span>
+                    </label>
+                    <small>{site.scan_frequency !== "none" ? `Next ${formatDateTime(site.next_scan_at)}` : "Run when you choose"}</small>
+                    {!schedulingEnabled && <span className="site-pro-badge">Pro scheduling</span>}
+                  </div>
+
+                  <div className="site-actions">
+                    <button type="button" onClick={() => scanSite(site)} disabled={busyId === site.id} className="site-scan-action">
+                      <Play size={15} weight="fill" aria-hidden="true" /> {busyId === site.id ? "Starting…" : "Run scan"}
+                    </button>
+                    <button type="button" onClick={() => editingId === site.id ? setEditingId(null) : startEdit(site)} aria-label={`Edit ${site.label ?? site.url}`}>
+                      {editingId === site.id ? <X size={17} aria-hidden="true" /> : <PencilSimple size={17} aria-hidden="true" />}
+                    </button>
+                    {isOwner && (
+                      <button type="button" onClick={() => removeSite(site)} disabled={busyId === site.id} className="is-danger" aria-label={`Delete ${site.label ?? site.url}`}>
+                        <Trash size={17} aria-hidden="true" />
+                      </button>
                     )}
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center justify-end gap-3 text-xs">
-                      <button
-                        type="button"
-                        onClick={() => scanSite(site)}
-                        disabled={busyId === site.id}
-                        className="font-semibold text-brand underline-offset-2 hover:underline disabled:opacity-50"
-                      >
-                        {busyId === site.id ? "Starten…" : "Scannen"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          editingId === site.id
-                            ? setEditingId(null)
-                            : startEdit(site)
-                        }
-                        className="text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline"
-                      >
-                        Bewerken
-                      </button>
-                      {isOwner && (
-                        <button
-                          type="button"
-                          onClick={() => removeSite(site)}
-                          disabled={busyId === site.id}
-                          className="text-slate-400 underline-offset-2 hover:text-red-400 hover:underline disabled:opacity-50"
-                        >
-                          Verwijderen
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       {upsell && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-6">
-          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-8">
-            <h2 className="text-xl font-bold">Functie vereist Pro</h2>
-            <p className="mt-2 text-sm text-slate-400">{upsell.error}</p>
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={upgrade}
-                disabled={upgrading}
-                className="flex-1 rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
-              >
-                {upgrading ? "Bezig…" : "Upgrade naar Pro"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setUpsell(null)}
-                disabled={upgrading}
-                className="rounded-lg border border-slate-700 px-4 py-3 text-sm font-semibold transition hover:border-slate-500 disabled:opacity-50"
-              >
-                Later
-              </button>
+        <div className="workspace-modal-backdrop" role="presentation">
+          <div className="workspace-modal" role="dialog" aria-modal="true" aria-labelledby="upgrade-title">
+            <span className="workspace-modal-icon"><ShieldCheck size={23} aria-hidden="true" /></span>
+            <h2 id="upgrade-title">This feature requires Pro</h2>
+            <p>{upsell.error}</p>
+            <div>
+              <button type="button" onClick={upgrade} disabled={upgrading} className="dashboard-primary-button">{upgrading ? "Opening checkout…" : "Upgrade to Pro"}</button>
+              <button type="button" onClick={() => setUpsell(null)} disabled={upgrading} className="dashboard-light-button">Maybe later</button>
             </div>
           </div>
         </div>

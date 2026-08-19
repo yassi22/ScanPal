@@ -46,10 +46,17 @@ export default async function ReportsPage() {
   });
 
   return (
-    <ReportsList
-      sites={sites.rows}
-      initialReports={reports}
-      initialNextCursor={next_cursor}
-    />
+    <div className="dashboard-home reports-page" data-design-direction="luminous-technical-calm">
+      <ReportsList
+        sites={sites.rows}
+        initialReports={reports}
+        initialNextCursor={next_cursor}
+      />
+
+      <footer className="dashboard-page-footer">
+        <span>Generated evidence, ready to share.</span>
+        <span>ScanPal · Report archive</span>
+      </footer>
+    </div>
   );
 }

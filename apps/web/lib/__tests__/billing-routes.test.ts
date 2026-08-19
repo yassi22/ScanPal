@@ -7,6 +7,7 @@ import {
   DELETE as subDELETE,
 } from "@/app/api/billing/subscription/route";
 import { POST as checkoutPOST } from "@/app/api/billing/checkout/route";
+import { POST as portalPOST } from "@/app/api/billing/portal/route";
 import { requireTeam, requireSessionOwner } from "@/lib/api-auth";
 import { getSubscriptionState } from "@/lib/credits";
 import {
@@ -16,6 +17,7 @@ import {
   reactivateSubscription,
   switchSubscriptionInterval,
   createCheckoutSession,
+  createPortalSession,
   BillingNotConfiguredError,
 } from "@/lib/billing";
 import { getSessionUser } from "@/lib/supabase/server";
@@ -36,6 +38,7 @@ vi.mock("@/lib/billing", () => ({
   reactivateSubscription: vi.fn(),
   switchSubscriptionInterval: vi.fn(),
   createCheckoutSession: vi.fn(),
+  createPortalSession: vi.fn(),
   BillingNotConfiguredError: class extends Error {},
 }));
 vi.mock("@/lib/notify", () => ({ notifier: vi.fn() }));
@@ -53,6 +56,7 @@ const cancelMock = vi.mocked(cancelSubscription);
 const reactivateMock = vi.mocked(reactivateSubscription);
 const switchMock = vi.mocked(switchSubscriptionInterval);
 const checkoutMock = vi.mocked(createCheckoutSession);
+const portalMock = vi.mocked(createPortalSession);
 const getSessionMock = vi.mocked(getSessionUser);
 const ensureTeamMock = vi.mocked(ensureUserTeam);
 
@@ -243,6 +247,24 @@ describe("DELETE /api/billing/subscription", () => {
     const response = await subDELETE();
     expect(response.status).toBe(204);
     expect(cancelMock).toHaveBeenCalledWith("sub_1");
+  });
+});
+
+describe("POST /api/billing/portal", () => {
+  it("403 voor een member", async () => {
+    requireOwnerMock.mockResolvedValue({ ok: false, status: 403 } as never);
+    const response = await portalPOST();
+    expect(response.status).toBe(403);
+    expect(getSubMock).not.toHaveBeenCalled();
+  });
+
+  it("200 voor de owner van het team", async () => {
+    getSubMock.mockResolvedValue(PRO_SUB as never);
+    portalMock.mockResolvedValue({ url: "https://billing.stripe.com/session" });
+    const response = await portalPOST();
+    expect(response.status).toBe(200);
+    expect(getSubMock).toHaveBeenCalledWith(expect.anything(), TEAM_ID);
+    expect(portalMock).toHaveBeenCalledWith("cus_1");
   });
 });
 

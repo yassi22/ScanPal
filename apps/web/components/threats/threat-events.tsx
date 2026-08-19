@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   ThreatEvent,
   ThreatEventsResponse,
@@ -9,6 +9,13 @@ import type {
 } from "@scanpal/shared";
 import { RiskBadge } from "./risk-badge";
 import { formatDateTime, hostOf } from "@/lib/uptime-format";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Crosshair,
+  FunnelSimple,
+  Robot,
+} from "@phosphor-icons/react";
 
 type Props = {
   honeypots: ThreatHoneypotView[];
@@ -16,31 +23,21 @@ type Props = {
 
 function EventRow({ event }: { event: ThreatEvent }) {
   return (
-    <tr className="border-b border-slate-800/60 last:border-b-0">
-      <td className="px-5 py-3 text-slate-400">
-        {formatDateTime(event.created_at)}
-      </td>
-      <td className="px-5 py-3">
-        <span className="font-medium text-slate-200">
-          {event.kind === "pattern" ? "Patroon" : "Hit"}
-        </span>
+    <article className="threat-event-row">
+      <span className={`threat-event-icon is-${event.kind}`}>
+        {event.kind === "pattern" ? <Robot size={18} aria-hidden="true" /> : <Crosshair size={18} aria-hidden="true" />}
+      </span>
+      <div className="threat-event-kind">
+        <strong>{event.kind === "pattern" ? "Pattern" : "Direct hit"}</strong>
         {event.matched_rule && (
-          <span className="ml-2 rounded-full border border-slate-700 bg-slate-800/60 px-2 py-0.5 text-xs text-slate-300">
-            {event.matched_rule}
-          </span>
+          <small>{event.matched_rule}</small>
         )}
-      </td>
-      <td className="px-5 py-3">
-        <RiskBadge risk={event.risk} />
-      </td>
-      <td className="px-5 py-3 font-mono text-xs text-slate-300">{event.path}</td>
-      <td className="px-5 py-3 font-mono text-xs text-slate-400">
-        {event.ip ?? "—"}
-      </td>
-      <td className="max-w-[240px] truncate px-5 py-3 text-xs text-slate-500">
-        {event.user_agent ?? "—"}
-      </td>
-    </tr>
+      </div>
+      <RiskBadge risk={event.risk} />
+      <div className="threat-event-path"><span>Path</span><code>{event.path}</code></div>
+      <div className="threat-event-source"><span>Source</span><code>{event.ip ?? "—"}</code><small>{event.user_agent ?? "Unknown user agent"}</small></div>
+      <time dateTime={event.created_at}>{formatDateTime(event.created_at)}</time>
+    </article>
   );
 }
 
@@ -53,85 +50,104 @@ export function ThreatEvents({ honeypots }: Props) {
   const [siteId, setSiteId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestController = useRef<AbortController | null>(null);
 
   const pageSize = 25;
 
   const load = useCallback(async () => {
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
     setLoading(true);
     setError(null);
+    setEvents([]);
+    setTotal(0);
     try {
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (risk) params.set("risk", risk);
       if (kind) params.set("kind", kind);
       if (siteId) params.set("site_id", siteId);
 
-      const res = await fetch(`/api/threats/events?${params.toString()}`);
+      const res = await fetch(`/api/threats/events?${params.toString()}`, {
+        signal: controller.signal,
+      });
       const data = await res.json().catch(() => null);
+      if (requestController.current !== controller) return;
       if (!res.ok) {
         setError(data?.error ?? "Ophalen mislukt");
+        setEvents([]);
+        setTotal(0);
         return;
       }
       const parsed = data as ThreatEventsResponse;
       setEvents(parsed.events);
       setTotal(parsed.total);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      if (requestController.current === controller) {
+        setError("Incident evidence could not be refreshed.");
+        setEvents([]);
+        setTotal(0);
+      }
     } finally {
-      setLoading(false);
+      if (requestController.current === controller) setLoading(false);
     }
   }, [page, risk, kind, siteId]);
 
   useEffect(() => {
     const timer = setTimeout(() => void load(), 0);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      requestController.current?.abort();
+    };
   }, [load]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="mt-8">
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="text-sm text-slate-400">
-          Ernst
+    <div className="threat-events-ledger">
+      <div className="threat-filter-bar">
+        <FunnelSimple size={17} aria-hidden="true" />
+        <label>
+          <span>Severity</span>
           <select
             value={risk}
             onChange={(e) => {
               setRisk(e.target.value as ThreatRisk | "");
               setPage(1);
             }}
-            className="ml-2 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-200"
           >
-            <option value="">Alle</option>
-            <option value="critical">Kritiek</option>
-            <option value="high">Hoog</option>
-            <option value="medium">Middel</option>
-            <option value="low">Laag</option>
+            <option value="">All levels</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
           </select>
         </label>
-        <label className="text-sm text-slate-400">
-          Type
+        <label>
+          <span>Signal</span>
           <select
             value={kind}
             onChange={(e) => {
               setKind(e.target.value as ThreatEvent["kind"] | "");
               setPage(1);
             }}
-            className="ml-2 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-200"
           >
-            <option value="">Alle</option>
-            <option value="pattern">Patroon</option>
-            <option value="hit">Hit</option>
+            <option value="">All signals</option>
+            <option value="pattern">Pattern</option>
+            <option value="hit">Direct hit</option>
           </select>
         </label>
-        <label className="text-sm text-slate-400">
-          Site
+        <label>
+          <span>Property</span>
           <select
             value={siteId}
             onChange={(e) => {
               setSiteId(e.target.value);
               setPage(1);
             }}
-            className="ml-2 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm text-slate-200"
           >
-            <option value="">Alle</option>
+            <option value="">All properties</option>
             {honeypots.map((h) => (
               <option key={h.site_id} value={h.site_id}>
                 {h.site_label ?? hostOf(h.site_url)}
@@ -141,55 +157,37 @@ export function ThreatEvents({ honeypots }: Props) {
         </label>
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+      {error && <p className="workspace-alert is-error" role="alert">{error}</p>}
 
       {loading && events.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">Laden…</p>
+        <div className="threat-events-loading" role="status">Loading incident evidence…</div>
       ) : events.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-slate-700 p-8 text-center text-sm text-slate-400">
-          Nog geen events in dit overzicht.
+        <div className="threat-events-empty">
+          No events match this view. Broaden a filter or wait for new evidence.
         </div>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-800 text-xs uppercase tracking-wide text-slate-500">
-                <th className="px-5 py-3 font-medium">Tijd</th>
-                <th className="px-5 py-3 font-medium">Type</th>
-                <th className="px-5 py-3 font-medium">Ernst</th>
-                <th className="px-5 py-3 font-medium">Pad</th>
-                <th className="px-5 py-3 font-medium">IP</th>
-                <th className="px-5 py-3 font-medium">User-agent</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((event) => (
-                <EventRow key={event.id} event={event} />
-              ))}
-            </tbody>
-          </table>
+        <div className={`threat-event-list${loading ? " is-loading" : ""}`} aria-busy={loading}>
+          {events.map((event) => <EventRow key={event.id} event={event} />)}
         </div>
       )}
 
-      <div className="mt-4 flex items-center gap-3 text-sm text-slate-400">
+      <div className="threat-pagination">
         <button
           type="button"
           disabled={page <= 1 || loading}
           onClick={() => setPage((p) => p - 1)}
-          className="rounded-lg border border-slate-700 px-3 py-1.5 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          ← Vorige
+          <ArrowLeft size={15} aria-hidden="true" /> Previous
         </button>
         <span>
-          Pagina {page} van {totalPages} ({total} events)
+          Page {page} of {totalPages} · {total} events
         </span>
         <button
           type="button"
           disabled={page >= totalPages || loading}
           onClick={() => setPage((p) => p + 1)}
-          className="rounded-lg border border-slate-700 px-3 py-1.5 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Volgende →
+          Next <ArrowRight size={15} aria-hidden="true" />
         </button>
       </div>
     </div>

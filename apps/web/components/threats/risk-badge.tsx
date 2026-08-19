@@ -8,16 +8,16 @@ const RISK_STYLES: Record<ThreatRisk, string> = {
 };
 
 const RISK_LABELS: Record<ThreatRisk, string> = {
-  low: "Laag",
-  medium: "Middel",
-  high: "Hoog",
-  critical: "Kritiek",
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  critical: "Critical",
 };
 
 export function RiskBadge({ risk }: { risk: ThreatRisk }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${RISK_STYLES[risk]}`}
+      className={`threat-risk-badge is-${risk} inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${RISK_STYLES[risk]}`}
     >
       {RISK_LABELS[risk]}
     </span>

@@ -34,6 +34,8 @@ function makeSummaryRow(overrides: Record<string, unknown> = {}) {
     label: null,
     uptime_state: "up",
     uptime_state_changed_at: new Date("2026-08-16T08:00:00Z"),
+    last_checked_at: new Date("2026-08-16T08:01:00Z"),
+    probe_fresh: true,
     uptime_enabled: true,
     up24: 1438,
     total24: 1440,
@@ -107,6 +109,8 @@ describe("GET /api/uptime", () => {
     expect(body.sites[0]).toMatchObject({
       site_id: expect.stringMatching(/^[0-9a-f-]{36}$/),
       uptime_state: "up",
+      last_checked_at: "2026-08-16T08:01:00.000Z",
+      probe_fresh: true,
       uptime_enabled: true,
       uptime_24h_pct: 99.86,
       uptime_30d_pct: 99.98,

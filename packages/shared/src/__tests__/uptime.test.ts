@@ -28,6 +28,8 @@ function makeSummary(overrides: Record<string, unknown> = {}) {
     label: null,
     uptime_state: "up",
     uptime_state_changed_at: "2026-08-16T09:00:00.000Z",
+    last_checked_at: "2026-08-16T09:01:00.000Z",
+    probe_fresh: true,
     uptime_enabled: true,
     uptime_24h_pct: 99.96,
     uptime_30d_pct: 99.99,

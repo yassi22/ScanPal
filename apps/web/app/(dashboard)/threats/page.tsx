@@ -13,15 +13,15 @@ import { isPaidPlan } from "@scanpal/shared";
 export const dynamic = "force-dynamic";
 
 const RULE_ADVICE: Record<ThreatRuleKey, string> = {
-  burst: "Blokkeer het IP of voeg rate-limiting toe op je site.",
-  path_admin: "Beveilig beheerpaden extra (wachtwoord/2FA) of verplaats ze.",
+  burst: "Block the IP or add rate limiting to the affected route.",
+  path_admin: "Protect admin paths with stronger authentication or move them.",
   path_env:
-    "Controleer dat deze bestanden echt niet publiek staan en roteer de token.",
+    "Confirm these files are private and rotate any exposed token.",
   path_traversal:
-    "Direct mogelijke aanval — bekijk je access-logs en blokkeer het IP.",
-  ua_scanner: "Waarschijnlijk een geautomatiseerde scan; weinig actie nodig.",
+    "Review access logs immediately and block the source when confirmed.",
+  ua_scanner: "Likely automated reconnaissance; monitor before escalating.",
   ip_repeat:
-    "Herhaalde probes vanaf één IP — overweeg het IP(-range) te blokkeren.",
+    "Repeated probes from one source; consider blocking the IP range.",
 };
 
 export default async function ThreatsPage() {
@@ -41,12 +41,16 @@ export default async function ThreatsPage() {
   const plan = await getPlanForTeam(pool, result.team.id);
   if (!isPaidPlan(plan.id)) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold">Threats</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Honeypot + patroon-detectie tegen probes en aanvallen.
-        </p>
+      <div className="dashboard-home threats-page" data-design-direction="luminous-technical-calm">
+        <header className="dashboard-page-heading threats-page-heading">
+          <div>
+            <h1>See reconnaissance before it becomes noise.</h1>
+            <p>Honeypot telemetry and pattern detection for probes, scanners, and suspicious paths.</p>
+          </div>
+          <span className="dashboard-plan-chip">Pro capability</span>
+        </header>
         <ThreatsUpsell />
+        <footer className="dashboard-page-footer"><span>Detection stays evidence-led.</span><span>ScanPal · Threats</span></footer>
       </div>
     );
   }
@@ -57,38 +61,45 @@ export default async function ThreatsPage() {
   ]);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Threats</h1>
-      <p className="mt-1 text-sm text-slate-400">
-        Honeypot per site: plaats de geheime URL op je site; elke hit wordt
-        gelogd en op aanvalspatronen geanalyseerd.
-      </p>
+    <div className="dashboard-home threats-page" data-design-direction="luminous-technical-calm">
+      <header className="dashboard-page-heading threats-page-heading">
+        <div>
+          <h1>See reconnaissance before it becomes noise.</h1>
+          <p>
+            Each property receives a private honeypot route. Every hit is logged,
+            grouped into patterns, and kept close to the response it may require.
+          </p>
+        </div>
+        <span className="dashboard-plan-chip">
+          {overviews.length} {overviews.length === 1 ? "honeypot" : "honeypots"}
+        </span>
+      </header>
 
       <ThreatsOverview initial={overviews} />
 
-      <h2 className="mt-12 text-lg font-semibold text-slate-100">Events</h2>
-      <ThreatEvents honeypots={overviews.map((o) => o.site)} />
+      <section className="threat-events-section">
+        <div className="workspace-section-heading">
+          <div><h2>Incident ledger</h2><p>Filter the evidence by severity, signal type, or property.</p></div>
+        </div>
+        <ThreatEvents honeypots={overviews.map((o) => o.site)} />
+      </section>
 
-      <h2 className="mt-12 text-lg font-semibold text-slate-100">
-        Patroon-detectie
-      </h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {rules.map((rule) => (
-          <div
-            key={rule.id}
-            className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-semibold text-slate-100">{rule.name}</p>
+      <section className="threat-rules-section">
+        <div className="workspace-section-heading">
+          <div><h2>Detection rules</h2><p>The patterns ScanPal evaluates when honeypot traffic arrives.</p></div>
+        </div>
+        <div className="threat-rule-list">
+          {rules.map((rule) => (
+            <article key={rule.id} className="threat-rule-row">
+              <div><strong>{rule.name}</strong><p>{rule.description}</p></div>
               <RiskBadge risk={rule.risk} />
-            </div>
-            <p className="mt-1 text-sm text-slate-400">{rule.description}</p>
-            <p className="mt-2 text-xs text-slate-500">
-              Advies: {RULE_ADVICE[rule.rule_key]}
-            </p>
-          </div>
-        ))}
-      </div>
+              <p><span>Recommended response</span>{RULE_ADVICE[rule.rule_key]}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <footer className="dashboard-page-footer"><span>Detection stays evidence-led.</span><span>ScanPal · Threats</span></footer>
     </div>
   );
 }

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ScanPal workspace extensions review fixture</title>
+    <link rel="stylesheet" href="/apps/web/app/globals.css?v=8" />
+    <style>
+      [data-review-page] { display: none; }
+      [data-review-page].is-visible { display: block; }
+      .review-icon { display: inline-grid; place-items: center; font-weight: 800; }
+      .uptime-sparkline { min-height: 30px; }
+      .uptime-sparkline span { display: block; height: 30px; border-radius: 5px; background: linear-gradient(90deg, #2f6e56 0 12%, #cfe3d9 12% 25%, #2f6e56 25% 56%, #dfc36f 56% 60%, #2f6e56 60% 100%); }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-light-shell">
+      <header class="dashboard-topbar">
+        <div class="dashboard-topbar-inner">
+          <a class="dashboard-brand" href="#uptime">ScanPal</a>
+          <div class="dashboard-topbar-actions"><a href="#">Notifications</a><span class="dashboard-team-name">Acme Studio</span><span class="dashboard-team-avatar">AC</span><div class="dashboard-logout-control"><button>Log out</button></div></div>
+          <button class="dashboard-mobile-toggle">Menu</button>
+        </div>
+      </header>
+      <div class="dashboard-frame">
+        <aside class="dashboard-sidebar">
+          <nav class="dashboard-sidebar-nav">
+            <span class="dashboard-sidebar-label">Workspace</span>
+            <a class="dashboard-nav-link" href="#dashboard">Dashboard</a>
+            <a class="dashboard-nav-link" href="#sites">Sites</a>
+            <a class="dashboard-nav-link" href="#reports">Reports</a>
+            <a class="dashboard-nav-link" data-nav="uptime" href="#uptime">Uptime</a>
+            <a class="dashboard-nav-link" data-nav="threats" href="#threats">Threats</a>
+            <a class="dashboard-nav-link" data-nav="team" href="#team">Team</a>
+            <a class="dashboard-nav-link" data-nav="billing" href="#billing">Billing</a>
+          </nav>
+          <div class="dashboard-sidebar-footer"><div><strong>Website health, made clear.</strong><span>Evidence before noise.</span></div></div>
+        </aside>
+        <main class="dashboard-main">
+          <div data-review-page="uptime" class="dashboard-home uptime-page">
+            <header class="dashboard-page-heading uptime-page-heading">
+              <div><h1>Know when a site goes quiet.</h1><p>Live availability for <strong>Acme Studio</strong>, with the history needed to separate a momentary blip from an outage.</p></div>
+              <span class="dashboard-plan-chip">3 endpoints</span>
+            </header>
+            <section class="uptime-board">
+              <div class="uptime-summary-strip" aria-label="Availability summary">
+                <div><span>Online now</span><strong>2</strong></div><div class="is-danger"><span>Confirmed outages</span><strong>1</strong></div><div><span>Monitoring enabled</span><strong>3</strong></div><p><span class="review-icon">↻</span> Snapshot refreshed on page load.</p>
+              </div>
+              <div class="uptime-ledger">
+                <div class="uptime-ledger-heading"><div><h2>Endpoint health</h2><p>Current state and the evidence behind it.</p></div><span>Last 24 hours</span></div>
+                <div class="uptime-site-list">
+                  <article class="uptime-site-row">
+                    <div class="uptime-site-identity"><span><span class="review-icon">◎</span></span><div><a href="#">Main website</a><small>https://scanpal.io</small></div></div>
+                    <div class="uptime-current-state"><span>Current state</span><span class="uptime-status-dot is-up"></span><strong class="uptime-status-label">Online</strong></div>
+                    <dl class="uptime-metrics"><div><dt>24h uptime</dt><dd>100%</dd></div><div><dt>30d uptime</dt><dd>99.98%</dd></div><div><dt>Avg. latency</dt><dd>184 ms</dd></div></dl>
+                    <div class="uptime-history"><span>24h signal</span><div class="uptime-sparkline"><span></span></div></div>
+                    <label class="uptime-monitor-control"><span>Monitor</span><button role="switch" aria-checked="true" class="is-enabled"><span></span></button></label>
+                  </article>
+                  <article class="uptime-site-row">
+                    <div class="uptime-site-identity"><span><span class="review-icon">◎</span></span><div><a href="#">Customer portal</a><small>https://app.scanpal.io</small></div></div>
+                    <div class="uptime-current-state"><span>Current state</span><span class="uptime-status-dot is-down"></span><strong class="uptime-status-label">Offline</strong><small>Since 14:22</small></div>
+                    <dl class="uptime-metrics"><div><dt>24h uptime</dt><dd>97.4%</dd></div><div><dt>30d uptime</dt><dd>99.61%</dd></div><div><dt>Avg. latency</dt><dd>622 ms</dd></div></dl>
+                    <div class="uptime-history"><span>24h signal</span><div class="uptime-sparkline"><span></span></div></div>
+                    <label class="uptime-monitor-control"><span>Monitor</span><button role="switch" aria-checked="true" class="is-enabled"><span></span></button></label>
+                  </article>
+                  <article class="uptime-site-row">
+                    <div class="uptime-site-identity"><span><span class="review-icon">◎</span></span><div><a href="#">Documentation</a><small>https://docs.scanpal.io</small></div></div>
+                    <div class="uptime-current-state"><span>Current state</span><span class="uptime-status-dot is-up"></span><strong class="uptime-status-label">Online</strong></div>
+                    <dl class="uptime-metrics"><div><dt>24h uptime</dt><dd>100%</dd></div><div><dt>30d uptime</dt><dd>100%</dd></div><div><dt>Avg. latency</dt><dd>132 ms</dd></div></dl>
+                    <div class="uptime-history"><span>24h signal</span><div class="uptime-sparkline"><span></span></div></div>
+                    <label class="uptime-monitor-control"><span>Monitor</span><button role="switch" aria-checked="true" class="is-enabled"><span></span></button></label>
+                  </article>
+                </div>
+              </div>
+            </section>
+            <footer class="dashboard-page-footer"><span>Status is refreshed automatically.</span><span>ScanPal · Uptime</span></footer>
+          </div>
+
+          <div data-review-page="threats" class="dashboard-home threats-page">
+            <header class="dashboard-page-heading threats-page-heading">
+              <div><h1>See reconnaissance before it becomes noise.</h1><p>Private honeypot routes surface automated probing across <strong>Acme Studio</strong> properties.</p></div><span class="dashboard-plan-chip">Max protection</span>
+            </header>
+            <section class="threat-honeypot-section">
+              <div class="threat-summary-strip"><div><span>Listening</span><strong>2</strong></div><div><span>Recorded hits</span><strong>36</strong></div><div class="is-danger"><span>High-risk signals</span><strong>4</strong></div><p><span class="review-icon">◇</span> Private routes stay unique per property.</p></div>
+              <div class="workspace-section-heading honeypot-section-heading"><div><h2>Honeypot endpoints</h2><p>Configure listening state, inspect signal volume, and copy the install route.</p></div></div>
+              <div class="honeypot-list">
+                <article class="honeypot-row">
+                  <div class="honeypot-identity"><span><span class="review-icon">◎</span></span><div><strong>Main website</strong><small>https://scanpal.io</small></div></div>
+                  <div class="honeypot-toggle"><span>Listening</span><button role="switch" aria-checked="true" class="is-enabled"><span></span></button></div>
+                  <dl class="honeypot-signals"><div><dt>Total hits</dt><dd>28</dd></div><div><dt>High or critical</dt><dd>3</dd></div><div><dt>Latest event</dt><dd class="honeypot-latest-event"><span class="threat-risk-badge is-high">High</span><small>19 Aug, 14:31</small></dd></div><div><dt>Active patterns · 24h</dt><dd class="honeypot-patterns"><span>wp-admin</span><span>.env</span></dd></div></dl>
+                  <div class="honeypot-actions"><button class="is-secondary">&lt;/&gt; Install snippet</button><button class="is-secondary">↻ Rotate token</button><button class="is-primary">Copy private URL</button></div>
+                </article>
+                <article class="honeypot-row">
+                  <div class="honeypot-identity"><span><span class="review-icon">◎</span></span><div><strong>Customer portal</strong><small>https://app.scanpal.io</small></div></div>
+                  <div class="honeypot-toggle"><span>Listening</span><button role="switch" aria-checked="true" class="is-enabled"><span></span></button></div>
+                  <dl class="honeypot-signals"><div><dt>Total hits</dt><dd>8</dd></div><div><dt>High or critical</dt><dd>1</dd></div><div><dt>Latest event</dt><dd class="honeypot-latest-event"><span class="threat-risk-badge is-medium">Medium</span><small>19 Aug, 12:08</small></dd></div><div><dt>Active patterns · 24h</dt><dd class="honeypot-patterns"><span>phpmyadmin</span></dd></div></dl>
+                  <div class="honeypot-actions"><button class="is-secondary">&lt;/&gt; Install snippet</button><button class="is-secondary">↻ Rotate token</button><button class="is-primary">Copy private URL</button></div>
+                </article>
+              </div>
+            </section>
+            <section class="threat-incident-section">
+              <div class="workspace-section-heading"><div><h2>Incident ledger</h2><p>Filter the raw evidence by severity, signal type, or property.</p></div></div>
+              <div class="threat-events-ledger">
+                <div class="threat-filter-bar"><span class="review-icon">≡</span><label><span>Severity</span><select><option>All levels</option></select></label><label><span>Signal</span><select><option>All signals</option></select></label><label><span>Property</span><select><option>All properties</option></select></label></div>
+                <div class="threat-event-list">
+                  <article class="threat-event-row"><span class="threat-event-icon is-pattern">◇</span><div class="threat-event-kind"><strong>Pattern</strong><small>Environment file probe</small></div><span class="threat-risk-badge is-high">High</span><div class="threat-event-path"><span>Path</span><code>/.env</code></div><div class="threat-event-source"><span>Source</span><code>185.220.101.4</code><small>python-requests/2.32</small></div><time>19 Aug, 14:31</time></article>
+                  <article class="threat-event-row"><span class="threat-event-icon is-hit">◎</span><div class="threat-event-kind"><strong>Direct hit</strong></div><span class="threat-risk-badge is-medium">Medium</span><div class="threat-event-path"><span>Path</span><code>/private-route</code></div><div class="threat-event-source"><span>Source</span><code>45.83.64.22</code><small>Mozilla/5.0</small></div><time>19 Aug, 12:08</time></article>
+                </div>
+                <div class="threat-pagination"><button disabled>← Previous</button><span>Page 1 of 1 · 2 events</span><button disabled>Next →</button></div>
+              </div>
+            </section>
+            <footer class="dashboard-page-footer"><span>Signals are evidence, not automatic breach claims.</span><span>ScanPal · Threats</span></footer>
+          </div>
+
+          <div data-review-page="team" class="dashboard-home team-page">
+            <header class="dashboard-page-heading team-page-heading"><div><h1>Build the workspace around your team.</h1><p>Invite collaborators, assign roles, and keep client access explicit for <strong>Acme Studio</strong>.</p></div><span class="dashboard-plan-chip">4 members</span></header>
+            <nav class="settings-subnav"><a class="is-active" href="#">Team</a><a href="#">Profile</a><a href="#">Notifications</a></nav>
+            <div class="team-settings">
+              <section class="team-invite-panel"><div class="team-panel-heading"><span>✉</span><div><h2>Invite a teammate</h2><p>The invitation link stays valid for seven days.</p></div></div><form class="team-invite-form"><input type="email" value="alex@acme.studio" readonly /><select><option>Member</option></select><button>＋ Send invite</button></form><div class="team-pending-invites"><h3>Pending invitations</h3><ul><li><div><strong>jules@acme.studio</strong><span>Member · expires 26 Aug</span></div><button aria-label="Cancel invitation">×</button></li></ul></div></section>
+              <section class="team-members-panel"><div class="team-panel-heading"><span>♙</span><div><h2>Members</h2><p>3 people have access to this team.</p></div><a class="team-mobile-invite-link" href="#team-invite">Invite</a></div><ul class="team-member-list"><li class="team-member-row"><span class="team-member-avatar">YA</span><div class="team-member-identity"><strong>Yassin<small>You</small></strong><span>yassin@acme.studio</span></div><div class="team-member-actions"><select><option>Owner</option></select><button>×</button></div></li><li class="team-member-row"><span class="team-member-avatar">AM</span><div class="team-member-identity"><strong>Alex Morgan</strong><span>alex@acme.studio</span></div><div class="team-member-actions"><select><option>Member</option></select><button>×</button></div></li><li class="team-member-row"><span class="team-member-avatar">SK</span><div class="team-member-identity"><strong>Samira Khan</strong><span>samira@acme.studio</span></div><div class="team-member-actions"><select><option>Member</option></select><button>×</button></div></li></ul></section>
+              <section class="team-branding-panel"><div class="team-panel-heading"><span>✦</span><div><h2>Report identity</h2><p>Use your own report name, logo, and accent in shared evidence.</p><a href="#">Terms and licensing</a></div></div><form class="team-branding-form"><label><span>Report name</span><input value="Acme security report" readonly /></label><label><span>Logo URL</span><input value="https://acme.studio/logo.svg" readonly /></label><label class="team-color-field"><input type="color" value="#2f6e56" /><span>Accent color</span></label><label class="team-check-field"><input type="checkbox" checked readonly /><span>Hide the ScanPal attribution</span></label><button>Save identity</button></form></section>
+              <section class="team-identity-panel"><span>▣</span><div><small>Team identity</small><strong>Acme Studio</strong><p>The team name is currently managed by ScanPal.</p></div></section>
+            </div>
+            <section class="team-workspace-section"><section class="workspace-manager-panel"><div class="team-panel-heading"><span>▣</span><div><h2>Client workspaces</h2><p>Scope properties and members per client. A member without a workspace cannot see any properties.</p></div></div><div class="workspace-create-form"><input placeholder="Workspace name" /><button>Add workspace</button></div><ul class="workspace-manager-list"><li><span>Acme Commerce</span><span><button>Rename</button><button class="is-danger">Delete</button></span></li><li><span>Acme Labs</span><span><button>Rename</button><button class="is-danger">Delete</button></span></li></ul></section></section>
+            <footer class="dashboard-page-footer"><span>Access remains explicit per role and workspace.</span><span>ScanPal · Team</span></footer>
+          </div>
+
+          <div data-review-page="billing" class="dashboard-home billing-page">
+            <header class="dashboard-page-heading billing-page-heading"><div><h1>Plan, usage, and payment in one place.</h1><p>Keep the subscription for <strong>Acme Studio</strong> predictable and auditable.</p></div><span class="dashboard-plan-chip">Pro plan</span></header>
+            <section class="billing-cockpit">
+              <div class="billing-plan-header"><div class="billing-plan-title"><span>▣</span><div><div><h2>Pro</h2><span class="billing-status is-active">Active</span></div><p>100 scans per month · 5 team members · uptime and GitHub scanning</p></div></div><div class="billing-manager-actions"><div><span class="billing-portal-control"><button class="billing-secondary-action">Manage subscription</button></span><button class="billing-secondary-action">Switch to yearly</button><button class="billing-danger-action">Cancel plan</button></div></div></div>
+              <div class="billing-usage-panel"><div class="billing-usage-heading"><span>◴</span><div><h3>Scan allowance</h3><p>Resets 19 Sep</p></div><strong>63 <span>/ 100</span></strong></div><div class="billing-usage-track" role="progressbar" aria-valuenow="63" aria-valuemin="0" aria-valuemax="100"><span style="width:63%"></span></div><p>63% of this period's allowance has been used.</p></div>
+              <div class="billing-detail-grid"><div><svg width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" /></svg><span>Next renewal</span><strong>19 Sep 2026</strong></div><div><svg width="18" height="18" aria-hidden="true"><rect x="2" y="4" width="14" height="10" rx="2" fill="none" stroke="currentColor" /></svg><span>Payment method</span><strong>Visa ···· 4242</strong></div><div><svg width="18" height="18" aria-hidden="true"><path d="M3 9l4 4 8-9" fill="none" stroke="currentColor" /></svg><span>Billing owner</span><strong>You can manage billing</strong></div></div>
+            </section>
+            <div class="billing-invoices-section"><section class="billing-invoice-ledger"><div class="workspace-section-heading"><div><h2>Invoices</h2><p>Receipts and payment status from the billing account.</p></div><span>▤</span></div><div class="billing-invoice-list"><article class="billing-invoice-row"><span class="billing-invoice-icon">PDF</span><div><strong>INV-2026-0081</strong><small>19 Aug 2026</small></div><div class="billing-invoice-amount"><strong>€29,00</strong><small>Includes €5,03 tax</small></div><span class="billing-invoice-status is-paid">Paid</span><a href="#"><span>Open PDF</span> ↗</a></article><article class="billing-invoice-row"><span class="billing-invoice-icon">PDF</span><div><strong>INV-2026-0069</strong><small>19 Jul 2026</small></div><div class="billing-invoice-amount"><strong>€29,00</strong><small>Includes €5,03 tax</small></div><span class="billing-invoice-status is-paid">Paid</span><a href="#"><span>Open PDF</span> ↗</a></article><article class="billing-invoice-row"><span class="billing-invoice-icon">PDF</span><div><strong>INV-2026-0054</strong><small>19 Jun 2026</small></div><div class="billing-invoice-amount"><strong>€29,00</strong><small>Includes €5,03 tax</small></div><span class="billing-invoice-status is-paid">Paid</span><a href="#"><span>Open PDF</span> ↗</a></article></div></section></div>
+            <footer class="dashboard-page-footer"><span>Billing actions remain owner-controlled.</span><span>ScanPal · Billing</span></footer>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script>
+      function showPage() {
+        const page = ['uptime', 'threats', 'team', 'billing'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'uptime';
+        document.querySelectorAll('[data-review-page]').forEach((node) => node.classList.toggle('is-visible', node.dataset.reviewPage === page));
+        document.querySelectorAll('[data-nav]').forEach((node) => node.classList.toggle('is-active', node.dataset.nav === page));
+        document.title = `ScanPal ${page} review fixture`;
+      }
+      addEventListener('hashchange', showPage);
+      showPage();
+    </script>
+  </body>
+</html>

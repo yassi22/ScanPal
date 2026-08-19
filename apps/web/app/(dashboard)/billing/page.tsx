@@ -4,13 +4,24 @@ import { pool } from "@/lib/db";
 import { getTeamUsage } from "@/lib/credits";
 import { getSubscriptionView } from "@/lib/billing";
 import { plans, isPaidPlan } from "@scanpal/shared";
-import { BillingManager } from "@/components/billing-manager";
+import {
+  BillingInvoices,
+  BillingManager,
+  PortalButton,
+} from "@/components/billing-manager";
+import {
+  CalendarBlank,
+  CheckCircle,
+  CreditCard,
+  Gauge,
+  WarningCircle,
+} from "@phosphor-icons/react/dist/ssr";
 
 const STATUS_LABELS: Record<string, string> = {
-  active: "Actief",
-  trialing: "Proef",
-  past_due: "Achterstallig",
-  canceled: "Geannuleerd",
+  active: "Active",
+  trialing: "Trial",
+  past_due: "Past due",
+  canceled: "Canceled",
 };
 
 export default async function BillingPage() {
@@ -37,105 +48,53 @@ export default async function BillingPage() {
   const usedPct = usage.creditsLimit > 0
     ? Math.min(100, Math.round((usage.creditsUsed / usage.creditsLimit) * 100))
     : 100;
+  const intervalLabel = subscription.interval === "year" ? "year" : "month";
+  const periodDate = subscription.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : null;
+  const planDescription = plan.id === "max"
+    ? `${plan.creditsPerPeriod} scans per ${intervalLabel} · ${plan.features.seats ?? plan.maxMembers} paid seats · white-label reports`
+    : isPaid
+      ? `${plan.creditsPerPeriod} scans per ${intervalLabel} · ${plan.maxMembers} team members · uptime and GitHub scanning`
+      : `${plan.creditsPerPeriod} scans per month · ${plan.maxMembers} team members`;
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Billing</h1>
-      <p className="mt-1 text-sm text-slate-400">
-        Huidig plan en verbruik van {result.team.name}.
-      </p>
+    <div className="dashboard-home billing-page" data-design-direction="luminous-technical-calm">
+      <header className="dashboard-page-heading billing-page-heading">
+        <div><h1>Plan, usage, and payment in one place.</h1><p>Keep the subscription for <strong>{result.team.name}</strong> predictable and auditable.</p></div>
+        <span className="dashboard-plan-chip">{plan.name} plan</span>
+      </header>
 
-      <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/50 p-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold">{plan.name}</h2>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  subscription.status === "active" || subscription.status === "trialing"
-                    ? "bg-emerald-500/15 text-emerald-400"
-                    : subscription.status === "past_due"
-                      ? "bg-amber-500/15 text-amber-400"
-                      : "bg-red-500/15 text-red-400"
-                }`}
-              >
-                {STATUS_LABELS[subscription.status] ?? subscription.status}
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-slate-400">
-              {plan.id === "max"
-                ? `${plan.creditsPerPeriod} scans per ${subscription.interval === "year" ? "jaar" : "maand"} · ${plan.features.seats ?? plan.maxMembers} betaalde seats · white-label branding`
-                : isPaid
-                  ? `${plan.creditsPerPeriod} scans per ${subscription.interval === "year" ? "jaar" : "maand"} · ${plan.maxMembers} teamleden · uptime & GitHub-scans`
-                  : `${plan.creditsPerPeriod} scans per maand · ${plan.maxMembers} teamleden`}
-            </p>
-            {isPaid && (
-              <p className="mt-1 text-xs text-slate-500">
-                {subscription.cancel_at_period_end && subscription.current_period_end
-                  ? `Stopt op ${new Date(subscription.current_period_end).toLocaleDateString("nl-NL")}`
-                  : subscription.current_period_end
-                    ? `Verlengt op ${new Date(subscription.current_period_end).toLocaleDateString("nl-NL")} · per ${subscription.interval === "year" ? "jaar" : "maand"}`
-                    : `Per ${subscription.interval === "year" ? "jaar" : "maand"}`}
-                {subscription.default_payment_method && (
-                  <>
-                    {" · "}
-                    {subscription.default_payment_method.brand}{" "}
-                    •••• {subscription.default_payment_method.last4} (
-                    {subscription.default_payment_method.exp_month}/
-                    {subscription.default_payment_method.exp_year})
-                  </>
-                )}
-              </p>
-            )}
-          </div>
-
-          <BillingManager
-            isOwner={isOwner}
-            isPaid={isPaid}
-            subscription={subscription}
-          />
+      <section className="billing-cockpit">
+        <div className="billing-plan-header">
+          <div className="billing-plan-title"><span><CreditCard size={21} aria-hidden="true" /></span><div><div><h2>{plan.name}</h2><span className={`billing-status is-${subscription.status}`}>{STATUS_LABELS[subscription.status] ?? subscription.status}</span></div><p>{planDescription}</p></div></div>
+          <BillingManager isOwner={isOwner} isPaid={isPaid} subscription={subscription} />
         </div>
 
-        <div className="mt-8">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-400">Verbruik deze periode</span>
-            <span className="font-semibold">
-              {usage.creditsUsed} / {usage.creditsLimit} scans
-            </span>
-          </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
-            <div
-              className={`h-full rounded-full transition-all ${
-                usedPct >= 100
-                  ? "bg-red-500"
-                  : usedPct >= 80
-                    ? "bg-amber-500"
-                    : "bg-brand"
-              }`}
-              style={{ width: `${usedPct}%` }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            {usage.resetAt
-              ? `Reset op ${new Date(usage.resetAt).toLocaleDateString("nl-NL")}`
-              : "Verbruik wordt per maand gereset"}
-          </p>
+        <div className="billing-usage-panel">
+          <div className="billing-usage-heading"><span><Gauge size={19} aria-hidden="true" /></span><div><h3>Scan allowance</h3><p>{usage.resetAt ? `Resets ${new Date(usage.resetAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : "Resets monthly"}</p></div><strong>{usage.creditsUsed} <span>/ {usage.creditsLimit}</span></strong></div>
+          <div className="billing-usage-track" role="progressbar" aria-label="Scan allowance used" aria-valuenow={usedPct} aria-valuemin={0} aria-valuemax={100}><span className={usedPct >= 100 ? "is-danger" : usedPct >= 80 ? "is-warning" : undefined} style={{ width: `${usedPct}%` }} /></div>
+          <p>{usedPct}% of this period&apos;s allowance has been used.</p>
+        </div>
+
+        <div className="billing-detail-grid">
+          <div><CalendarBlank size={18} aria-hidden="true" /><span>{subscription.cancel_at_period_end ? "Access ends" : "Next renewal"}</span><strong>{periodDate ?? `Billed per ${intervalLabel}`}</strong></div>
+          <div><CreditCard size={18} aria-hidden="true" /><span>Payment method</span><strong>{subscription.default_payment_method ? `${subscription.default_payment_method.brand} ···· ${subscription.default_payment_method.last4}` : "No saved method"}</strong></div>
+          <div><CheckCircle size={18} aria-hidden="true" /><span>Billing owner</span><strong>{isOwner ? "You can manage billing" : "Owner-managed"}</strong></div>
         </div>
 
         {subscription.status === "past_due" && (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-            <p className="text-sm text-amber-400">
-              Betalingsachterstand — scans zijn gepauzeerd. Werk je
-              betaalmethode bij om verder te gaan.
-            </p>
-            <BillingManager.PortalButton />
-          </div>
+          <div className="billing-payment-alert"><WarningCircle size={19} aria-hidden="true" /><p>Payment is past due, so new scans are paused. {isOwner ? "Update the payment method to continue." : "Ask the billing owner to update the payment method."}</p>{isOwner && <PortalButton />}</div>
         )}
-      </div>
+      </section>
 
-      <div className="mt-8">
-        <BillingManager.Invoices />
-      </div>
+      <div className="billing-invoices-section"><BillingInvoices /></div>
+
+      <footer className="dashboard-page-footer"><span>Billing actions remain owner-controlled.</span><span>ScanPal · Billing</span></footer>
     </div>
   );
 }

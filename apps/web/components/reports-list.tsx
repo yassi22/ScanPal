@@ -2,6 +2,14 @@
 
 import { useState } from "react";
 import { type ReportMeta } from "@scanpal/shared";
+import {
+  ArrowDown,
+  DownloadSimple,
+  FilePdf,
+  FileText,
+  FunnelSimple,
+  GlobeHemisphereWest,
+} from "@phosphor-icons/react";
 
 type SiteOption = {
   id: string;
@@ -40,6 +48,8 @@ export function ReportsList({
   const [error, setError] = useState<string | null>(null);
 
   const siteById = new Map(sites.map((site) => [site.id, site]));
+  const pdfCount = reports.filter((report) => report.format === "pdf").length;
+  const markdownCount = reports.length - pdfCount;
 
   async function fetchPage(site: string, cursor?: string) {
     const params = new URLSearchParams();
@@ -86,71 +96,98 @@ export function ReportsList({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="reports-library">
+      <header className="dashboard-page-heading reports-page-heading">
         <div>
-          <h1 className="text-xl font-bold">Rapporten</h1>
-          <p className="text-sm text-slate-400">
-            Opgeslagen PDF- en Markdown-rapporten van je scans.
+          <h1>Reports, ready to share.</h1>
+          <p>
+            Your generated PDF and Markdown evidence, organized by property and
+            kept close to the scan that produced it.
           </p>
         </div>
-        <select
-          value={siteId}
-          onChange={(event) => load(event.target.value)}
-          className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300"
-        >
-          <option value="">Alle sites</option>
-          {sites.map((site) => (
-            <option key={site.id} value={site.id}>
-              {site.label ?? site.url}
-            </option>
-          ))}
-        </select>
-      </div>
+        <span className="dashboard-plan-chip">
+          {reports.length} {reports.length === 1 ? "report" : "reports"}
+        </span>
+      </header>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      <section className="reports-toolbar" aria-label="Report filters and summary">
+        <div className="reports-summary" aria-label="Visible report types">
+          <span><FilePdf size={18} aria-hidden="true" /> {pdfCount} PDF</span>
+          <span><FileText size={18} aria-hidden="true" /> {markdownCount} Markdown</span>
+        </div>
+        <label className="reports-filter">
+          <FunnelSimple size={17} aria-hidden="true" />
+          <span>Property</span>
+          <select
+            value={siteId}
+            onChange={(event) => load(event.target.value)}
+            disabled={loading}
+            aria-label="Filter reports by property"
+          >
+            <option value="">All sites</option>
+            {sites.map((site) => (
+              <option key={site.id} value={site.id}>
+                {site.label ?? site.url}
+              </option>
+            ))}
+          </select>
+        </label>
+      </section>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50">
+      {error && (
+        <p className="workspace-alert is-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      <section className={`reports-archive${loading ? " is-loading" : ""}`} aria-busy={loading}>
+        <div className="reports-archive-heading">
+          <div>
+            <h2>{siteId ? "Filtered archive" : "Report archive"}</h2>
+            <p>Exports are immutable snapshots of a completed scan.</p>
+          </div>
+          {loading && <span className="reports-loading">Updating…</span>}
+        </div>
+
         {reports.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-700 p-10 text-center text-sm text-slate-500">
-            Nog geen rapporten. Exporteer een PDF of Markdown-rapport vanaf een
-            scanresultaat.
+          <div className="reports-empty-state">
+            <span className="reports-empty-icon"><FileText size={22} aria-hidden="true" /></span>
+            <div>
+              <strong>No reports yet</strong>
+              <p>Export a PDF or Markdown report from a completed scan to build this archive.</p>
+            </div>
           </div>
         ) : (
-          <ul className="divide-y divide-slate-800">
+          <ul className="reports-list">
             {reports.map((report) => {
               const site = siteById.get(report.site_id);
               return (
-                <li
-                  key={report.id}
-                  className="flex flex-wrap items-center gap-3 px-5 py-4"
-                >
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                      report.format === "pdf"
-                        ? "bg-red-500/15 text-red-400"
-                        : "bg-sky-500/15 text-sky-400"
-                    }`}
-                  >
-                    {report.format === "pdf" ? "PDF" : "Markdown"}
+                <li key={report.id} className="report-row">
+                  <span className={`report-format-icon is-${report.format}`}>
+                    {report.format === "pdf" ? (
+                      <FilePdf size={20} aria-hidden="true" />
+                    ) : (
+                      <FileText size={20} aria-hidden="true" />
+                    )}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-200">
-                      {report.filename}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {site?.label ?? site?.url ?? "Onbekende site"} ·{" "}
-                      {formatDate(report.created_at)}
-                    </p>
+                  <div className="report-file">
+                    <strong>{report.filename}</strong>
+                    <span>
+                      <GlobeHemisphereWest size={13} aria-hidden="true" />
+                      {site?.label ?? site?.url ?? "Unknown site"}
+                    </span>
                   </div>
-                  <span className="text-xs text-slate-500">
-                    {formatBytes(report.size_bytes)}
-                  </span>
+                  <div className="report-meta">
+                    <span>{formatDate(report.created_at)}</span>
+                    <span>{formatBytes(report.size_bytes)}</span>
+                  </div>
                   <a
                     href={`/api/reports/${report.id}/content`}
-                    className="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-brand/90"
+                    className="report-download"
+                    aria-label={`Download ${report.filename}`}
                   >
-                    Download
+                    <DownloadSimple size={17} aria-hidden="true" />
+                    <span>Download</span>
                   </a>
                 </li>
               );
@@ -158,21 +195,22 @@ export function ReportsList({
           </ul>
         )}
         {nextCursor && (
-          <div className="px-5 py-4">
+          <div className="reports-pagination">
             <button
               type="button"
               onClick={loadMore}
               disabled={loadingMore}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+              className="dashboard-light-button"
             >
-              {loadingMore ? "Laden…" : "Meer laden"}
+              <ArrowDown size={16} aria-hidden="true" />
+              {loadingMore ? "Loading…" : "Load more"}
             </button>
           </div>
         )}
         {(loading || loadingMore) && !nextCursor && (
-          <p className="px-5 py-3 text-xs text-slate-500">Laden…</p>
+          <p className="reports-loading-note">Loading reports…</p>
         )}
-      </div>
+      </section>
     </div>
   );
 }

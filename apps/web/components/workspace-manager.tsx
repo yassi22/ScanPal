@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Briefcase, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
 
 type Workspace = { id: string; name: string };
 
@@ -73,40 +74,37 @@ export function WorkspaceManager({
   }
 
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-      <h2 className="font-semibold">Client-workspaces</h2>
-      <p className="mt-1 text-sm text-slate-400">
-        Organiseer sites en teamleden per klant. Een member zonder workspace ziet geen sites.
-      </p>
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+    <section className="workspace-manager-panel">
+      <div className="team-panel-heading"><span><Briefcase size={19} aria-hidden="true" /></span><div><h2>Client workspaces</h2><p>Scope properties and members per client. A member without a workspace cannot see any properties.</p></div></div>
+      {error && <p className="workspace-alert is-error" role="alert">{error}</p>}
       {isOwner && (
-        <div className="mt-4 flex gap-3">
+        <div className="workspace-create-form">
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Nieuwe workspace"
+            placeholder="Workspace name"
+            aria-label="Workspace name"
             maxLength={80}
-            className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none focus:border-brand"
           />
-          <button type="button" onClick={create} disabled={busy || !name.trim()} className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-50">
-            {busy ? "Maken…" : "Toevoegen"}
+          <button type="button" onClick={create} disabled={busy || !name.trim()}>
+            <Plus size={16} aria-hidden="true" /> {busy ? "Creating…" : "Add workspace"}
           </button>
         </div>
       )}
-      <ul className="mt-4 space-y-2">
+      <ul className="workspace-manager-list">
         {workspaces.map((workspace) => (
-          <li key={workspace.id} className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm">
-            <span className="text-slate-200">{workspace.name}</span>
+          <li key={workspace.id}>
+            <span>{workspace.name}</span>
             {isOwner && (
-              <span className="flex gap-3 text-xs">
-                <button type="button" onClick={() => rename(workspace)} className="text-slate-400 hover:text-slate-200">Hernoemen</button>
-                <button type="button" onClick={() => remove(workspace)} className="text-slate-400 hover:text-red-400">Verwijderen</button>
+              <span>
+                <button type="button" onClick={() => rename(workspace)}><PencilSimple size={16} aria-hidden="true" /><span>Rename</span></button>
+                <button type="button" onClick={() => remove(workspace)} className="is-danger"><Trash size={16} aria-hidden="true" /><span>Delete</span></button>
               </span>
             )}
           </li>
         ))}
       </ul>
-      {workspaces.length === 0 && <p className="mt-4 text-sm text-slate-500">Nog geen workspaces.</p>}
+      {workspaces.length === 0 && <p className="workspace-empty-note">No client workspaces yet.</p>}
     </section>
   );
 }

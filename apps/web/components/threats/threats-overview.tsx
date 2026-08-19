@@ -4,6 +4,15 @@ import { useState } from "react";
 import type { ThreatHoneypotView, ThreatOverview } from "@scanpal/shared";
 import { RiskBadge } from "./risk-badge";
 import { formatDateTime, hostOf } from "@/lib/uptime-format";
+import {
+  Check,
+  Code,
+  Copy,
+  GlobeHemisphereWest,
+  Key,
+  ShieldChevron,
+  WarningCircle,
+} from "@phosphor-icons/react";
 
 type Props = {
   initial: ThreatOverview[];
@@ -56,124 +65,99 @@ function HoneypotCard({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <article className="honeypot-row">
+      <div className="honeypot-identity">
+        <span><GlobeHemisphereWest size={20} aria-hidden="true" /></span>
         <div>
-          <p className="font-bold text-slate-100">
-            {site.site_label ?? hostOf(site.site_url)}
-          </p>
-          <p className="text-sm text-slate-400">{site.site_url}</p>
+          <strong>{site.site_label ?? hostOf(site.site_url)}</strong>
+          <small>{site.site_url}</small>
         </div>
+      </div>
+
+      <div className="honeypot-toggle">
+        <span>{site.enabled ? "Listening" : "Paused"}</span>
         <button
           type="button"
           role="switch"
           aria-checked={site.enabled}
-          aria-label={`Honeypot voor ${site.site_url} ${site.enabled ? "uitzetten" : "aanzetten"}`}
+          aria-label={`${site.enabled ? "Pause" : "Enable"} honeypot for ${site.site_url}`}
           onClick={() => save({ enabled: !site.enabled, rotate_token: false })}
           disabled={busy}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 ${
-            site.enabled ? "bg-brand" : "bg-slate-700"
-          }`}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-              site.enabled ? "translate-x-6" : "translate-x-1"
-            }`}
-          />
-        </button>
+          className={site.enabled ? "is-enabled" : undefined}
+        ><span /></button>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Hits</p>
-          <p className="mt-1 text-xl font-bold text-slate-100">{site.hit_count}</p>
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Hoog/kritiek
-          </p>
-          <p className="mt-1 text-xl font-bold text-slate-100">
-            {overview.high_risk_count}
-          </p>
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Laatste event
-          </p>
+      <dl className="honeypot-signals">
+        <div><dt>Total hits</dt><dd>{site.hit_count}</dd></div>
+        <div><dt>High or critical</dt><dd>{overview.high_risk_count}</dd></div>
+        <div>
+          <dt>Latest event</dt>
           {overview.last_event ? (
-            <div className="mt-1 space-y-1">
+            <dd className="honeypot-latest-event">
               <RiskBadge risk={overview.last_event.risk} />
-              <p className="text-xs text-slate-500">
-                {formatDateTime(overview.last_event.created_at)}
-              </p>
-            </div>
+              <small>{formatDateTime(overview.last_event.created_at)}</small>
+            </dd>
           ) : (
-            <p className="mt-1 text-sm text-slate-500">—</p>
+            <dd>—</dd>
           )}
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Actieve patronen (24u)
-          </p>
+        <div>
+          <dt>Active patterns · 24h</dt>
           {overview.active_patterns.length > 0 ? (
-            <div className="mt-1 flex flex-wrap gap-1">
+            <dd className="honeypot-patterns">
               {overview.active_patterns.map((key) => (
-                <span
-                  key={key}
-                  className="rounded-full border border-slate-700 bg-slate-800/60 px-2 py-0.5 text-xs text-slate-300"
-                >
-                  {key}
-                </span>
+                <span key={key}>{key}</span>
               ))}
-            </div>
+            </dd>
           ) : (
-            <p className="mt-1 text-sm text-slate-500">—</p>
+            <dd>—</dd>
           )}
         </div>
-      </div>
+      </dl>
 
       {error && (
-        <p className="mt-3 text-sm text-red-400">{error}</p>
+        <p className="honeypot-error" role="alert"><WarningCircle size={16} aria-hidden="true" /> {error}</p>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="honeypot-actions">
         <button
           type="button"
           onClick={() => setShowSnippet((v) => !v)}
-          className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+          className="is-secondary"
         >
-          {showSnippet ? "Snippet verbergen" : "Install-snippet"}
+          <Code size={16} aria-hidden="true" /> {showSnippet ? "Hide snippet" : "Install snippet"}
         </button>
         <button
           type="button"
           onClick={() => save({ enabled: site.enabled, rotate_token: true })}
           disabled={busy}
-          className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:border-slate-500 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="is-secondary"
         >
-          Token roteren
+          <Key size={16} aria-hidden="true" /> Rotate token
         </button>
         <button
           type="button"
           onClick={copySnippet}
-          className="rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-slate-950 transition hover:bg-brand/90"
+          className="is-primary"
         >
-          {copied ? "Gekopieerd!" : "Honeypot-URL kopiëren"}
+          {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+          {copied ? "Copied" : "Copy private URL"}
         </button>
       </div>
 
       {showSnippet && (
-        <div className="mt-4 space-y-2">
-          <p className="text-xs text-slate-500">
-            Plaats deze verborgen link ergens op je site (bijv. in de footer).
-            De URL zelf mag nooit publiek gelinkt worden.
+        <div className="honeypot-snippet">
+          <p>
+            Place this hidden link in your site footer. Never expose the private
+            route as a visible or indexed link.
           </p>
-          <pre className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-slate-300">
+          <pre>
             {"<!-- ScanPal honeypot (verborgen) -->\n"}
             {`<a href="${site.url}" rel="nofollow" aria-hidden="true" style="display:none">.</a>`}
           </pre>
         </div>
       )}
-    </div>
+    </article>
   );
 }
 
@@ -184,25 +168,35 @@ export function ThreatsOverview({ initial }: Props) {
     setOverviews((prev) => prev.map((o, i) => (i === index ? next : o)));
   }
 
+  const activeCount = overviews.filter((overview) => overview.site.enabled).length;
+  const hitCount = overviews.reduce((sum, overview) => sum + overview.site.hit_count, 0);
+  const highRiskCount = overviews.reduce((sum, overview) => sum + overview.high_risk_count, 0);
+
   return (
-    <div className="mt-8 space-y-6">
+    <section className="threat-honeypot-section">
       {overviews.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 p-10 text-center">
-          <p className="font-medium">Nog geen honeypots</p>
-          <p className="mt-1 text-sm text-slate-400">
-            Zet per site de honeypot aan om probes te detecteren. Elke site
-            krijgt een eigen geheime URL.
-          </p>
+        <div className="threat-empty-state">
+          <span><ShieldChevron size={24} aria-hidden="true" /></span>
+          <div><strong>No honeypots available</strong><p>Add a site to create its private detection route.</p></div>
         </div>
       ) : (
-        overviews.map((overview, index) => (
-          <HoneypotCard
-            key={overview.site.honeypot_id}
-            overview={overview}
-            onChanged={(next) => update(index, next)}
-          />
-        ))
+        <>
+          <div className="threat-summary-strip">
+            <div><span>Listening</span><strong>{activeCount}</strong></div>
+            <div><span>Recorded hits</span><strong>{hitCount}</strong></div>
+            <div className={highRiskCount > 0 ? "is-danger" : undefined}><span>High-risk signals</span><strong>{highRiskCount}</strong></div>
+            <p><ShieldChevron size={17} aria-hidden="true" /> Private routes stay unique per property.</p>
+          </div>
+          <div className="workspace-section-heading honeypot-section-heading">
+            <div><h2>Honeypot endpoints</h2><p>Configure listening state, inspect signal volume, and copy the install route.</p></div>
+          </div>
+          <div className="honeypot-list">
+            {overviews.map((overview, index) => (
+              <HoneypotCard key={overview.site.honeypot_id} overview={overview} onChanged={(next) => update(index, next)} />
+            ))}
+          </div>
+        </>
       )}
-    </div>
+    </section>
   );
 }

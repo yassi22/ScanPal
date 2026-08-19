@@ -36,11 +36,19 @@ export default async function SitesPage() {
   ]);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Sites</h1>
-      <p className="mt-1 text-sm text-slate-400">
-        Voeg websites toe, start scans en volg de status van je laatste scan.
-      </p>
+    <div className="dashboard-home sites-page" data-design-direction="luminous-technical-calm">
+      <header className="dashboard-page-heading sites-page-heading">
+        <div>
+          <h1>Your monitored sites.</h1>
+          <p>
+            Add a property, run an on-demand scan, and keep its security and
+            availability signals in one calm workspace.
+          </p>
+        </div>
+        <span className="dashboard-plan-chip">
+          {sites.length} {sites.length === 1 ? "property" : "properties"}
+        </span>
+      </header>
 
       <SitesManager
         sites={sites.map(toSiteJson)}
@@ -49,6 +57,11 @@ export default async function SitesPage() {
         activeTestsEnabled={plan.features.activeTests}
         isOwner={result.membership.role === "owner"}
       />
+
+      <footer className="dashboard-page-footer">
+        <span>Workspace data stays scoped to your team.</span>
+        <span>ScanPal · Site operations</span>
+      </footer>
     </div>
   );
 }

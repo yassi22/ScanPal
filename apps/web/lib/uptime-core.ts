@@ -9,6 +9,8 @@ type SiteAggRow = {
   label: string | null;
   uptime_state: "up" | "down" | "unknown";
   uptime_state_changed_at: Date | null;
+  last_checked_at: Date | null;
+  probe_fresh: boolean;
   uptime_enabled: boolean;
   up24: number;
   total24: number;
@@ -81,6 +83,8 @@ function toSummary(
     uptime_state_changed_at: row.uptime_state_changed_at
       ? row.uptime_state_changed_at.toISOString()
       : null,
+    last_checked_at: row.last_checked_at?.toISOString() ?? null,
+    probe_fresh: row.probe_fresh,
     uptime_enabled: row.uptime_enabled,
     uptime_24h_pct: pct(row.up24, row.total24),
     uptime_30d_pct: pct(row.up30, row.total30),
@@ -104,6 +108,8 @@ export async function listUptimeSummaries(
     db.query<SiteAggRow>(
       `select s.id as site_id, s.url, s.label, s.uptime_state,
               s.uptime_state_changed_at, s.uptime_enabled,
+              (select max(e.checked_at) from uptime_events e where e.site_id = s.id) as last_checked_at,
+              coalesce((select max(e.checked_at) > now() - interval '3 minutes' from uptime_events e where e.site_id = s.id), false) as probe_fresh,
               ${AGGREGATE_SUBQUERIES}
        from sites s
        where s.team_id = $1
@@ -151,6 +157,8 @@ export async function getUptimeDetail(
   const site = await db.query<SiteWithAgg>(
     `select s.id as site_id, s.url, s.label, s.uptime_state,
             s.uptime_state_changed_at, s.uptime_enabled,
+            (select max(e.checked_at) from uptime_events e where e.site_id = s.id) as last_checked_at,
+            coalesce((select max(e.checked_at) > now() - interval '3 minutes' from uptime_events e where e.site_id = s.id), false) as probe_fresh,
             ${AGGREGATE_SUBQUERIES}
      from sites s
      where s.team_id = $1 and s.id = $2`,

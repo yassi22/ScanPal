@@ -3,10 +3,18 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { UptimeSummary } from "@scanpal/shared";
+import {
+  ArrowRight,
+  GlobeHemisphereWest,
+  Pulse,
+  Timer,
+  WarningCircle,
+} from "@phosphor-icons/react";
 import { StatusDot } from "./status-dot";
 import { Sparkline } from "./sparkline";
 import {
   downSinceLabel,
+  formatDateTime,
   formatLatency,
   formatUptimePct,
   hostOf,
@@ -17,6 +25,9 @@ type Props = {
 };
 
 const REFRESH_INTERVAL_MS = 30000;
+function hasFreshProbe(site: UptimeSummary): boolean {
+  return site.uptime_enabled && site.probe_fresh;
+}
 
 export function UptimeList({ initial }: Props) {
   const [summaries, setSummaries] = useState<UptimeSummary[]>(initial);
@@ -24,10 +35,20 @@ export function UptimeList({ initial }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const res = await fetch("/api/uptime");
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data?.sites) setSummaries(data.sites);
+    try {
+      const res = await fetch("/api/uptime");
+      if (!res.ok) {
+        setError("Availability refresh failed. Showing the last successful probe data.");
+        return;
+      }
+      const data = await res.json();
+      if (data?.sites) {
+        setSummaries(data.sites);
+        setError(null);
+      }
+    } catch {
+      setError("Availability refresh failed. Showing the last successful snapshot.");
+    }
   }, []);
 
   useEffect(() => {
@@ -61,105 +82,114 @@ export function UptimeList({ initial }: Props) {
     }
   }
 
+  const monitoredCount = summaries.filter((site) => site.uptime_enabled).length;
+  const onlineCount = summaries.filter(
+    (site) => hasFreshProbe(site) && site.uptime_state === "up",
+  ).length;
+  const outageCount = summaries.filter(
+    (site) => hasFreshProbe(site) && site.uptime_state === "down",
+  ).length;
+  const latestProbeAt = summaries
+    .filter((site) => site.uptime_enabled && site.last_checked_at)
+    .map((site) => site.last_checked_at as string)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null;
+
   return (
-    <div className="mt-8 space-y-6">
+    <section className="uptime-board">
       {error && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {error}
+        <div className="workspace-alert is-error" role="alert">
+          <WarningCircle size={18} aria-hidden="true" />
+          <span>{error}</span>
         </div>
       )}
 
       {summaries.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 p-10 text-center">
-          <p className="font-medium">Nog geen sites</p>
-          <p className="mt-1 text-sm text-slate-400">
-            Voeg eerst een site toe om uptime te volgen.
-          </p>
-          <Link
-            href="/sites"
-            className="mt-4 inline-block rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-brand/90"
-          >
-            Naar sites
+        <div className="uptime-empty-state">
+          <span><Pulse size={24} aria-hidden="true" /></span>
+          <div>
+            <strong>No endpoints to monitor</strong>
+            <p>Add a property first, then enable availability monitoring here.</p>
+          </div>
+          <Link href="/sites" className="dashboard-primary-button">
+            Manage sites <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50">
-          <table className="w-full min-w-[880px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-800 text-xs uppercase tracking-wide text-slate-500">
-                <th className="px-5 py-3 font-medium">Site</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Uptime 24u</th>
-                <th className="px-5 py-3 font-medium">Uptime 30d</th>
-                <th className="px-5 py-3 font-medium">Gem. latency</th>
-                <th className="px-5 py-3 font-medium">24u</th>
-                <th className="px-5 py-3 font-medium">Monitoring</th>
-              </tr>
-            </thead>
-            <tbody>
+        <>
+          <div className="uptime-summary-strip" aria-label="Availability summary">
+            <div><span>Online now</span><strong>{onlineCount}</strong></div>
+            <div className={outageCount > 0 ? "is-danger" : undefined}><span>Confirmed outages</span><strong>{outageCount}</strong></div>
+            <div><span>Monitoring enabled</span><strong>{monitoredCount}</strong></div>
+            <p><Timer size={17} aria-hidden="true" /> Latest probe {formatDateTime(latestProbeAt)}.</p>
+          </div>
+
+          <div className="uptime-ledger">
+            <div className="uptime-ledger-heading">
+              <div><h2>Endpoint health</h2><p>Current state and the evidence behind it.</p></div>
+              <span>Latest successful snapshot</span>
+            </div>
+            <div className="uptime-site-list">
               {summaries.map((site) => {
-                const downSince = downSinceLabel(
-                  site.uptime_state,
-                  site.uptime_state_changed_at,
-                );
+                const freshProbe = hasFreshProbe(site);
+                const downSince = freshProbe
+                  ? downSinceLabel(site.uptime_state, site.uptime_state_changed_at)
+                  : null;
                 return (
-                  <tr
-                    key={site.site_id}
-                    className="border-b border-slate-800/60 last:border-b-0"
-                  >
-                    <td className="px-5 py-4">
-                      <Link
-                        href={`/uptime/${site.site_id}`}
-                        className="font-medium text-slate-200 underline-offset-2 hover:text-brand hover:underline"
-                      >
-                        {site.label ?? hostOf(site.url)}
-                      </Link>
-                      <p className="text-xs text-slate-500">{site.url}</p>
-                    </td>
-                    <td className="px-5 py-4">
-                      <StatusDot state={site.uptime_state} />
-                      {downSince && (
-                        <p className="mt-1 text-xs text-red-400">{downSince}</p>
+                  <article key={site.site_id} className="uptime-site-row">
+                    <div className="uptime-site-identity">
+                      <span><GlobeHemisphereWest size={20} aria-hidden="true" /></span>
+                      <div>
+                        <Link href={`/uptime/${site.site_id}`}>{site.label ?? hostOf(site.url)}</Link>
+                        <small>{site.url}</small>
+                      </div>
+                    </div>
+                    <div className="uptime-current-state">
+                      <span>Current state</span>
+                      {!site.uptime_enabled ? (
+                        <>
+                          <strong className="uptime-paused-status">Paused</strong>
+                          <small>Live checks are off</small>
+                        </>
+                      ) : freshProbe ? (
+                        <>
+                          <StatusDot state={site.uptime_state} />
+                          {downSince && <small>{downSince}</small>}
+                        </>
+                      ) : (
+                        <>
+                          <strong className="uptime-stale-status">Stale</strong>
+                          <small>{site.last_checked_at ? `Last probe ${formatDateTime(site.last_checked_at)}` : "No completed probes"}</small>
+                        </>
                       )}
-                    </td>
-                    <td className="px-5 py-4 text-slate-300">
-                      {formatUptimePct(site.uptime_24h_pct)}
-                    </td>
-                    <td className="px-5 py-4 text-slate-300">
-                      {formatUptimePct(site.uptime_30d_pct)}
-                    </td>
-                    <td className="px-5 py-4 text-slate-400">
-                      {formatLatency(site.avg_latency_ms_24h)}
-                    </td>
-                    <td className="px-5 py-4">
+                    </div>
+                    <dl className="uptime-metrics">
+                      <div><dt>24h uptime</dt><dd>{formatUptimePct(site.uptime_24h_pct)}</dd></div>
+                      <div><dt>30d uptime</dt><dd>{formatUptimePct(site.uptime_30d_pct)}</dd></div>
+                      <div><dt>Avg. latency</dt><dd>{formatLatency(site.avg_latency_ms_24h)}</dd></div>
+                    </dl>
+                    <div className="uptime-history">
+                      <span>24h signal</span>
                       <Sparkline points={site.sparkline} />
-                    </td>
-                    <td className="px-5 py-4">
+                    </div>
+                    <label className="uptime-monitor-control">
+                      <span>Monitor</span>
                       <button
                         type="button"
                         role="switch"
                         aria-checked={site.uptime_enabled}
-                        aria-label={`Monitoring voor ${site.url}`}
+                        aria-label={`Monitor ${site.url}`}
                         onClick={() => toggleMonitoring(site)}
                         disabled={busyId === site.site_id}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                          site.uptime_enabled ? "bg-brand" : "bg-slate-700"
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                            site.uptime_enabled ? "translate-x-6" : "translate-x-1"
-                          }`}
-                        />
-                      </button>
-                    </td>
-                  </tr>
+                        className={site.uptime_enabled ? "is-enabled" : undefined}
+                      ><span /></button>
+                    </label>
+                  </article>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+        </>
       )}
-    </div>
+    </section>
   );
 }

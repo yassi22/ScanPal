@@ -26,6 +26,8 @@ export const uptimeSummarySchema = z.object({
   label: z.string().nullable(),
   uptime_state: siteStatusSchema,
   uptime_state_changed_at: z.string().datetime().nullable(),
+  last_checked_at: z.string().datetime().nullable(),
+  probe_fresh: z.boolean(),
   uptime_enabled: z.boolean(),
   uptime_24h_pct: z.number().min(0).max(100).nullable(),
   uptime_30d_pct: z.number().min(0).max(100).nullable(),

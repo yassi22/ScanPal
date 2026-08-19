@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ScanPal dashboard review fixture</title>
+    <link rel="stylesheet" href="/apps/web/app/globals.css?v=4" />
+  </head>
+  <body>
+    <div class="dashboard-light-shell">
+      <header class="dashboard-topbar">
+        <div class="dashboard-topbar-inner">
+          <a class="dashboard-brand" href="#">ScanPal</a>
+          <div class="dashboard-topbar-actions">
+            <a href="#">Notifications</a>
+            <span class="dashboard-team-name">Acme Studio</span>
+            <span class="dashboard-team-avatar">AC</span>
+            <div class="dashboard-logout-control"><button>Log out</button></div>
+          </div>
+          <button class="dashboard-mobile-toggle">Menu</button>
+        </div>
+      </header>
+      <div class="dashboard-frame">
+        <aside class="dashboard-sidebar">
+          <nav class="dashboard-sidebar-nav">
+            <span class="dashboard-sidebar-label">Workspace</span>
+            <a class="dashboard-nav-link is-active" href="#">Dashboard</a>
+            <a class="dashboard-nav-link" href="#">Sites</a>
+            <a class="dashboard-nav-link" href="#">Reports</a>
+            <a class="dashboard-nav-link" href="#">Uptime</a>
+            <a class="dashboard-nav-link" href="#">Threats</a>
+            <a class="dashboard-nav-link" href="#">Team</a>
+            <a class="dashboard-nav-link" href="#">Billing</a>
+          </nav>
+          <div class="dashboard-sidebar-footer">
+            <div><strong>Website health, made clear.</strong><span>Evidence before noise.</span></div>
+          </div>
+        </aside>
+        <main class="dashboard-main">
+          <div class="dashboard-home">
+            <section class="dashboard-page-heading">
+              <div>
+                <h1>Keep your website health in view.</h1>
+                <p>A quiet overview for <strong>Acme Studio</strong>. Start with the next useful signal, then follow the evidence.</p>
+              </div>
+              <div class="dashboard-heading-actions">
+                <span class="dashboard-plan-chip">Pro plan</span>
+                <a class="dashboard-primary-button" href="#">Scan a new site</a>
+              </div>
+            </section>
+            <section class="dashboard-primary-grid">
+              <article class="dashboard-focus-panel">
+                <div class="dashboard-focus-heading">
+                  <h2>Security headers are missing</h2>
+                  <span class="dashboard-state-chip is-danger">high priority</span>
+                </div>
+                <p class="dashboard-focus-copy">Your site may be more exposed to common browser-based attacks. Start here, then follow the evidence and remediation in the report.</p>
+                <a class="dashboard-dark-button" href="#">Open finding in report →</a>
+                <div class="dashboard-preview-panel">
+                  <div class="dashboard-preview-toolbar"><span>ScanPal report</span><span>Latest scan</span></div>
+                  <div class="dashboard-preview-body">
+                    <div class="dashboard-score-block">
+                      <span class="dashboard-score-label">Health score</span>
+                      <strong class="dashboard-score-value">82</strong>
+                      <span class="dashboard-score-context">Measured out of 100</span>
+                    </div>
+                    <div class="dashboard-preview-lines">
+                      <div class="dashboard-preview-line"><span class="dashboard-preview-icon">•</span><span>Security</span><span class="dashboard-preview-line-fill"></span><span>→</span></div>
+                      <div class="dashboard-preview-line"><span class="dashboard-preview-icon">•</span><span>SEO</span><span class="dashboard-preview-line-fill"></span><span>→</span></div>
+                      <div class="dashboard-preview-line"><span class="dashboard-preview-icon">•</span><span>Performance</span><span class="dashboard-preview-line-fill"></span><span>→</span></div>
+                      <div class="dashboard-preview-line"><span class="dashboard-preview-icon">•</span><span>AI visibility</span><span class="dashboard-preview-line-fill"></span><span>→</span></div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+              <aside class="dashboard-workspace-card">
+                <div class="dashboard-card-heading"><h2>Workspace at a glance</h2><span class="dashboard-workspace-mark">✓</span></div>
+                <div class="dashboard-metric-list">
+                  <div class="dashboard-metric-row"><span>Sites in workspace</span><strong>4</strong></div>
+                  <div class="dashboard-metric-row"><span>Recent completed</span><strong>12</strong></div>
+                  <div class="dashboard-metric-row"><span>Latest score</span><strong>82</strong></div>
+                </div>
+                <div class="dashboard-site-callout"><div><span>Latest site</span><strong>example.com</strong></div></div>
+                <a class="dashboard-light-button" href="#">Manage sites →</a>
+                <div class="dashboard-plan-note"><span>You're on the <strong>Pro</strong> plan.</span><a href="#">Review</a></div>
+              </aside>
+            </section>
+            <section class="dashboard-lower-grid">
+              <article class="dashboard-activity-panel">
+                <div class="dashboard-section-heading"><h2>Recent scans</h2><a class="dashboard-inline-link" href="#">View reports →</a></div>
+                <div class="dashboard-scan-list">
+                  <a class="dashboard-scan-row" href="#"><div class="dashboard-scan-row-main"><span class="dashboard-scan-status is-completed"><span></span>Completed</span><strong>example.com</strong></div><div class="dashboard-scan-row-meta"><span>Aug 19, 2026</span><strong>82</strong><span>→</span></div></a>
+                  <a class="dashboard-scan-row" href="#"><div class="dashboard-scan-row-main"><span class="dashboard-scan-status is-running"><span></span>Running</span><strong>docs.example.com</strong></div><div class="dashboard-scan-row-meta"><span>Aug 19, 2026</span><strong>—</strong><span>→</span></div></a>
+                </div>
+              </article>
+              <article class="dashboard-lenses-panel">
+                <div class="dashboard-section-heading"><h2>Five lenses, one useful signal.</h2></div>
+                <p class="dashboard-lenses-copy">Security leads. The surrounding checks show how browsers, search engines, people and AI systems experience your site.</p>
+                <div class="dashboard-lens-list">
+                  <div class="dashboard-lens-row is-primary"><span class="dashboard-lens-icon">✓</span><span>Security</span><small>Protection first</small></div>
+                  <div class="dashboard-lens-row"><span class="dashboard-lens-icon">·</span><span>SEO</span><small>Be easier to find</small></div>
+                  <div class="dashboard-lens-row"><span class="dashboard-lens-icon">·</span><span>Performance</span><small>Load with intent</small></div>
+                  <div class="dashboard-lens-row"><span class="dashboard-lens-icon">·</span><span>AI visibility</span><small>Be understood</small></div>
+                  <div class="dashboard-lens-row"><span class="dashboard-lens-icon">·</span><span>Compliance</span><small>Build trust</small></div>
+                </div>
+              </article>
+            </section>
+            <footer class="dashboard-page-footer"><span>Evidence-backed by design.</span><span>ScanPal workspace · Pro plan</span></footer>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

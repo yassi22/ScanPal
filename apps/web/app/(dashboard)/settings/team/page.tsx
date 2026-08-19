@@ -38,11 +38,19 @@ export default async function SettingsTeamPage() {
   const branding = brandingSchema.parse(teamRow.rows[0]?.branding ?? {});
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Team-instellingen</h1>
-      <p className="mt-1 text-sm text-slate-400">
-        Beheer leden en uitnodigingen voor {result.team.name}.
-      </p>
+    <div className="dashboard-home team-page" data-design-direction="luminous-technical-calm">
+      <header className="dashboard-page-heading team-page-heading">
+        <div>
+          <h1>Build the workspace around your team.</h1>
+          <p>
+            Manage access, client workspaces, and report identity for
+            <strong> {result.team.name}</strong>.
+          </p>
+        </div>
+        <span className="dashboard-plan-chip">
+          {members.length} {members.length === 1 ? "member" : "members"}
+        </span>
+      </header>
 
       <SettingsNav />
 
@@ -66,11 +74,18 @@ export default async function SettingsTeamPage() {
             typeof i.expires_at === "string" ? i.expires_at : i.expires_at.toISOString(),
         }))}
       />
-      <WorkspaceManager
-        teamId={result.team.id}
-        isOwner={result.membership.role === "owner"}
-        initialWorkspaces={workspaceRows.map(toWorkspaceJson).map(({ id, name }) => ({ id, name }))}
-      />
+      <div className="team-workspace-section">
+        <WorkspaceManager
+          teamId={result.team.id}
+          isOwner={result.membership.role === "owner"}
+          initialWorkspaces={workspaceRows.map(toWorkspaceJson).map(({ id, name }) => ({ id, name }))}
+        />
+      </div>
+
+      <footer className="dashboard-page-footer">
+        <span>Access stays explicit and workspace-scoped.</span>
+        <span>ScanPal · Team settings</span>
+      </footer>
     </div>
   );
 }

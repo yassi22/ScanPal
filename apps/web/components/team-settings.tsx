@@ -4,6 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Branding } from "@scanpal/shared";
+import { useAccessibleDialog } from "@/lib/use-accessible-dialog";
+import {
+  CheckCircle,
+  EnvelopeSimple,
+  IdentificationBadge,
+  PaintBrush,
+  Plus,
+  Trash,
+  UsersThree,
+  WarningCircle,
+} from "@phosphor-icons/react";
 
 type Member = {
   user_id: string;
@@ -56,6 +67,7 @@ export function TeamSettings({
   const [invitations, setInvitations] = useState(initialInvitations);
   const [upsell, setUpsell] = useState<Upsell>(null);
   const [upgrading, setUpgrading] = useState(false);
+  const upsellDialogRef = useAccessibleDialog(upsell !== null, () => setUpsell(null));
   const [branding, setBranding] = useState<Branding>(initialBranding);
   const [brandingSaving, setBrandingSaving] = useState(false);
 
@@ -178,74 +190,103 @@ export function TeamSettings({
   }
 
   return (
-    <div className="mt-8 space-y-8">
+    <div className="team-settings">
       {(error || notice) && (
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm ${
-            error
-              ? "border-red-500/30 bg-red-500/10 text-red-400"
-              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-          }`}
-        >
-          {error ?? notice}
+        <div className={`workspace-alert ${error ? "is-error" : "is-success"}`} role={error ? "alert" : "status"}>
+          {error ? <WarningCircle size={18} aria-hidden="true" /> : <CheckCircle size={18} aria-hidden="true" />}
+          <span>{error ?? notice}</span>
         </div>
       )}
 
+      <section className="team-members-panel">
+        <div className="team-panel-heading">
+          <span><UsersThree size={19} aria-hidden="true" /></span>
+          <div><h2>Members</h2><p>{members.length} {members.length === 1 ? "person has" : "people have"} access to this team.</p></div>
+          {isOwner && <a className="team-mobile-invite-link" href="#team-invite">Invite</a>}
+        </div>
+        <ul className="team-member-list">
+          {members.map((member) => (
+            <li key={member.user_id} className="team-member-row">
+              <span className="team-member-avatar" aria-hidden="true">{(member.name ?? member.email).slice(0, 2).toUpperCase()}</span>
+              <div className="team-member-identity">
+                <strong>
+                  {member.name ?? member.email}
+                  {member.user_id === currentUserId && <small>You</small>}
+                </strong>
+                {member.name && <span>{member.email}</span>}
+              </div>
+              <div className="team-member-actions">
+                {isOwner ? (
+                  <>
+                    <select
+                      value={member.role}
+                      onChange={(e) => changeRole(member.user_id, e.target.value as "owner" | "member")}
+                      aria-label={`Role for ${member.name ?? member.email}`}
+                    >
+                      <option value="member">Member</option>
+                      <option value="owner">Owner</option>
+                    </select>
+                    <button type="button" onClick={() => removeMember(member.user_id)} aria-label={`Remove ${member.name ?? member.email}`}>
+                      <Trash size={16} aria-hidden="true" />
+                    </button>
+                  </>
+                ) : (
+                  <span className="team-role-label">{member.role === "owner" ? "Owner" : "Member"}</span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+        {!isOwner && <p className="team-owner-note">Only an owner can invite and manage members.</p>}
+      </section>
+
       {isOwner && (
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-          <h2 className="font-semibold">Leden uitnodigen</h2>
-          <p className="mt-1 text-sm text-slate-400">
-            De uitgenodigde ontvangt een e-mail met een link die 7 dagen geldig is.
-          </p>
-          <form onSubmit={sendInvite} className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <section className="team-invite-panel" id="team-invite">
+          <div className="team-panel-heading"><span><EnvelopeSimple size={19} aria-hidden="true" /></span><div><h2>Invite a teammate</h2><p>The invitation link stays valid for seven days.</p></div></div>
+          <form onSubmit={sendInvite} className="team-invite-form">
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="collega@bedrijf.nl"
-              className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none transition focus:border-brand"
+              placeholder="colleague@company.com"
+              aria-label="Email address"
             />
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as "owner" | "member")}
-              className="rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none transition focus:border-brand"
+              aria-label="Workspace role"
             >
-              <option value="member">Lid</option>
+              <option value="member">Member</option>
               <option value="owner">Owner</option>
             </select>
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
             >
-              {loading ? "Versturen…" : "Uitnodigen"}
+              <Plus size={16} aria-hidden="true" /> {loading ? "Sending…" : "Send invite"}
             </button>
           </form>
 
           {invitations.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-slate-300">
-                Openstaande uitnodigingen
-              </h3>
-              <ul className="mt-2 space-y-2">
+            <div className="team-pending-invites">
+              <h3>Pending invitations</h3>
+              <ul>
                 {invitations.map((invite) => (
-                  <li
-                    key={invite.id}
-                    className="flex items-center justify-between gap-4 rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
-                  >
+                  <li key={invite.id}>
                     <div>
-                      <span className="text-slate-200">{invite.email}</span>
-                      <span className="ml-2 text-xs text-slate-500">
-                        als {invite.role === "owner" ? "owner" : "lid"} · verloopt{" "}
+                      <strong>{invite.email}</strong>
+                      <span>
+                        {invite.role === "owner" ? "Owner" : "Member"} · expires{" "}
                         {new Date(invite.expires_at).toLocaleDateString("nl-NL")}
                       </span>
                     </div>
                     <button
+                      type="button"
                       onClick={() => cancelInvite(invite.id)}
-                      className="text-xs text-slate-400 underline-offset-2 hover:text-red-400 hover:underline"
+                      aria-label={`Cancel invitation for ${invite.email}`}
                     >
-                      Annuleren
+                      <Trash size={16} aria-hidden="true" />
                     </button>
                   </li>
                 ))}
@@ -255,166 +296,94 @@ export function TeamSettings({
         </section>
       )}
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-        <div className="flex items-start justify-between gap-4">
+      <section className="team-identity-panel">
+        <span><IdentificationBadge size={20} aria-hidden="true" /></span>
+        <div><small>Team identity</small><strong>{teamName}</strong><p>The team name is currently managed by ScanPal.</p></div>
+      </section>
+
+      <section className="team-branding-panel">
+        <div className="team-panel-heading">
+          <span><PaintBrush size={19} aria-hidden="true" /></span>
           <div>
-            <h2 className="font-semibold">White-label rapporten</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Gebruik je eigen naam, logo en accentkleur in gedeelde rapporten.
-            </p>
-            <Link href="/terms" className="mt-2 inline-block text-xs text-brand underline-offset-2 hover:underline">
-              Bekijk Terms &amp; licensing
-            </Link>
+            <h2>Report identity</h2>
+            <p>Use your own report name, logo, and accent in shared evidence.</p>
+            <Link href="/terms">Terms and licensing</Link>
           </div>
-          {!whiteLabelEnabled && (
-            <span className="rounded-full border border-brand/40 bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">
-              Max
-            </span>
-          )}
+          {!whiteLabelEnabled && <small className="team-plan-badge">Max</small>}
         </div>
         {whiteLabelEnabled ? (
-          <form onSubmit={saveBranding} className="mt-5 space-y-4">
-            <label className="block text-sm">
-              <span className="text-slate-300">Rapportnaam</span>
+          <form onSubmit={saveBranding} className="team-branding-form">
+            <label>
+              <span>Report name</span>
               <input
                 value={branding.report_name ?? ""}
                 onChange={(e) => setBranding((prev) => ({ ...prev, report_name: e.target.value || null }))}
-                placeholder="Bijv. Acme Security Report"
+                placeholder="Northstar security report"
                 maxLength={120}
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 outline-none focus:border-brand"
               />
             </label>
-            <label className="block text-sm">
-              <span className="text-slate-300">Logo URL</span>
+            <label>
+              <span>Logo URL</span>
               <input
                 type="url"
                 value={branding.logo_url ?? ""}
                 onChange={(e) => setBranding((prev) => ({ ...prev, logo_url: e.target.value || null }))}
-                placeholder="https://voorbeeld.nl/logo.png"
+                placeholder="https://example.com/logo.png"
                 maxLength={2048}
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 outline-none focus:border-brand"
               />
             </label>
-            <label className="flex items-center gap-3 text-sm text-slate-300">
+            <label className="team-color-field">
               <input
                 type="color"
                 value={branding.primary_color ?? "#22d3ee"}
                 onChange={(e) => setBranding((prev) => ({ ...prev, primary_color: e.target.value }))}
-                className="h-9 w-12 rounded border border-slate-700 bg-slate-950"
               />
-              Accentkleur
+              <span>Accent color</span>
             </label>
-            <label className="flex items-center gap-3 text-sm text-slate-300">
+            <label className="team-check-field">
               <input
                 type="checkbox"
                 checked={branding.hide_branding ?? false}
                 onChange={(e) => setBranding((prev) => ({ ...prev, hide_branding: e.target.checked }))}
               />
-              ScanPal-vermelding verbergen
+              <span>Hide the ScanPal attribution</span>
             </label>
             <button
               type="submit"
               disabled={!isOwner || brandingSaving}
-              className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-50"
             >
-              {brandingSaving ? "Opslaan…" : "Branding opslaan"}
+              {brandingSaving ? "Saving…" : "Save identity"}
             </button>
           </form>
         ) : (
-          <p className="mt-4 text-sm text-slate-500">
-            White-label rapporten zijn beschikbaar op het Max-plan.
-          </p>
+          <p className="team-locked-note">White-label reports are available on the Max plan.</p>
         )}
-      </section>
-
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-        <h2 className="font-semibold">Leden ({members.length})</h2>
-        <ul className="mt-4 space-y-2">
-          {members.map((member) => (
-            <li
-              key={member.user_id}
-              className="flex items-center justify-between gap-4 rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium text-slate-200">
-                  {member.name ?? member.email}
-                  {member.user_id === currentUserId && (
-                    <span className="ml-2 text-xs font-normal text-slate-500">
-                      (jij)
-                    </span>
-                  )}
-                </p>
-                {member.name && (
-                  <p className="truncate text-xs text-slate-500">{member.email}</p>
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {isOwner ? (
-                  <>
-                    <select
-                      value={member.role}
-                      onChange={(e) =>
-                        changeRole(member.user_id, e.target.value as "owner" | "member")
-                      }
-                      className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs outline-none transition focus:border-brand"
-                    >
-                      <option value="member">Lid</option>
-                      <option value="owner">Owner</option>
-                    </select>
-                    <button
-                      onClick={() => removeMember(member.user_id)}
-                      className="text-xs text-slate-400 underline-offset-2 hover:text-red-400 hover:underline"
-                    >
-                      Verwijderen
-                    </button>
-                  </>
-                ) : (
-                  <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
-                    {member.role === "owner" ? "Owner" : "Lid"}
-                  </span>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-        {!isOwner && (
-          <p className="mt-4 text-xs text-slate-500">
-            Alleen de owner kan leden uitnodigen en beheren.
-          </p>
-        )}
-      </section>
-
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-        <h2 className="font-semibold">Team</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          De teamnaam <span className="font-medium text-slate-200">{teamName}</span>{" "}
-          wordt later bewerkbaar gemaakt.
-        </p>
       </section>
 
       {upsell && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-6">
-          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-8">
-            <h2 className="text-xl font-bold">Ledenlimiet bereikt</h2>
-            <p className="mt-2 text-sm text-slate-400">{upsell.error}</p>
-            <div className="mt-6 flex gap-3">
+        <div className="workspace-modal-backdrop" role="presentation">
+          <div ref={upsellDialogRef} tabIndex={-1} className="workspace-modal" role="dialog" aria-modal="true" aria-labelledby="team-upgrade-title">
+            <span className="workspace-modal-icon"><UsersThree size={22} aria-hidden="true" /></span>
+            <h2 id="team-upgrade-title">Member limit reached</h2>
+            <p>{upsell.error}</p>
+            <div>
               <button
                 type="button"
                 onClick={upgrade}
                 disabled={upgrading}
-                className="flex-1 rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
+                className="dashboard-primary-button"
               >
                 {upgrading
-                  ? "Bezig…"
-                  : `Upgrade naar ${upsell.plan === "pro" ? "Pro" : upsell.plan}`}
+                  ? "Opening checkout…"
+                  : `Upgrade to ${upsell.plan === "pro" ? "Pro" : upsell.plan}`}
               </button>
               <button
                 type="button"
                 onClick={() => setUpsell(null)}
                 disabled={upgrading}
-                className="rounded-lg border border-slate-700 px-4 py-3 text-sm font-semibold transition hover:border-slate-500 disabled:opacity-50"
+                className="dashboard-light-button"
               >
-                Later
+                Maybe later
               </button>
             </div>
           </div>

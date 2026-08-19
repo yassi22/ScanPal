@@ -1,15 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { InvoiceView, SubscriptionView } from "@scanpal/shared";
+import { useAccessibleDialog } from "@/lib/use-accessible-dialog";
+import {
+  ArrowSquareOut,
+  CheckCircle,
+  FilePdf,
+  Receipt,
+  WarningCircle,
+  X,
+} from "@phosphor-icons/react";
 
 const STATUS_LABELS: Record<string, string> = {
-  paid: "Betaald",
+  paid: "Paid",
   open: "Open",
-  void: "Vervallen",
-  uncollectible: "Oninbaar",
-  draft: "Concept",
-  past_due: "Achterstallig",
+  void: "Void",
+  uncollectible: "Uncollectible",
+  draft: "Draft",
+  past_due: "Past due",
 };
 
 type Props = {
@@ -19,11 +29,16 @@ type Props = {
 };
 
 export function BillingManager({ isOwner, isPaid, subscription: initial }: Props) {
+  const router = useRouter();
   const [subscription, setSubscription] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const cancelDialogRef = useAccessibleDialog(
+    confirmCancel,
+    () => setConfirmCancel(false),
+  );
 
   const setBanner = (err: string | null, ok: string | null = null) => {
     setError(err);
@@ -47,6 +62,7 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
       }
       setBanner(null, success);
       await refresh();
+      router.refresh();
     } catch (err) {
       setBanner(err instanceof Error ? err.message : "Er ging iets mis");
     } finally {
@@ -90,40 +106,40 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
 
   return (
     <>
-      <div className="flex flex-col items-end gap-2">
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        {notice && <p className="text-sm text-emerald-400">{notice}</p>}
-        {isPaidActive && (
-          <div className="flex flex-wrap justify-end gap-2">
+      <div className="billing-manager-actions">
+        {error && <p className="billing-inline-message is-error"><WarningCircle size={15} aria-hidden="true" /> {error}</p>}
+        {notice && <p className="billing-inline-message is-success"><CheckCircle size={15} aria-hidden="true" /> {notice}</p>}
+        {isPaidActive && isOwner && (
+          <div>
             <PortalButton />
-            {isOwner && !subscription.cancel_at_period_end && (
+            {!subscription.cancel_at_period_end && (
               <>
                 <button
                   type="button"
                   disabled={busy}
                   onClick={switchInterval}
-                  className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold transition hover:border-slate-500 disabled:opacity-50"
+                  className="billing-secondary-action"
                 >
-                  {busy ? "Bezig…" : subscription.interval === "year" ? "Naar maandplan" : "Naar jaarplan"}
+                  {busy ? "Updating…" : subscription.interval === "year" ? "Switch to monthly" : "Switch to yearly"}
                 </button>
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => setConfirmCancel(true)}
-                  className="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-400 transition hover:border-red-500/60 disabled:opacity-50"
+                  className="billing-danger-action"
                 >
-                  Opzeggen
+                  Cancel plan
                 </button>
               </>
             )}
-            {isOwner && subscription.cancel_at_period_end && (
+            {subscription.cancel_at_period_end && (
               <button
                 type="button"
                 disabled={busy}
                 onClick={reactivatePlan}
-                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
+                className="billing-primary-action"
               >
-                Hervatten
+                Reactivate
               </button>
             )}
           </div>
@@ -131,32 +147,33 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
       </div>
 
       {confirmCancel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6">
-            <h3 className="text-lg font-semibold">Abonnement opzeggen?</h3>
-            <p className="mt-2 text-sm text-slate-400">
-              Je houdt toegang tot het einde van de huidige periode
+        <div className="workspace-modal-backdrop" role="presentation">
+          <div ref={cancelDialogRef} tabIndex={-1} className="workspace-modal billing-cancel-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-plan-title">
+            <button type="button" className="workspace-modal-close" onClick={() => setConfirmCancel(false)} aria-label="Close"><X size={18} aria-hidden="true" /></button>
+            <span className="workspace-modal-icon is-warning"><WarningCircle size={22} aria-hidden="true" /></span>
+            <h2 id="cancel-plan-title">Cancel this subscription?</h2>
+            <p>
+              Access remains available until the end of the current period
               ({subscription.current_period_end
                 ? new Date(subscription.current_period_end).toLocaleDateString("nl-NL")
-                : "de lopende periode"}
-              ). Daarna worden scans gepauzeerd; je sites en rapporten blijven
-              bewaard.
+                : "the current billing period"}
+              ). New scans pause afterward; properties and reports stay stored.
             </p>
-            <div className="mt-6 flex justify-end gap-3">
+            <div>
               <button
                 type="button"
                 onClick={() => setConfirmCancel(false)}
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold transition hover:border-slate-500"
+                className="dashboard-light-button"
               >
-                Terug
+                Keep plan
               </button>
               <button
                 type="button"
                 disabled={busy}
                 onClick={cancelPlan}
-                className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400 disabled:opacity-50"
+                className="billing-confirm-cancel"
               >
-                {busy ? "Bezig…" : "Opzeggen"}
+                {busy ? "Canceling…" : "Cancel subscription"}
               </button>
             </div>
           </div>
@@ -168,29 +185,29 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
 
 export function PortalButton() {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function openPortal() {
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch("/api/billing/portal", { method: "POST" });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "Portal openen mislukt");
       window.location.href = data.url;
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Portal openen mislukt");
+      setError(err instanceof Error ? err.message : "Could not open the billing portal");
       setBusy(false);
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={openPortal}
-      disabled={busy}
-      className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold transition hover:border-slate-500 disabled:opacity-50"
-    >
-      {busy ? "Bezig…" : "Abonnement beheren"}
-    </button>
+    <span className="billing-portal-control">
+      <button type="button" onClick={openPortal} disabled={busy} className="billing-secondary-action">
+        {busy ? "Opening…" : "Manage subscription"}
+      </button>
+      {error && <small role="alert">{error}</small>}
+    </span>
   );
 }
 
@@ -199,7 +216,7 @@ function formatMoney(cents: number, currency: string): string {
   return currency === "eur" ? `€${value}` : `${value} ${currency.toUpperCase()}`;
 }
 
-function Invoices() {
+export function BillingInvoices() {
   const [invoices, setInvoices] = useState<InvoiceView[] | null>(null);
   const [noCustomer, setNoCustomer] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -222,83 +239,33 @@ function Invoices() {
   }, []);
 
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-      <h2 className="font-semibold">Facturen</h2>
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+    <section className="billing-invoice-ledger">
+      <div className="workspace-section-heading"><div><h2>Invoices</h2><p>Receipts and payment status from the billing account.</p></div><span><Receipt size={18} aria-hidden="true" /></span></div>
+      {error && <p className="workspace-alert is-error" role="alert"><WarningCircle size={16} aria-hidden="true" /> {error}</p>}
       {!error && noCustomer && (
-        <p className="mt-3 text-sm text-slate-400">
-          Nog geen facturen — facturen verschijnen zodra je een betaald plan hebt.
-        </p>
+        <div className="billing-invoice-empty">Invoices appear here after the first paid billing period.</div>
       )}
       {!error && !noCustomer && invoices === null && (
-        <p className="mt-3 text-sm text-slate-500">Laden…</p>
+        <div className="billing-invoice-loading" role="status"><span /><span /><span /></div>
       )}
       {!error && !noCustomer && invoices !== null && invoices.length === 0 && (
-        <p className="mt-3 text-sm text-slate-400">Nog geen facturen.</p>
+        <div className="billing-invoice-empty">No invoices have been issued yet.</div>
       )}
       {!error && !noCustomer && invoices !== null && invoices.length > 0 && (
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-800 text-xs uppercase text-slate-500">
-                <th className="pb-2 pr-4 font-medium">Nummer</th>
-                <th className="pb-2 pr-4 font-medium">Datum</th>
-                <th className="pb-2 pr-4 font-medium">Bedrag</th>
-                <th className="pb-2 pr-4 font-medium">Status</th>
-                <th className="pb-2 font-medium">Download</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((invoice) => (
-                <tr key={invoice.id} className="border-b border-slate-800/60">
-                  <td className="py-2.5 pr-4 text-slate-300">{invoice.number}</td>
-                  <td className="py-2.5 pr-4 text-slate-400">
-                    {new Date(invoice.created_at).toLocaleDateString("nl-NL")}
-                  </td>
-                  <td className="py-2.5 pr-4 text-slate-300">
-                    {formatMoney(invoice.total, invoice.currency)}
-                    {invoice.tax_total > 0 && (
-                      <span className="ml-1 text-xs text-slate-500">
-                        (incl. btw {formatMoney(invoice.tax_total, invoice.currency)})
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-2.5 pr-4">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs ${
-                        invoice.status === "paid"
-                          ? "bg-emerald-500/10 text-emerald-400"
-                          : invoice.status === "open" || invoice.status === "past_due"
-                            ? "bg-amber-500/10 text-amber-400"
-                            : "bg-slate-500/10 text-slate-400"
-                      }`}
-                    >
-                      {STATUS_LABELS[invoice.status] ?? invoice.status}
-                    </span>
-                  </td>
-                  <td className="py-2.5">
-                    {invoice.pdf_url ? (
-                      <a
-                        href={invoice.pdf_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-brand transition hover:text-brand/80"
-                      >
-                        PDF
-                      </a>
-                    ) : (
-                      <span className="text-slate-600">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="billing-invoice-list">
+          {invoices.map((invoice) => (
+            <article key={invoice.id} className="billing-invoice-row">
+              <span className="billing-invoice-icon"><FilePdf size={19} aria-hidden="true" /></span>
+              <div><strong>{invoice.number}</strong><small>{new Date(invoice.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</small></div>
+              <div className="billing-invoice-amount"><strong>{formatMoney(invoice.total, invoice.currency)}</strong>{invoice.tax_total > 0 && <small>Includes {formatMoney(invoice.tax_total, invoice.currency)} tax</small>}</div>
+              <span className={`billing-invoice-status is-${invoice.status}`}>{STATUS_LABELS[invoice.status] ?? invoice.status}</span>
+              {invoice.pdf_url ? (
+                <a href={invoice.pdf_url} target="_blank" rel="noopener noreferrer" aria-label={`Open invoice ${invoice.number}`}><ArrowSquareOut size={17} aria-hidden="true" /><span>Open PDF</span></a>
+              ) : <span className="billing-invoice-unavailable">Unavailable</span>}
+            </article>
+          ))}
         </div>
       )}
     </section>
   );
 }
-
-BillingManager.PortalButton = PortalButton;
-BillingManager.Invoices = Invoices;

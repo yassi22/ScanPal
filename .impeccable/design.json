@@ -1,0 +1,861 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-19T14:39:42.951Z",
+  "title": "Design System: ScanPal",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "Ink",
+        "canonical": "#1a1c21",
+        "tonalRamp": [
+          "#101114",
+          "#17181c",
+          "#1a1c21",
+          "#4a4c52",
+          "#777980",
+          "#a2a3a7",
+          "#cdced0",
+          "#f5f5f5"
+        ]
+      },
+      "ink-soft": {
+        "role": "secondary",
+        "displayName": "Ink Soft",
+        "canonical": "#333640",
+        "tonalRamp": [
+          "#17181c",
+          "#25262c",
+          "#333640",
+          "#5c5e66",
+          "#85868d",
+          "#adaeb4",
+          "#d5d5d9",
+          "#f5f5f6"
+        ]
+      },
+      "action": {
+        "role": "primary",
+        "displayName": "Black Action",
+        "canonical": "#0a0a0a",
+        "tonalRamp": [
+          "#000000",
+          "#050505",
+          "#0a0a0a",
+          "#3b3b3b",
+          "#6b6b6b",
+          "#989898",
+          "#c7c7c7",
+          "#f4f4f4"
+        ]
+      },
+      "action-hover": {
+        "role": "secondary",
+        "displayName": "Action Hover",
+        "canonical": "#1f1f1f",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#151515",
+          "#1f1f1f",
+          "#4b4b4b",
+          "#777777",
+          "#a4a4a4",
+          "#d0d0d0",
+          "#f6f6f6"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#171717",
+          "#303030",
+          "#4a4a4a",
+          "#707070",
+          "#979797",
+          "#bdbdbd",
+          "#e2e2e2",
+          "#ffffff"
+        ]
+      },
+      "paper-cool": {
+        "role": "neutral",
+        "displayName": "Cool Paper",
+        "canonical": "#f6f8fb",
+        "tonalRamp": [
+          "#151719",
+          "#2e3135",
+          "#474b51",
+          "#6f747b",
+          "#969ba2",
+          "#bdc2c8",
+          "#dce1e7",
+          "#f6f8fb"
+        ]
+      },
+      "atmosphere-blue": {
+        "role": "tertiary",
+        "displayName": "Atmosphere Blue",
+        "canonical": "#dfe5ee",
+        "tonalRamp": [
+          "#17191c",
+          "#2d3137",
+          "#474d56",
+          "#6d7580",
+          "#969ea9",
+          "#b9c2ce",
+          "#cfd8e3",
+          "#dfe5ee"
+        ]
+      },
+      "atmosphere-blue-deep": {
+        "role": "tertiary",
+        "displayName": "Atmosphere Blue Deep",
+        "canonical": "#c9d2e0",
+        "tonalRamp": [
+          "#151719",
+          "#2c3036",
+          "#444b55",
+          "#68717d",
+          "#8b96a3",
+          "#aab5c2",
+          "#bbc6d4",
+          "#c9d2e0"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Quiet Border",
+        "canonical": "#e0e0e0",
+        "tonalRamp": [
+          "#151515",
+          "#2e2e2e",
+          "#494949",
+          "#707070",
+          "#979797",
+          "#bdbdbd",
+          "#d1d1d1",
+          "#e0e0e0"
+        ]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Muted Text",
+        "canonical": "#6b6b70",
+        "tonalRamp": [
+          "#161617",
+          "#2e2e30",
+          "#474749",
+          "#68686b",
+          "#86868a",
+          "#aaaab0",
+          "#ceced2",
+          "#f0f0f2"
+        ]
+      },
+      "panel-dark": {
+        "role": "neutral",
+        "displayName": "Diagnostic Panel",
+        "canonical": "#17171e",
+        "tonalRamp": [
+          "#0a0a0e",
+          "#111117",
+          "#17171e",
+          "#45454d",
+          "#72727a",
+          "#9f9fa5",
+          "#cbcbcF",
+          "#f3f3f4"
+        ]
+      },
+      "success": {
+        "role": "primary",
+        "displayName": "Success",
+        "canonical": "#22c55e",
+        "tonalRamp": [
+          "#052e16",
+          "#075b2b",
+          "#15803d",
+          "#22c55e",
+          "#4ade80",
+          "#86efac",
+          "#bbf7d0",
+          "#f0fdf4"
+        ]
+      },
+      "success-wash": {
+        "role": "neutral",
+        "displayName": "Success Wash",
+        "canonical": "#f0fdf4",
+        "tonalRamp": [
+          "#052e16",
+          "#14532d",
+          "#166534",
+          "#22c55e",
+          "#86efac",
+          "#bbf7d0",
+          "#dcfce7",
+          "#f0fdf4"
+        ]
+      },
+      "success-ink": {
+        "role": "primary",
+        "displayName": "Success Ink",
+        "canonical": "#166534",
+        "tonalRamp": [
+          "#052e16",
+          "#14532d",
+          "#166534",
+          "#15803d",
+          "#22c55e",
+          "#4ade80",
+          "#86efac",
+          "#dcfce7"
+        ]
+      },
+      "info": {
+        "role": "tertiary",
+        "displayName": "Info",
+        "canonical": "#3b82f6",
+        "tonalRamp": [
+          "#172554",
+          "#1e40af",
+          "#2563eb",
+          "#3b82f6",
+          "#60a5fa",
+          "#93c5fd",
+          "#bfdbfe",
+          "#eff6ff"
+        ]
+      },
+      "warning": {
+        "role": "secondary",
+        "displayName": "Warning",
+        "canonical": "#f59e0b",
+        "tonalRamp": [
+          "#451a03",
+          "#92400e",
+          "#d97706",
+          "#f59e0b",
+          "#fbbf24",
+          "#fcd34d",
+          "#fde68a",
+          "#fffbeb"
+        ]
+      },
+      "danger": {
+        "role": "secondary",
+        "displayName": "Danger",
+        "canonical": "#ef4444",
+        "tonalRamp": [
+          "#450a0a",
+          "#991b1b",
+          "#dc2626",
+          "#ef4444",
+          "#f87171",
+          "#fca5a5",
+          "#fecaca",
+          "#fef2f2"
+        ]
+      },
+      "info-wash": {
+        "role": "neutral",
+        "displayName": "Info Wash",
+        "canonical": "#eff5ff",
+        "tonalRamp": [
+          "#0b1d3d",
+          "#002e7a",
+          "#0041ad",
+          "#005af0",
+          "#3d86ff",
+          "#80afff",
+          "#b8d2ff",
+          "#eef3fc"
+        ]
+      },
+      "info-ink": {
+        "role": "primary",
+        "displayName": "Info Ink",
+        "canonical": "#1e40af",
+        "tonalRamp": [
+          "#121a35",
+          "#122668",
+          "#193694",
+          "#234bcd",
+          "#5a7ae3",
+          "#92a7ec",
+          "#c2cef5",
+          "#f0f2fa"
+        ]
+      },
+      "warning-wash": {
+        "role": "neutral",
+        "displayName": "Warning Wash",
+        "canonical": "#fffaeb",
+        "tonalRamp": [
+          "#3d300b",
+          "#7a5c00",
+          "#ad8200",
+          "#f0b400",
+          "#ffcf3d",
+          "#ffdf80",
+          "#ffedb8",
+          "#fcf8ee"
+        ]
+      },
+      "warning-ink": {
+        "role": "primary",
+        "displayName": "Warning Ink",
+        "canonical": "#92600a",
+        "tonalRamp": [
+          "#39290e",
+          "#734b08",
+          "#a26b0b",
+          "#e0940f",
+          "#f3b44a",
+          "#f7ce88",
+          "#fae4bc",
+          "#fbf6ef"
+        ]
+      },
+      "danger-wash": {
+        "role": "neutral",
+        "displayName": "Danger Wash",
+        "canonical": "#fef2f2",
+        "tonalRamp": [
+          "#390e0e",
+          "#720909",
+          "#a10c0c",
+          "#df1111",
+          "#f14b4b",
+          "#f68989",
+          "#fabdbd",
+          "#fbefef"
+        ]
+      },
+      "danger-ink": {
+        "role": "primary",
+        "displayName": "Danger Ink",
+        "canonical": "#b42318",
+        "tonalRamp": [
+          "#371311",
+          "#6c150e",
+          "#991e14",
+          "#d3291c",
+          "#e85e54",
+          "#f0958f",
+          "#f7c4c0",
+          "#faf0ef"
+        ]
+      },
+      "high": {
+        "role": "tertiary",
+        "displayName": "High",
+        "canonical": "#fb7185",
+        "tonalRamp": [
+          "#3b0c13",
+          "#770314",
+          "#a9051d",
+          "#e90727",
+          "#fa435d",
+          "#fc8394",
+          "#fdbac3",
+          "#fceef0"
+        ]
+      },
+      "high-wash": {
+        "role": "neutral",
+        "displayName": "High Wash",
+        "canonical": "#fff1f2",
+        "tonalRamp": [
+          "#3d0b0e",
+          "#7a0009",
+          "#ad000c",
+          "#f00011",
+          "#ff3d4b",
+          "#ff8089",
+          "#ffb8bd",
+          "#fceeef"
+        ]
+      },
+      "high-ink": {
+        "role": "primary",
+        "displayName": "High Ink",
+        "canonical": "#be123c",
+        "tonalRamp": [
+          "#380f19",
+          "#700b23",
+          "#9e0f32",
+          "#db1545",
+          "#ee4e75",
+          "#f48ba4",
+          "#f9becc",
+          "#fbeff2"
+        ]
+      },
+      "rose-base": {
+        "role": "tertiary",
+        "displayName": "Rose Base",
+        "canonical": "#f43f5e",
+        "tonalRamp": [
+          "#3a0d15",
+          "#740719",
+          "#a40924",
+          "#e30d32",
+          "#f44865",
+          "#f8869a",
+          "#fbbbc6",
+          "#fbeef1"
+        ]
+      },
+      "border-soft": {
+        "role": "neutral",
+        "displayName": "Border Soft",
+        "canonical": "#ececf0",
+        "tonalRamp": [
+          "#212127",
+          "#363644",
+          "#4d4d61",
+          "#6a6a86",
+          "#9393a9",
+          "#b8b8c7",
+          "#d7d7df",
+          "#f4f4f6"
+        ]
+      },
+      "panel-dark-2": {
+        "role": "neutral",
+        "displayName": "Panel Dark 2",
+        "canonical": "#1f1f28",
+        "tonalRamp": [
+          "#212127",
+          "#353545",
+          "#4c4c62",
+          "#696987",
+          "#9292aa",
+          "#b7b7c7",
+          "#d7d7e0",
+          "#f4f4f6"
+        ]
+      },
+      "selection": {
+        "role": "neutral",
+        "displayName": "Selection",
+        "canonical": "#d7e0ef",
+        "tonalRamp": [
+          "#19212e",
+          "#233757",
+          "#324d7c",
+          "#446bab",
+          "#7594c8",
+          "#a4b8db",
+          "#ccd7eb",
+          "#f2f4f8"
+        ]
+      },
+      "shadow-slate": {
+        "role": "neutral",
+        "displayName": "Shadow Slate",
+        "canonical": "#0f172a",
+        "tonalRamp": [
+          "#181f30",
+          "#20315a",
+          "#2e4680",
+          "#3f61b1",
+          "#708bcc",
+          "#a1b3dd",
+          "#cad4ec",
+          "#f1f3f8"
+        ]
+      },
+      "panel-fg": {
+        "role": "neutral",
+        "displayName": "Panel Fg",
+        "canonical": "#f4f4f6",
+        "tonalRamp": [
+          "#212126",
+          "#373743",
+          "#4e4e5f",
+          "#6c6c84",
+          "#9494a8",
+          "#b9b9c6",
+          "#d8d8df",
+          "#f4f4f6"
+        ]
+      },
+      "panel-fg-soft": {
+        "role": "neutral",
+        "displayName": "Panel Fg Soft",
+        "canonical": "#b9bcc6",
+        "tonalRamp": [
+          "#212226",
+          "#373a43",
+          "#4e5260",
+          "#6c7184",
+          "#9499a8",
+          "#b9bcc6",
+          "#d8d9df",
+          "#f4f4f6"
+        ]
+      },
+      "panel-code": {
+        "role": "neutral",
+        "displayName": "Panel Code",
+        "canonical": "#cbd2e0",
+        "tonalRamp": [
+          "#1d222a",
+          "#2e384d",
+          "#414f6d",
+          "#5a6e96",
+          "#8696b7",
+          "#afbacf",
+          "#d2d8e4",
+          "#f3f4f7"
+        ]
+      },
+      "panel-line": {
+        "role": "neutral",
+        "displayName": "Panel Line",
+        "canonical": "#d7d9e0",
+        "tonalRamp": [
+          "#212227",
+          "#353945",
+          "#4c5162",
+          "#696f87",
+          "#9297aa",
+          "#b7bbc7",
+          "#d7d9e0",
+          "#f4f4f6"
+        ]
+      },
+      "panel-muted": {
+        "role": "neutral",
+        "displayName": "Panel Muted",
+        "canonical": "#9ea2ad",
+        "tonalRamp": [
+          "#222326",
+          "#383b42",
+          "#4f535e",
+          "#6e7382",
+          "#969aa6",
+          "#babdc5",
+          "#d8dade",
+          "#f4f5f5"
+        ]
+      },
+      "panel-muted-soft": {
+        "role": "neutral",
+        "displayName": "Panel Muted Soft",
+        "canonical": "#8b8f99",
+        "tonalRamp": [
+          "#222325",
+          "#393c41",
+          "#51545c",
+          "#707580",
+          "#989ba4",
+          "#bbbdc3",
+          "#d9dade",
+          "#f4f5f5"
+        ]
+      },
+      "panel-muted-dim": {
+        "role": "neutral",
+        "displayName": "Panel Muted Dim",
+        "canonical": "#8b93a3",
+        "tonalRamp": [
+          "#212327",
+          "#363b44",
+          "#4d5361",
+          "#6a7386",
+          "#939aa9",
+          "#b8bdc7",
+          "#d7dadf",
+          "#f4f5f6"
+        ]
+      },
+      "panel-muted-faint": {
+        "role": "neutral",
+        "displayName": "Panel Muted Faint",
+        "canonical": "#7f8794",
+        "tonalRamp": [
+          "#212326",
+          "#383c43",
+          "#4f555e",
+          "#6d7583",
+          "#959ca7",
+          "#babec5",
+          "#d8dbde",
+          "#f4f5f5"
+        ]
+      },
+      "panel-hover": {
+        "role": "neutral",
+        "displayName": "Panel Hover",
+        "canonical": "#eaeaea",
+        "tonalRamp": [
+          "#242424",
+          "#3d3d3d",
+          "#575757",
+          "#787878",
+          "#9e9e9e",
+          "#bfbfbf",
+          "#dbdbdb",
+          "#f5f5f5"
+        ]
+      },
+      "ev-pass": {
+        "role": "tertiary",
+        "displayName": "Ev Pass",
+        "canonical": "#6ee7a8",
+        "tonalRamp": [
+          "#123623",
+          "#11693b",
+          "#199554",
+          "#22ce74",
+          "#59e39b",
+          "#92edbd",
+          "#c2f5da",
+          "#f0faf5"
+        ]
+      },
+      "ev-add": {
+        "role": "tertiary",
+        "displayName": "Ev Add",
+        "canonical": "#9ae6b4",
+        "tonalRamp": [
+          "#15331f",
+          "#186232",
+          "#228b46",
+          "#30c061",
+          "#64d98c",
+          "#99e6b3",
+          "#c6f1d5",
+          "#f0f9f3"
+        ]
+      },
+      "ev-del": {
+        "role": "tertiary",
+        "displayName": "Ev Del",
+        "canonical": "#f2a4a4",
+        "tonalRamp": [
+          "#361111",
+          "#6b0f0f",
+          "#981616",
+          "#d21e1e",
+          "#e75555",
+          "#ef8f8f",
+          "#f6c1c1",
+          "#faefef"
+        ]
+      },
+      "ev-warn": {
+        "role": "tertiary",
+        "displayName": "Ev Warn",
+        "canonical": "#f6c06a",
+        "tonalRamp": [
+          "#3a290e",
+          "#734a07",
+          "#a4680a",
+          "#e2900e",
+          "#f4b248",
+          "#f8cc87",
+          "#fbe3bc",
+          "#fbf6ee"
+        ]
+      },
+      "ev-key": {
+        "role": "tertiary",
+        "displayName": "Ev Key",
+        "canonical": "#8ab4f8",
+        "tonalRamp": [
+          "#0e1e3a",
+          "#073073",
+          "#0a45a4",
+          "#0e5fe2",
+          "#488af4",
+          "#87b2f8",
+          "#bcd4fb",
+          "#eef3fb"
+        ]
+      },
+      "ev-high": {
+        "role": "tertiary",
+        "displayName": "Ev High",
+        "canonical": "#f6a5b0",
+        "tonalRamp": [
+          "#380f15",
+          "#6f0b19",
+          "#9e1023",
+          "#da1630",
+          "#ed4f64",
+          "#f38b99",
+          "#f9bec6",
+          "#fbeff1"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Luminous Display",
+        "purpose": "Hero promise and first-run statement."
+      },
+      "headline": {
+        "displayName": "Editorial Headline",
+        "purpose": "Major sections and product pillars."
+      },
+      "data": {
+        "displayName": "Technical Data",
+        "purpose": "URLs, evidence, identifiers and code."
+      },
+      "headline-lg": {
+        "displayName": "Headline Large",
+        "purpose": "Section headlines on light surfaces (clamp 25.6–34.4px)."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "Hero and section supporting paragraphs (16–18px)."
+      }
+    },
+    "shadows": [
+      {
+        "name": "field-rest",
+        "value": "0 4px 12px rgba(15, 23, 42, 0.06), 0 28px 64px -22px rgba(15, 23, 42, 0.28)",
+        "purpose": "Quiet depth under the primary URL field."
+      },
+      {
+        "name": "field-focus",
+        "value": "0 36px 90px -24px rgba(15, 23, 42, 0.24), 0 8px 24px -12px rgba(0, 0, 0, 0.12)",
+        "purpose": "Broad focus-within state for the primary URL field."
+      },
+      {
+        "name": "diagnostic-panel",
+        "value": "inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 2px rgba(4, 6, 14, 0.5), 0 32px 64px -32px rgba(4, 7, 18, 0.95)",
+        "purpose": "Deep but restrained elevation for dark technical previews."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Default short transition for color, shadow and opacity."
+      },
+      {
+        "name": "press",
+        "value": "transform: scale(0.98)",
+        "purpose": "Subtle confirmation for direct action buttons."
+      },
+      {
+        "name": "fade-up",
+        "value": "opacity 220ms ease-out, transform 220ms ease-out",
+        "purpose": "One-time hero and result entrance."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "640px"
+      },
+      {
+        "name": "desktop",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Decisive black pill action for scanning or unlocking a report.",
+      "html": "<button class=\"ds-btn-primary\">Scan my site</button>",
+      "css": ".ds-btn-primary { background: #0a0a0a; color: #fff; border: 0; border-radius: 999px; padding: 12px 24px; font: 500 15px/22.5px 'Helvetica Neue', Helvetica, Arial, sans-serif; transition: background-color 150ms ease-out, transform 150ms ease-out, box-shadow 150ms ease-out; } .ds-btn-primary:hover { background: #1f1f1f; } .ds-btn-primary:focus-visible { outline: 2px solid #3b82f6; outline-offset: 3px; } .ds-btn-primary:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Secondary Link",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet navigation or low-commitment action beside the primary pill.",
+      "html": "<a class=\"ds-btn-secondary\" href=\"#product\">Explore product</a>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; border-radius: 999px; padding: 8px 12px; color: rgba(10, 10, 10, 0.9); background: transparent; font: 500 15px/15px 'Helvetica Neue', Helvetica, Arial, sans-serif; text-decoration: none; transition: background-color 150ms ease-out, color 150ms ease-out; } .ds-btn-secondary:hover { background: rgba(10, 10, 10, 0.06); color: #1a1c21; } .ds-btn-secondary:focus-visible { outline: 2px solid #3b82f6; outline-offset: 3px; }"
+    },
+    {
+      "name": "URL Scan Field",
+      "kind": "input",
+      "refersTo": "input-url",
+      "description": "The hero focal control: a paper field with a compact embedded scan action.",
+      "html": "<label class=\"ds-url-shell\"><span class=\"ds-url-label\">Your website address</span><input class=\"ds-url-input\" type=\"url\" placeholder=\"Enter your website address\" /><button class=\"ds-url-action\">Scan my site</button></label>",
+      "css": ".ds-url-shell { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; background: #fff; border: 1px solid #e0e0e0; border-radius: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06), 0 28px 64px -22px rgba(15, 23, 42, 0.28); transition: box-shadow 200ms ease-out; } .ds-url-shell:focus-within { box-shadow: 0 36px 90px -24px rgba(15, 23, 42, 0.24), 0 8px 24px -12px rgba(0, 0, 0, 0.12); } .ds-url-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .ds-url-input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 12px 0; color: #1a1c21; background: transparent; font: 400 18px/28px 'Helvetica Neue', Helvetica, Arial, sans-serif; } .ds-url-input::placeholder { color: #86868a; } .ds-url-action { flex: 0 0 auto; border: 0; border-radius: 999px; padding: 12px 24px; color: #fff; background: #0a0a0a; font: 500 15px/22.5px 'Helvetica Neue', Helvetica, Arial, sans-serif; } .ds-url-action:hover { background: #1f1f1f; } .ds-url-action:focus-visible { outline: 2px solid #3b82f6; outline-offset: 3px; }"
+    },
+    {
+      "name": "Light Card",
+      "kind": "card",
+      "refersTo": "card-light",
+      "description": "Paper container for explanatory content, scan summaries and report sections.",
+      "html": "<article class=\"ds-card-light\"><h3>Scan for issues</h3><p>Every check comes back ranked, with a fix.</p></article>",
+      "css": ".ds-card-light { padding: 24px; color: #1a1c21; background: #fff; border: 1px solid #e0e0e0; border-radius: 14px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06); } .ds-card-light h3 { margin: 0; font: 500 20px/26px 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: -0.02em; } .ds-card-light p { margin: 8px 0 0; color: #86868a; font: 400 16px/24px 'Helvetica Neue', Helvetica, Arial, sans-serif; }"
+    },
+    {
+      "name": "Diagnostic Panel",
+      "kind": "custom",
+      "refersTo": "card-dark",
+      "description": "Dark contrast surface for code, technical evidence and product previews.",
+      "html": "<section class=\"ds-diagnostic\"><code>Headers &amp; TLS</code><strong>Scan complete</strong></section>",
+      "css": ".ds-diagnostic { display: grid; gap: 12px; padding: 24px; color: #fff; background: linear-gradient(#17171e 0%, #131318 100%); border-radius: 18px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 1px 2px rgba(4, 6, 14, 0.5), 0 32px 64px -32px rgba(4, 7, 18, 0.95); } .ds-diagnostic code { color: #c9d2e0; font: 500 13px/18px 'SF Mono', 'Fira Code', monospace; } .ds-diagnostic strong { font: 500 20px/26px 'Helvetica Neue', Helvetica, Arial, sans-serif; }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "status-success",
+      "description": "Compact labeled state that never relies on color alone.",
+      "html": "<span class=\"ds-status\" aria-label=\"Status: completed\"><span class=\"ds-status-dot\" aria-hidden=\"true\"></span>Completed</span>",
+      "css": ".ds-status { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 10px; color: #166534; background: #f0fdf4; font: 500 13px/17px 'Helvetica Neue', Helvetica, Arial, sans-serif; } .ds-status-dot { width: 7px; height: 7px; border-radius: 999px; background: #22c55e; } .ds-status:focus-visible { outline: 2px solid #3b82f6; outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Luminous Technical Calm.",
+    "overview": "ScanPal is a security product, but its interface should not look like an alarm panel. The refreshed direction follows CheckVibe's quiet, editorial technical confidence: a luminous paper canvas, a cool blue-grey atmospheric field, compact black actions and dense technical detail revealed only when it helps the user decide what to fix.\n\nOperate is the primary mode. The public first-scan surface also persuades, but it earns action through a clear promise, a single obvious input and visible proof. The report then becomes more technical through progressive disclosure: summary, score, finding, evidence and remediation.",
+    "keyCharacteristics": [
+      "Light-first public surfaces with a soft, cool atmosphere rather than a flat white void.",
+      "Black pill actions that feel decisive without becoming aggressive.",
+      "Helvetica-like sans typography with tight display tracking and calm body copy.",
+      "Rounded search fields and cards with restrained borders and diffuse depth.",
+      "Dark diagnostic panels reserved for code, previews and dense technical evidence.",
+      "Severity communicated through labels and icons as well as color."
+    ],
+    "rules": [
+      {
+        "name": "The Quiet Atmosphere Rule",
+        "body": "Gradients and grain create space and orientation, not decoration. If removing the atmosphere improves legibility, remove it from the component rather than adding more contrast.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tight Headline Rule",
+        "body": "Display text is compact and confident, but never compressed enough to sacrifice the plain-language promise.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Neon Depth Rule",
+        "body": "Do not add colored glows to make a security interface feel more technical. Contrast, layering and evidence create the authority.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the public experience light, calm and centered.",
+      "Do use a soft cool atmosphere behind the hero and let the content remain the highest-contrast layer.",
+      "Do make the URL field the clearest first action.",
+      "Do use black pill buttons for decisive actions and white or transparent pills for secondary actions.",
+      "Do reveal technical depth progressively: summary, finding, evidence, remediation.",
+      "Do pair severity colors with words, icons or scores.",
+      "Do keep ScanPal's own copy, product name and identity distinct from CheckVibe."
+    ],
+    "donts": [
+      "Don't restore the old near-black-and-teal shell as the default public surface while this direction is active.",
+      "Don't use neon cyan, purple gradients, cyberpunk decoration or colored glows.",
+      "Don't copy CheckVibe's logo, wordmark, exact copy or proprietary imagery.",
+      "Don't use color alone to communicate security, uptime or severity.",
+      "Don't bury the scan action in a dashboard-like toolbar or a multi-step form.",
+      "Don't make dark panels, heavy borders or large shadows compete with the score and next fix."
+    ]
+  }
+}

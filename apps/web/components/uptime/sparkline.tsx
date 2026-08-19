@@ -34,7 +34,7 @@ export function Sparkline({ points, width = 120, height = 28 }: Props) {
       width={width}
       height={height}
       aria-hidden
-      className="rounded bg-slate-950/60"
+      className="uptime-sparkline rounded bg-slate-950/60"
     >
       {points.map((point, index) => {
         const color = point.up_pct === 100 ? GREEN_COLOR : RED_COLOR;

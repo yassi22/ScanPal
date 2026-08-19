@@ -32,6 +32,8 @@ function makeSiteRow(overrides: Record<string, unknown> = {}) {
     label: null,
     uptime_state: "up",
     uptime_state_changed_at: new Date("2026-08-16T08:00:00Z"),
+    last_checked_at: new Date("2026-08-16T08:01:00Z"),
+    probe_fresh: true,
     uptime_enabled: true,
     up24: 1440,
     total24: 1440,
