@@ -8,6 +8,7 @@ export * from "./notifications";
 export * from "./build-findings";
 export * from "./queue";
 export * from "./routes";
+export * from "./checks";
 export * from "./domain-net";
 export * from "./domain";
 export * from "./crux";

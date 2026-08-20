@@ -102,6 +102,10 @@ describe("GET /api/scans/[id]/stream", () => {
     expect(first).toContain("event: progress");
     expect(first).toContain('"overall":25');
     expect(first).toContain('"checks_total":4');
+    // De data-payload moet het `event`-discriminatorveld bevatten, anders
+    // faalt de client-side scanProgressEventSchema en wordt het event stil
+    // weggegooid (geen live-update tot handmatige refresh).
+    expect(first).toContain('"event":"progress"');
 
     row.status = "completed";
     row.score = 83;

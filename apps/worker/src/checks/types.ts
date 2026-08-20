@@ -27,7 +27,28 @@ export type CheckContext = {
    * negeren dit veld.
    */
   githubRepo?: string | null;
+  /**
+   * Optionele gedeelde page-fetch: de scan-worker levert per route een
+   * gememoïseerde fetch zodat één download van de pagina hergebruikt wordt
+   * over alle per-route checks (i.p.v. dat elke check de pagina opnieuw
+   * ophaalt). Checks halen de pagina op via `ctx.fetchPage ?? fetchPage`.
+   * Alleen gewone GET's (geen custom headers/maxBytes) worden gedeeld;
+   * afwijkende requests (bijv. de CORS-check met Origin-header) vallen
+   * automatisch terug op een eigen fetch. Ontbreekt het veld (losse
+   * aanroepen, tests), dan gebruikt de check de directe `fetchPage`.
+   */
+  fetchPage?: PageFetcher;
 };
+
+/** Signatuur van {@link fetchPage} — gedeeld via {@link CheckContext.fetchPage}. */
+export type PageFetcher = (
+  url: string,
+  options?: {
+    timeoutMs?: number;
+    headers?: Record<string, string>;
+    maxBytes?: number;
+  },
+) => Promise<Response>;
 
 export type CheckImplementation = {
   id: string;

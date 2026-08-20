@@ -25,6 +25,7 @@ async function run(): Promise<void> {
     redis,
     notify,
     log: (line) => console.log(line),
+    routeConcurrency: env.PROBE_MAX_CONCURRENCY,
   });
 
   let shuttingDown = false;

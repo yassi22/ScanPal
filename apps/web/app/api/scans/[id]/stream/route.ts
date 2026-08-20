@@ -94,8 +94,13 @@ export async function GET(
         if (closed) return;
         const parsed = scanProgressEventSchema.safeParse(payload);
         if (!parsed.success) return;
-        const { event, ...data } = parsed.data;
-        controller.enqueue(encoder.encode(sseFrame(event, data)));
+        // Het volledige event (incl. `event`-discriminator) gaat mee in de
+        // data-payload: de client valideert het opnieuw met
+        // scanProgressEventSchema (discriminated union op `event`). Zonder dit
+        // veld faalt die validatie en wordt elk event stil weggegooid — geen
+        // live-update tot een handmatige refresh. De SSE `event:`-regel gebruikt
+        // hetzelfde type voor de addEventListener-routing.
+        controller.enqueue(encoder.encode(sseFrame(parsed.data.event, parsed.data)));
       };
 
       let sentFingerprint = "";

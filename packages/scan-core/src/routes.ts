@@ -109,3 +109,30 @@ export async function setRouteHttpStatus(
     [scanId, url, httpStatus],
   );
 }
+
+/**
+ * Werkt meerdere route-statussen gebundeld bij in één UPDATE (scan-tijd): de
+ * scan-worker verzamelt de statussen per route en schrijft ze in één keer weg
+ * i.p.v. één round-trip per route. No-op bij een lege lijst.
+ */
+export async function setRouteHttpStatuses(
+  db: Pool,
+  scanId: string,
+  entries: { url: string; status: number }[],
+): Promise<void> {
+  if (entries.length === 0) return;
+  const tuples: string[] = [];
+  const params: unknown[] = [scanId];
+  let i = 2;
+  for (const entry of entries) {
+    tuples.push(`($${i}, $${i + 1}::int)`);
+    params.push(entry.url, entry.status);
+    i += 2;
+  }
+  await db.query(
+    `update scan_routes set http_status = v.status
+     from (values ${tuples.join(", ")}) as v(url, status)
+     where scan_routes.scan_id = $1 and scan_routes.url = v.url`,
+    params,
+  );
+}

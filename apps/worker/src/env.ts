@@ -18,7 +18,13 @@ const envSchema = z.object({
     .positive()
     .default(6 * 60 * 60 * 1000),
   PROBE_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
-  PROBE_MAX_CONCURRENCY: z.coerce.number().int().positive().default(10),
+  /**
+   * Aantal routes dat de http-scan-worker binnen één scan tegelijk verwerkt
+   * (elke route wordt één keer opgehaald en gedeeld over zijn checks). Hoger =
+   * snellere scan, maar meer gelijktijdige requests naar de doel-site; houd het
+   * beleefd (aanrader ≤ 8). Default 4.
+   */
+  PROBE_MAX_CONCURRENCY: z.coerce.number().int().positive().default(4),
   RESEND_API_KEY: z.string().min(1).optional(),
   RESEND_FROM: z.string().default("ScanPal <no-reply@scanpal.dev>"),
   APP_URL: z.url().optional().default("http://localhost:3000"),

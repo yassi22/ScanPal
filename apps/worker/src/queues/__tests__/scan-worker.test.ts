@@ -15,6 +15,7 @@ import { createScanProcessor } from "../scan-worker";
 import { advanceCategoryProgress, getScanRoutes } from "@scanpal/scan-core";
 import type { ImplementedCheck } from "../../checks/registry";
 import type { RateLimiter } from "../../rate-limit";
+import { fetchPage } from "../../checks/types";
 
 const mockedAdvance = vi.mocked(advanceCategoryProgress);
 const mockedGetRoutes = vi.mocked(getScanRoutes);
@@ -118,13 +119,87 @@ describe("createScanProcessor (sub-job consumer, plan 54 route-bewust)", () => {
 
     // één check-run per route
     expect(impl.run).toHaveBeenCalledTimes(3);
-    // drie checks-rijen (één per route_url), met route_url geset
+    // gebundeld: één insert-statement met alle drie de route_urls
     const upserts = queries.filter((q) => q.startsWith("insert into checks"));
-    expect(upserts.length).toBe(3);
-    expect(upserts.some((q) => q.includes("https://example.com/about"))).toBe(true);
-    expect(upserts.some((q) => q.includes("https://example.com/contact"))).toBe(true);
+    expect(upserts.length).toBe(1);
+    expect(upserts[0]).toContain("https://example.com/about");
+    expect(upserts[0]).toContain("https://example.com/contact");
     // progress schuift één keer op (per check_id, niet per route)
     expect(mockedAdvance).toHaveBeenCalledTimes(1);
+  });
+
+  it("haalt een route één keer op en deelt die over meerdere per-route checks", async () => {
+    const scan = {
+      id: "scan-share",
+      status: "running",
+      site_url: "example.com",
+      active_tests: false,
+    };
+    const { db } = fakeDb(scan);
+    mockedGetRoutes.mockResolvedValue([
+      { url: "https://example.com/", source: "seed", http_status: null },
+    ]);
+
+    // Twee per-route checks die elk de pagina ophalen via ctx.fetchPage
+    // (met fallback naar de directe fetchPage voor losse aanroepen).
+    const makeFetchingImpl = (id: string): ImplementedCheck => ({
+      id,
+      category: "http",
+      outputCheckIds: [id],
+      run: async (ctx) => {
+        const doFetch = ctx.fetchPage ?? fetchPage;
+        await doFetch(ctx.url, { timeoutMs: 10000 });
+        return [{ id, name: id, status: "pass", detail: "ok" }];
+      },
+    });
+
+    const processor = createScanProcessor(db, [
+      makeFetchingImpl("security-headers"),
+      makeFetchingImpl("cookies"),
+    ], rateLimit);
+    await processor({ data: { scanId: "scan-share" } });
+
+    // Eén enkele netwerk-fetch voor de route, gedeeld over probe + beide checks.
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+  });
+
+  it("verwerkt routes parallel tot de ingestelde route-concurrency", async () => {
+    const scan = {
+      id: "scan-par",
+      status: "running",
+      site_url: "example.com",
+      active_tests: false,
+    };
+    const { db } = fakeDb(scan);
+    mockedGetRoutes.mockResolvedValue([
+      { url: "https://example.com/", source: "seed", http_status: null },
+      { url: "https://example.com/a", source: "link", http_status: null },
+      { url: "https://example.com/b", source: "link", http_status: null },
+      { url: "https://example.com/c", source: "link", http_status: null },
+    ]);
+
+    let active = 0;
+    let maxActive = 0;
+    const impl: ImplementedCheck = {
+      id: "meta-tags",
+      category: "seo",
+      outputCheckIds: ["meta-tags"],
+      run: async () => {
+        active += 1;
+        maxActive = Math.max(maxActive, active);
+        await new Promise((r) => setTimeout(r, 5));
+        active -= 1;
+        return [{ id: "meta-tags", name: "meta", status: "pass", detail: "ok" }];
+      },
+    };
+
+    const processor = createScanProcessor(db, [impl], rateLimit, {
+      routeConcurrency: 2,
+    });
+    await processor({ data: { scanId: "scan-par" } });
+
+    expect(impl.run).toBeDefined();
+    expect(maxActive).toBe(2);
   });
 
   it("stopt vroeg bij een gecancelde scan", async () => {

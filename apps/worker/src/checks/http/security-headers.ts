@@ -278,7 +278,7 @@ export const securityHeadersCheck: CheckImplementation = {
   category: "http",
   async run(ctx) {
     try {
-      const response = await fetchPage(ctx.url, { timeoutMs: 10000 });
+      const response = await (ctx.fetchPage ?? fetchPage)(ctx.url, { timeoutMs: 10000 });
       return evaluateSecurityHeaders(response.headers);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Onbekende fout";

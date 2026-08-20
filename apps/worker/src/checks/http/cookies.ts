@@ -298,7 +298,7 @@ export const cookiesCheck: CheckImplementation = {
   category: "http",
   async run(ctx) {
     try {
-      const response = await fetchPage(ctx.url, { timeoutMs: 10000 });
+      const response = await (ctx.fetchPage ?? fetchPage)(ctx.url, { timeoutMs: 10000 });
       const headers = collectSetCookieHeaders(
         response.headers as unknown as SetCookieHeaderSource,
       );

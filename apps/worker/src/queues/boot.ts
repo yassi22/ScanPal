@@ -16,6 +16,11 @@ export type WorkerDeps = {
   redis: Redis;
   notify: (input: NotifyInput) => Promise<unknown> | unknown;
   log?: (line: string) => void;
+  /**
+   * Aantal routes dat de http-worker binnen één scan parallel verwerkt
+   * (PROBE_MAX_CONCURRENCY). Default 1 (serieel) wanneer niet opgegeven.
+   */
+  routeConcurrency?: number;
 };
 
 export type WorkerHandle = {
@@ -67,7 +72,9 @@ export function startScanWorkers(deps: WorkerDeps): WorkerHandle {
 
   const httpWorker = new Worker(
     QUEUES.http,
-    createScanProcessor(deps.db, registry.http, rateLimiter),
+    createScanProcessor(deps.db, registry.http, rateLimiter, {
+      routeConcurrency: deps.routeConcurrency,
+    }),
     {
       ...connection,
       concurrency: 1,
