@@ -16,8 +16,10 @@ import { ScanTrendChart } from "@/components/scan-trend-chart";
 import { DomainWatchtowerCard } from "@/components/domain-watchtower-card";
 import { PublicStatusToggle } from "@/components/public-status-toggle";
 import { DeployWebhookCard } from "@/components/deploy-webhook-card";
+import { SiteScanAutoRefresh } from "@/components/site-scan-auto-refresh";
 import { getMembershipWorkspace } from "@/lib/workspace-scope";
 import { getDashboardContext } from "@/lib/dashboard-context";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +95,7 @@ export default async function SiteDetailPage({
 
   return (
     <div className="dashboard-home site-detail-page" data-design-direction="luminous-technical-calm">
+      <SiteScanAutoRefresh siteId={site.id} initialStatus={site.last_scan_status} />
       <header className="site-detail-header">
         <div className="site-detail-heading">
           <Link href="/sites" className="site-detail-back-link">
@@ -156,6 +159,7 @@ export default async function SiteDetailPage({
           githubRepo={site.github_repo}
           configured={site.github_webhook_configured}
           onDeployEnabled={plan.features.onDeploy}
+          webhookUrl={`${env.appUrl}/api/webhooks/github`}
         />
       </div>
 

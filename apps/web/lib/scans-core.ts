@@ -300,6 +300,7 @@ export type ScanTrendSiteSummary = {
   github_webhook_configured: boolean;
   label: string | null;
   public_status_slug: string | null;
+  last_scan_status: string | null;
   last_scan_score: number | null;
   last_scanned_at: Date | null;
 };
@@ -321,7 +322,7 @@ export async function getScanTrend(
   const siteResult = await db.query(
     `select id, url, github_repo, label, public_status_slug,
        (github_webhook_secret is not null) as github_webhook_configured,
-       last_scan_score, last_scanned_at
+       last_scan_status, last_scan_score, last_scanned_at
       from sites
       where id = $1 and team_id = $2${siteScope}`,
     input.workspaceId === undefined

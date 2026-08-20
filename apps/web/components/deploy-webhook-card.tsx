@@ -8,6 +8,14 @@ type Props = {
   githubRepo: string | null;
   configured: boolean;
   onDeployEnabled: boolean;
+  /**
+   * Deterministische webhook-URL (`${APP_URL}/api/webhooks/github`), server-side
+   * afgeleid en als prop doorgegeven. Zo rendert de client dezelfde string als
+   * de server (geen hydration-mismatch) én is het de daadwerkelijk bruikbare
+   * URL die de gebruiker in GitHub/Vercel plakt — niet `window.location.origin`,
+   * dat lokaal `http://localhost:3000/...` zou opleveren.
+   */
+  webhookUrl: string;
 };
 
 /**
@@ -20,6 +28,7 @@ export function DeployWebhookCard({
   githubRepo,
   configured,
   onDeployEnabled,
+  webhookUrl,
 }: Props) {
   const [secret, setSecret] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
@@ -27,8 +36,9 @@ export function DeployWebhookCard({
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const webhookUrl = url ?? `${origin}/api/webhooks/github`;
+  // De POST-response geeft dezelfde deterministische URL terug; de prop is de
+  // fallback vóór setup en houdt server- en client-render identiek.
+  const displayWebhookUrl = url ?? webhookUrl;
 
   async function setup() {
     setBusy(true);
@@ -107,10 +117,10 @@ export function DeployWebhookCard({
                 only count on the default branch.
               </p>
               <div className="site-detail-code-row">
-                <code>{webhookUrl}</code>
+                <code>{displayWebhookUrl}</code>
                 <button
                   type="button"
-                  onClick={() => void copy(webhookUrl, "url")}
+                  onClick={() => void copy(displayWebhookUrl, "url")}
                   className="site-detail-code-action"
                 >
                   {copied === "url" ? "Copied" : "Copy"}
@@ -161,7 +171,7 @@ export function DeployWebhookCard({
           <h3>Vercel</h3>
           <p>
             In Project → Settings → Webhooks, send{" "}
-            <code>deployment.completed</code> to <code>{webhookUrl}</code> and use{" "}
+            <code>deployment.completed</code> to <code>{displayWebhookUrl}</code> and use{" "}
             <code>VERCEL_WEBHOOK_SECRET</code> as the secret. The payload URL
             matches this site by hostname.
           </p>
