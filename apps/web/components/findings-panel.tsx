@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CaretDown, MagnifyingGlass } from "@phosphor-icons/react";
 import {
   bundleKeyTypeLabels,
   bundleProviderLabels,
@@ -482,6 +483,17 @@ export function FindingsPanel({ scanId, legacy }: Props) {
     }));
   }
 
+  function resetFilters() {
+    setFilters({
+      severity: null,
+      category: null,
+      status: null,
+      q: "",
+      keyType: null,
+      routeUrl: null,
+    });
+  }
+
   const counts = data?.counts ?? {
     critical: 0,
     high: 0,
@@ -496,23 +508,26 @@ export function FindingsPanel({ scanId, legacy }: Props) {
     filters.status !== null ||
     filters.keyType !== null ||
     filters.routeUrl !== null ||
-    debouncedQ.trim() !== "";
+    filters.q.trim() !== "";
   const canLoadMore = data !== null && findings.length < data.total;
 
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">Findings</h2>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500">
-            {data ? `${data.total} in deze scan` : "…"}
+    <section className="scan-findings-panel rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+      <div className="scan-findings-header">
+        <div>
+          <h2 className="text-lg font-bold">Bevindingen</h2>
+          <p>Filter op prioriteit of route en open alleen de details die je nodig hebt.</p>
+        </div>
+        <div className="scan-findings-header-actions">
+          <span className="scan-findings-count">
+            {data ? `${findings.length} van ${data.total} getoond` : "Laden…"}
           </span>
           <ScanFixPromptPanel scanId={scanId} />
         </div>
       </div>
 
-      <div className="mt-4 space-y-3">
-        <div className="flex flex-wrap gap-2">
+      <div className="scan-findings-filters">
+        <div className="scan-findings-severity-filters" aria-label="Filter op ernst">
           {severityOrder.map((severity) => (
             <button
               key={severity}
@@ -531,9 +546,22 @@ export function FindingsPanel({ scanId, legacy }: Props) {
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="scan-findings-filter-row">
+          <label className="scan-findings-search">
+            <MagnifyingGlass size={17} aria-hidden="true" />
+            <input
+              type="search"
+              aria-label="Zoek in bevindingen"
+              value={filters.q}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, q: event.target.value }))
+              }
+              placeholder="Zoek op controle of uitleg…"
+            />
+          </label>
+
           <select
-            aria-label="Filter findings op categorie"
+            aria-label="Filter bevindingen op categorie"
             value={filters.category ?? ""}
             onChange={(event) =>
               setFilters((prev) => ({
@@ -552,7 +580,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
           </select>
 
           <select
-            aria-label="Filter findings op status"
+            aria-label="Filter bevindingen op status"
             value={filters.status ?? ""}
             onChange={(event) =>
               setFilters((prev) => ({
@@ -612,16 +640,11 @@ export function FindingsPanel({ scanId, legacy }: Props) {
             </select>
           )}
 
-          <input
-            type="search"
-            aria-label="Zoek in findings"
-            value={filters.q}
-            onChange={(event) =>
-              setFilters((prev) => ({ ...prev, q: event.target.value }))
-            }
-            placeholder="Zoek in findings…"
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 placeholder:text-slate-600 sm:w-64"
-          />
+          {hasFilters && (
+            <button type="button" className="scan-findings-reset" onClick={resetFilters}>
+              Filters wissen
+            </button>
+          )}
         </div>
       </div>
 
@@ -683,9 +706,11 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                     Gesnoozd
                   </span>
                 )}
-                <span className="text-xs text-slate-600">
-                  {expanded ? "−" : "+"}
-                </span>
+                <CaretDown
+                  size={16}
+                  className={`scan-finding-caret ${expanded ? "is-expanded" : ""}`}
+                  aria-hidden="true"
+                />
               </button>
 
               {expanded && (
@@ -884,7 +909,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
             onClick={() => fetchPage(findings.length, false)}
             className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500 disabled:opacity-50"
           >
-            {loading ? "Laden…" : "Meer laden"}
+            {loading ? "Laden…" : `Toon volgende ${Math.min(PAGE_SIZE, data.total - findings.length)}`}
           </button>
         </div>
       )}

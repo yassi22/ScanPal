@@ -171,38 +171,32 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
   }
 
   const banner = (error || notice) && (
-    <div
-      className={`rounded-lg border px-4 py-3 text-sm ${
-        error
-          ? "border-red-500/30 bg-red-500/10 text-red-400"
-          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-      }`}
-    >
+    <p className={`workspace-alert${error ? " is-error" : ""}`} role="alert">
       {error ?? notice}
-    </div>
+    </p>
   );
 
   return (
-    <div className="mt-8 space-y-8">
+    <div className="settings-stack">
       {banner}
 
       {(createdSecret || rotatedSecret) && (
-        <div className="rounded-2xl border border-brand/40 bg-brand/10 p-6">
-          <h2 className="font-semibold text-slate-100">
+        <div className="settings-secret-card">
+          <h2>
             {createdSecret ? "Webhook aangemaakt" : "Secret geroteerd"} — bewaar hem nu
           </h2>
-          <p className="mt-1 text-sm text-slate-400">
+          <p>
             Het signing-secret wordt maar één keer getoond. Gebruik het om de{" "}
-            <code className="text-slate-300">x-scanpal-signature</code>-header te
+            <code className="settings-code">x-scanpal-signature</code>-header te
             verifiëren (HMAC-SHA256 over de raw body).
           </p>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <code className="break-all rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-emerald-300">
+          <div className="settings-secret-reveal">
+            <code className="settings-secret-value">
               {(createdSecret ?? rotatedSecret) as string}
             </code>
             <button
               onClick={() => copySecret((createdSecret ?? rotatedSecret) as string)}
-              className="shrink-0 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-brand/90"
+              className="dashboard-primary-button"
             >
               Kopiëren
             </button>
@@ -210,21 +204,21 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
         </div>
       )}
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-        <h2 className="font-semibold">Nieuwe webhook</h2>
-        <p className="mt-1 text-sm text-slate-400">
+      <section className="settings-card">
+        <h2>Nieuwe webhook</h2>
+        <p className="settings-card-intro">
           Kies bij welke events ScanPal een POST naar je endpoint stuurt. Payload:
           envelop v1 met de notificatie-data, gesigneerd met HMAC-SHA256.
         </p>
-        <form onSubmit={createWebhook} className="mt-4 flex flex-col gap-3">
-          <div className="flex flex-col gap-3 sm:flex-row">
+        <form onSubmit={createWebhook} className="settings-form">
+          <div className="settings-form-row">
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="bijv. CI-pipeline"
-              className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none transition focus:border-brand"
+              className="settings-input"
             />
             <input
               type="url"
@@ -232,24 +226,19 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://api.voorbeeld.nl/scanpal-webhook"
-              className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none transition focus:border-brand"
+              className="settings-input"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="settings-event-picker">
             {notificationTypes.map((type) => (
               <label
                 key={type}
-                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition ${
-                  events.includes(type)
-                    ? "border-brand/50 bg-brand/10 text-slate-200"
-                    : "border-slate-700 text-slate-400 hover:text-slate-200"
-                }`}
+                className={`settings-event-option${events.includes(type) ? " is-selected" : ""}`}
               >
                 <input
                   type="checkbox"
                   checked={events.includes(type)}
                   onChange={() => toggleEvent(type)}
-                  className="accent-brand"
                 />
                 {EVENT_LABELS[type]}
               </label>
@@ -259,7 +248,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
             <button
               type="submit"
               disabled={loading || events.length === 0}
-              className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
+              className="dashboard-primary-button"
             >
               {loading ? "Aanmaken…" : "Webhook aanmaken"}
             </button>
@@ -267,86 +256,76 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
         </form>
       </section>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-        <h2 className="font-semibold">Webhooks ({webhooks.length})</h2>
+      <section className="settings-card">
+        <h2>Webhooks ({webhooks.length})</h2>
         {webhooks.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-400">
+          <p className="settings-note">
             Nog geen webhooks. Maak er één aan om notificatie-events naar je
             eigen infrastructuur te sturen.
           </p>
         ) : (
-          <ul className="mt-4 space-y-3">
+          <ul className="settings-item-list">
             {webhooks.map((webhook) => (
-              <li
-                key={webhook.id}
-                className="rounded-lg border border-slate-800 bg-slate-950/60 p-4"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
+              <li key={webhook.id} className="settings-item">
+                <div className="settings-item-head">
                   <div className="min-w-0">
-                    <p className="flex items-center gap-2 font-medium text-slate-200">
+                    <p className="settings-item-title">
                       {webhook.name}
                       {webhook.active ? (
-                        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
-                          actief
-                        </span>
+                        <span className="settings-chip is-success">actief</span>
                       ) : (
-                        <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs text-red-400">
-                          uitgeschakeld
-                        </span>
+                        <span className="settings-chip is-danger">uitgeschakeld</span>
                       )}
                       {webhook.failure_count > 0 && (
-                        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">
+                        <span className="settings-chip is-warning">
                           {webhook.failure_count} mislukt
                         </span>
                       )}
                     </p>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">
-                      <code className="text-slate-400">{webhook.url}</code>
+                    <p className="settings-item-sub">
+                      <code>{webhook.url}</code>
                       {webhook.last_delivery_at
                         ? ` · laatste bezorging ${new Date(webhook.last_delivery_at).toLocaleString("nl-NL")}`
                         : " · nog geen bezorging"}
                     </p>
-                    <div className="mt-1.5 flex flex-wrap gap-1">
+                    <div className="settings-event-tags">
                       {webhook.events.map((event) => (
-                        <span
-                          key={event}
-                          className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400"
-                        >
+                        <span key={event} className="settings-event-tag">
                           {EVENT_LABELS[event as NotificationType]}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <div className="settings-item-actions">
                     <button
                       onClick={() => toggleWebhook(webhook)}
-                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+                      className="settings-mini-button"
                     >
                       {webhook.active ? "Uitschakelen" : "Inschakelen"}
                     </button>
                     <button
                       onClick={() => testWebhook(webhook.id)}
-                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+                      className="settings-mini-button"
                     >
                       Test
                     </button>
                     <button
                       onClick={() => openLog(webhook.id)}
-                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+                      className="settings-mini-button"
                     >
                       {logFor === webhook.id ? "Log sluiten" : "Log"}
                     </button>
                     {isOwner && (
                       <button
                         onClick={() => rotateSecret(webhook.id)}
-                        className="rounded-lg border border-slate-700 px-3 py-1.5 text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+                        className="settings-mini-button"
                       >
                         Secret roteren
                       </button>
                     )}
                     <button
                       onClick={() => deleteWebhook(webhook)}
-                      className="rounded-lg border border-red-500/30 px-3 py-1.5 text-red-400 transition hover:border-red-500/60 hover:text-red-300"
+                      className="settings-mini-button is-danger"
                     >
                       Verwijderen
                     </button>
@@ -354,58 +333,42 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
                 </div>
 
                 {logFor === webhook.id && (
-                  <div className="mt-4 border-t border-slate-800 pt-3">
-                    <h3 className="text-sm font-medium text-slate-300">
-                      Delivery-log ({log?.total ?? 0})
-                    </h3>
+                  <div className="settings-log">
+                    <h3>Delivery-log ({log?.total ?? 0})</h3>
                     {!log || log.deliveries.length === 0 ? (
-                      <p className="mt-2 text-xs text-slate-500">
-                        Nog geen deliveries.
-                      </p>
+                      <p className="settings-note">Nog geen deliveries.</p>
                     ) : (
-                      <ul className="mt-2 space-y-1.5">
+                      <ul className="settings-log-list">
                         {log.deliveries.map((delivery) => (
-                          <li
-                            key={delivery.id}
-                            className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400"
-                          >
+                          <li key={delivery.id} className="settings-log-row">
                             <span>
-                              <span className="text-slate-300">
+                              <strong>
                                 {EVENT_LABELS[delivery.event as NotificationType] ??
                                   delivery.event}
-                              </span>{" "}
+                              </strong>{" "}
                               · {new Date(delivery.created_at).toLocaleString("nl-NL")}
                               {delivery.http_status
                                 ? ` · HTTP ${delivery.http_status}`
                                 : ""}
                             </span>
-                            <span className="flex items-center gap-2">
+                            <span className="settings-log-status">
                               <span
-                                className={`rounded-full px-2 py-0.5 ${
+                                className={`settings-chip ${
                                   delivery.status === "ok"
-                                    ? "bg-emerald-500/10 text-emerald-400"
-                                    : delivery.status === "rejected"
-                                      ? "bg-slate-500/10 text-slate-400"
-                                      : delivery.status === "failed"
-                                        ? "bg-amber-500/10 text-amber-400"
-                                        : delivery.status === "disabled"
-                                          ? "bg-red-500/10 text-red-400"
-                                          : "bg-slate-500/10 text-slate-300"
+                                    ? "is-success"
+                                    : delivery.status === "failed"
+                                      ? "is-warning"
+                                      : delivery.status === "disabled"
+                                        ? "is-danger"
+                                        : ""
                                 }`}
                               >
                                 {DELIVERY_LABELS[delivery.status] ?? delivery.status}
                               </span>
                               {delivery.attempts > 0 && ` · poging ${delivery.attempts}`}
-                              {delivery.next_attempt_at && (
-                                <span className="text-slate-500">
-                                  · volgende {new Date(delivery.next_attempt_at).toLocaleString("nl-NL")}
-                                </span>
-                              )}
-                              {delivery.error && (
-                                <code className="max-w-60 truncate text-slate-500">
-                                  {delivery.error}
-                                </code>
-                              )}
+                              {delivery.next_attempt_at &&
+                                ` · volgende ${new Date(delivery.next_attempt_at).toLocaleString("nl-NL")}`}
+                              {delivery.error && <code>{delivery.error}</code>}
                             </span>
                           </li>
                         ))}
@@ -417,9 +380,9 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
             ))}
           </ul>
         )}
-        <p className="mt-4 text-xs text-slate-500">
+        <p className="settings-note">
           Bezorging is HMAC-SHA256-gesigneerd ({`sha256=…`} in{" "}
-          <code className="text-slate-400">x-scanpal-signature</code>) met
+          <code className="settings-code">x-scanpal-signature</code>) met
           retry/backoff; na 5 mislukte pogingen wordt de webhook automatisch
           uitgeschakeld. Endpoints op loopback/private netwerken worden
           geweigerd.

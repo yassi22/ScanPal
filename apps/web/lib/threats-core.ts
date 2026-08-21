@@ -15,6 +15,13 @@ import type { RuleMatch, ThreatHit } from "@/lib/threat-rules";
 
 type HoneypotRow = ThreatHoneypotRow & { site_url: string; site_label: string | null };
 
+/** Een team-site die nog geen honeypot heeft — voedt de "maak honeypot"-actie in het paneel. */
+export type ThreatCreatableSite = {
+  site_id: string;
+  site_url: string;
+  site_label: string | null;
+};
+
 function toHoneypotView(row: HoneypotRow): ThreatHoneypotView {
   return {
     site_id: row.site_id,
@@ -167,6 +174,26 @@ function toEvent(row: {
     payload: row.payload,
     created_at: row.created_at.toISOString(),
   };
+}
+
+/**
+ * Team-sites zonder honeypot: geeft het paneel de sites waarvoor de klant nog
+ * een detectie-route kan aanmaken (via POST /api/sites/[id]/honeypot). Team-scoped,
+ * consistent met listThreatOverviews (geen workspace-filter).
+ */
+export async function listSitesWithoutHoneypot(
+  db: Pool,
+  teamId: string,
+): Promise<ThreatCreatableSite[]> {
+  const result = await db.query<ThreatCreatableSite>(
+    `select s.id as site_id, s.url as site_url, s.label as site_label
+     from sites s
+     where s.team_id = $1
+       and not exists (select 1 from threat_honeypots h where h.site_id = s.id)
+     order by s.created_at desc`,
+    [teamId],
+  );
+  return result.rows;
 }
 
 /** Overzicht per site voor het threats-paneel (team-scoped). */

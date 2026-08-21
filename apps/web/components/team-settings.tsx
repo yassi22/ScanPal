@@ -89,8 +89,14 @@ export function TeamSettings({
       }
       if (!res.ok) throw new Error(data?.error ?? "Uitnodigen mislukt");
       setEmail("");
-      setNotice(`Uitnodiging gestuurd naar ${email}`);
       setInvitations((prev) => [...prev, data.invitation]);
+      if (data.email?.sent === false) {
+        setError(
+          "Uitnodiging aangemaakt, maar de e-mail kon niet worden verzonden. Controleer de Resend-configuratie.",
+        );
+      } else {
+        setNotice(`Uitnodiging gestuurd naar ${email}`);
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Er ging iets mis");

@@ -200,11 +200,11 @@ export function DashboardShell(props: DashboardShellProps) {
     "/reports",
     "/uptime",
     "/threats",
-    "/settings/team",
+    "/notifications",
     "/billing",
   ].some(
     (route) => pathname === route || pathname === `${route}/`,
-  ) || pathname.startsWith("/sites/") || pathname.startsWith("/scans/");
+  ) || pathname.startsWith("/sites/") || pathname.startsWith("/scans/") || pathname.startsWith("/settings");
 
   if (usesWorkspaceShell) {
     return <DashboardHomeShell {...props} />;

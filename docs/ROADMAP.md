@@ -102,5 +102,10 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 | `docs/plans/67-tls-cert.md` | 31 | ✅ |
 | features 32–34, 37, 39, 40, 41–45, 46–49 | rest | ✅ (direct in code + `registry.ts`; geen apart plan-doc) |
 | feature 36 (robots-sitemap) | 36 | ✅ (`apps/worker/src/checks/http/robots-sitemap.ts` + `packages/shared/src/robots-sitemap.ts`, geregistreerd in `registry.ts`) |
+| `docs/plans/68-dns-email-security.md` | 68 | 📝 |
+| `docs/plans/69-hosting-fingerprint.md` | 69 | 📝 |
+| `docs/plans/70-browser-storage-tokens.md` | 70 | 📝 |
+| `docs/plans/71-client-dep-cve.md` | 71 | 📝 |
+| `docs/gap-analysis-checkvibe-security-checks.md` | 68–71 + Tier 2/3-gaten | 📝 (gap-analyse `/security-checks`, 2026-08-21) |
 
 > **Update 2026-08-18 (geverifieerd tegen code)**: feature 36 (robots-sitemap) is opgeleverd — implementatie `apps/worker/src/checks/http/robots-sitemap.ts`, pure helpers + evidence-schema in `packages/shared/src/robots-sitemap.ts` (inspectRobotsTxt/inspectSitemap/evaluateRobotsSitemap), geregistreerd in `apps/worker/src/checks/registry.ts`; de check produceert findings over de geldigheid/kwaliteit van robots.txt en sitemap.xml zelf (los van de route-discovery-parse in plan 54). Alle 67 catalog-entries hebben nu een geregistreerde implementatie — geen open MVP-gap meer. Feature 54 (route-discovery) en 55 (aeo-engine-matrix) waren al eerder opgeleverd en staan nu ook ✅ in dit overzicht. Statussen hierboven zijn bijgewerkt.

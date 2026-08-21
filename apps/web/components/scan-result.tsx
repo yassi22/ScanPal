@@ -776,7 +776,7 @@ function CategoryScore({
   );
   if (relevant.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+      <div className="scan-category-item rounded-xl border border-slate-800 bg-slate-950/60 p-4">
         <p className="text-xs font-semibold text-slate-400">
           {categoryLabels[category]}
         </p>
@@ -787,13 +787,13 @@ function CategoryScore({
   const passed = relevant.filter((item) => item.severity === "info").length;
   const percent = Math.round((passed / relevant.length) * 100);
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+    <div className="scan-category-item rounded-xl border border-slate-800 bg-slate-950/60 p-4">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-slate-400">
           {categoryLabels[category]}
         </p>
         <span
-          className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${scoreColor(percent)}`}
+          className={`scan-category-score inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${scoreColor(percent)}`}
         >
           {percent}
         </span>
@@ -940,53 +940,63 @@ export function ScanResultView({
             </section>
           ) : (
             <>
-              <section className="scan-result-summary" aria-labelledby="scan-result-heading">
-                <div className="scan-score-block">
-                  <div className={`scan-score-value ${scanScoreTone(state.score ?? 0)}`}>
-                    <strong>{state.score ?? "—"}</strong>
-                    <span>/ 100</span>
+              <div className="scan-overview">
+                <section
+                  className="scan-result-summary"
+                  aria-labelledby="scan-result-heading"
+                >
+                  <div className="scan-score-block">
+                    <div className={`scan-score-value ${scanScoreTone(state.score ?? 0)}`}>
+                      <strong>{state.score ?? "—"}</strong>
+                      <span>/ 100</span>
+                    </div>
+                    <div>
+                      <h2 id="scan-result-heading">{scoreHeading}</h2>
+                      <p>
+                        {blockingFindings > 0
+                          ? `${blockingFindings} bevinding${blockingFindings === 1 ? "" : "en"} met hoge prioriteit vragen om actie.`
+                          : "Geen kritieke of ernstige bevindingen in deze scan."}
+                      </p>
+                      <a href="#scan-findings" className="scan-primary-link">
+                        Bekijk bevindingen
+                      </a>
+                    </div>
                   </div>
-                  <div>
-                    <h2 id="scan-result-heading">{scoreHeading}</h2>
-                    <p>
-                      {blockingFindings > 0
-                        ? `${blockingFindings} bevinding${blockingFindings === 1 ? "" : "en"} met hoge prioriteit vragen om actie.`
-                        : "Geen kritieke of ernstige bevindingen in deze scan."}
-                    </p>
-                    <a href="#scan-findings" className="scan-primary-link">
-                      Bekijk bevindingen
-                    </a>
-                  </div>
-                </div>
 
-                <dl className="scan-summary-facts">
-                  <div>
-                    <dt>Bevindingen</dt>
-                    <dd>{findingsItems.length}</dd>
-                  </div>
-                  <div>
-                    <dt>Routes</dt>
-                    <dd>{state.routeCount ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Afgerond</dt>
-                    <dd>{completedLabel ?? "Zojuist"}</dd>
-                  </div>
-                </dl>
-              </section>
+                  <dl className="scan-summary-facts">
+                    <div>
+                      <dt>Bevindingen</dt>
+                      <dd>{findingsItems.length}</dd>
+                    </div>
+                    <div>
+                      <dt>Routes</dt>
+                      <dd>{state.routeCount ?? "—"}</dd>
+                    </div>
+                    <div>
+                      <dt>Afgerond</dt>
+                      <dd>{completedLabel ?? "Zojuist"}</dd>
+                    </div>
+                  </dl>
+                </section>
 
-              {state.summary && (
-                <div className="scan-severity-summary" aria-label="Bevindingen per ernst">
-                  {(Object.keys(SEVERITY_LABELS) as (keyof SeverityCounts)[]).map(
-                    (severity) => (
-                      <div key={severity} className={`scan-severity-item is-${severity}`}>
-                        <strong>{state.summary![severity]}</strong>
-                        <span>{SEVERITY_LABELS[severity]}</span>
-                      </div>
-                    ),
-                  )}
-                </div>
-              )}
+                {state.summary && (
+                  <div className="scan-severity-summary" aria-label="Bevindingen per ernst">
+                    {(Object.keys(SEVERITY_LABELS) as (keyof SeverityCounts)[]).map(
+                      (severity) => (
+                        <div
+                          key={severity}
+                          className={`scan-severity-item is-${severity}${
+                            state.summary![severity] === 0 ? " is-zero" : ""
+                          }`}
+                        >
+                          <strong>{state.summary![severity]}</strong>
+                          <span>{SEVERITY_LABELS[severity]}</span>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
 
               <section className="scan-category-section" aria-labelledby="scan-category-heading">
                 <div className="scan-section-heading">
@@ -997,7 +1007,11 @@ export function ScanResultView({
                 </div>
                 <div className="scan-category-grid">
                   {scanCategories.map((category) => (
-                    <CategoryScore key={category} category={category} items={findingsItems} />
+                    <CategoryScore
+                      key={category}
+                      category={category}
+                      items={findingsItems}
+                    />
                   ))}
                 </div>
               </section>

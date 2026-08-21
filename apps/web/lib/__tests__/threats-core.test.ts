@@ -3,6 +3,7 @@ import type { Pool } from "pg";
 import {
   getHoneypotByToken,
   honeypotSnippet,
+  listSitesWithoutHoneypot,
   listThreatEvents,
   listThreatOverviews,
   recordHoneypotHit,
@@ -193,6 +194,29 @@ describe("setHoneypot", () => {
     expect(
       await setHoneypot(pool, TEAM_ID, SITE_ID, { enabled: true, rotateToken: false }),
     ).toBeNull();
+  });
+});
+
+describe("listSitesWithoutHoneypot", () => {
+  it("retourneert team-sites zonder honeypot (team-scoped, not-exists)", async () => {
+    const { pool, query } = makePool();
+    query.mockResolvedValueOnce({
+      rowCount: 1,
+      rows: [{ site_id: SITE_ID, site_url: "voorbeeld.nl", site_label: null }],
+    } as never);
+
+    const rows = await listSitesWithoutHoneypot(pool, TEAM_ID);
+    expect(rows).toEqual([
+      { site_id: SITE_ID, site_url: "voorbeeld.nl", site_label: null },
+    ]);
+    expect(query.mock.calls[0][0]).toContain("not exists");
+    expect(query.mock.calls[0][1]).toEqual([TEAM_ID]);
+  });
+
+  it("geeft lege lijst wanneer elke site al een honeypot heeft", async () => {
+    const { pool, query } = makePool();
+    query.mockResolvedValueOnce({ rowCount: 0, rows: [] } as never);
+    expect(await listSitesWithoutHoneypot(pool, TEAM_ID)).toEqual([]);
   });
 });
 

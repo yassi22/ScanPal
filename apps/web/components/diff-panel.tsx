@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CaretDown } from "@phosphor-icons/react";
 import {
   categoryLabels,
   severityOrder,
@@ -50,57 +51,162 @@ function routePath(url: string): string {
   }
 }
 
-function snoozeLabel(finding: Finding): string | null {
-  const until = finding.snooze_until;
-  if (!until) return null;
-  if (until === "next-scan") return "gesnoozd tot volgende scan";
-  return `gesnoozd tot ${new Date(until).toLocaleDateString("nl-NL", {
-    day: "numeric",
-    month: "short",
-  })}`;
+type FindingGroup = {
+  key: string;
+  title: string;
+  severity: FindingSeverity;
+  category: Finding["category"];
+  findings: Finding[];
+  routes: string[];
+  snoozed: number;
+};
+
+const GROUP_PREVIEW_SIZE = 6;
+const ROUTE_PREVIEW_SIZE = 8;
+
+function groupFindings(findings: Finding[]): FindingGroup[] {
+  const groups = new Map<string, FindingGroup>();
+
+  for (const finding of findings) {
+    const key = [
+      finding.check_id,
+      finding.title,
+      finding.severity,
+      finding.category,
+    ].join("::");
+    const current = groups.get(key);
+
+    if (current) {
+      current.findings.push(finding);
+      if (finding.route_url && !current.routes.includes(finding.route_url)) {
+        current.routes.push(finding.route_url);
+      }
+      if (finding.snooze_until) current.snoozed += 1;
+      continue;
+    }
+
+    groups.set(key, {
+      key,
+      title: finding.title,
+      severity: finding.severity,
+      category: finding.category,
+      findings: [finding],
+      routes: finding.route_url ? [finding.route_url] : [],
+      snoozed: finding.snooze_until ? 1 : 0,
+    });
+  }
+
+  return [...groups.values()].sort((a, b) => {
+    const severityDifference =
+      severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity);
+    if (severityDifference !== 0) return severityDifference;
+    if (a.findings.length !== b.findings.length) {
+      return b.findings.length - a.findings.length;
+    }
+    return a.title.localeCompare(b.title, "nl");
+  });
 }
 
-function FindingRow({ finding, kind }: { finding: Finding; kind: "new" | "regressed" }) {
-  const snoozed = snoozeLabel(finding);
+function FindingGroupRow({
+  group,
+  kind,
+}: {
+  group: FindingGroup;
+  kind: "new" | "regressed";
+}) {
+  const count = group.findings.length;
+  const hiddenRouteCount = Math.max(group.routes.length - ROUTE_PREVIEW_SIZE, 0);
+
   return (
-    <li className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${SEVERITY_COLORS[finding.severity]}`}
-        >
-          {SEVERITY_LABELS[finding.severity]}
-        </span>
-        {kind === "regressed" && (
-          <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-violet-400">
-            Teruggekeerd
-          </span>
-        )}
-        {kind === "new" && (
-          <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-red-400">
-            Nieuw
-          </span>
-        )}
-        <span className="flex-1 text-sm font-semibold text-slate-200">
-          {finding.title}
-        </span>
-        {finding.route_url && (
+    <li className="scan-diff-group">
+      <details>
+        <summary>
           <span
-            title={finding.route_url}
-            className="max-w-[10rem] truncate rounded-full bg-slate-700/40 px-2 py-0.5 text-[10px] font-medium text-slate-400"
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${SEVERITY_COLORS[group.severity]}`}
           >
-            {routePath(finding.route_url)}
+            {SEVERITY_LABELS[group.severity]}
           </span>
-        )}
-        <span className="text-xs text-slate-500">
-          {categoryLabels[finding.category]}
-        </span>
-      </div>
-      {snoozed && (
-        <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-          {snoozed}
-        </p>
-      )}
+          <span className="scan-diff-group-title">{group.title}</span>
+          <span className="scan-diff-group-count">
+            {count} {count === 1 ? "bevinding" : "bevindingen"}
+          </span>
+          <span className="scan-diff-group-category">
+            {categoryLabels[group.category]}
+          </span>
+          <CaretDown className="scan-diff-caret" size={16} aria-hidden="true" />
+        </summary>
+
+        <div className="scan-diff-group-details">
+          <p>
+            {kind === "new" ? "Nieuw aangetroffen" : "Opnieuw aangetroffen"} op{" "}
+            {group.routes.length > 0
+              ? `${group.routes.length} ${group.routes.length === 1 ? "route" : "routes"}`
+              : `${count} ${count === 1 ? "controlepunt" : "controlepunten"}`}.
+          </p>
+          {group.routes.length > 0 && (
+            <ul className="scan-diff-routes" aria-label={`Getroffen routes voor ${group.title}`}>
+              {group.routes.slice(0, ROUTE_PREVIEW_SIZE).map((route) => (
+                <li key={route} title={route}>
+                  {routePath(route)}
+                </li>
+              ))}
+              {hiddenRouteCount > 0 && (
+                <li className="scan-diff-routes-more">+ {hiddenRouteCount} meer</li>
+              )}
+            </ul>
+          )}
+          <div className="scan-diff-group-footer">
+            {group.snoozed > 0 && (
+              <span>
+                {group.snoozed} {group.snoozed === 1 ? "bevinding is" : "bevindingen zijn"}{" "}
+                gesnoozd
+              </span>
+            )}
+            <a href="#scan-findings">Bekijk in alle bevindingen</a>
+          </div>
+        </div>
+      </details>
     </li>
+  );
+}
+
+function GroupSection({
+  title,
+  groups,
+  kind,
+}: {
+  title: string;
+  groups: FindingGroup[];
+  kind: "new" | "regressed";
+}) {
+  const [showAll, setShowAll] = useState(false);
+  if (groups.length === 0) return null;
+
+  const visibleGroups = showAll ? groups : groups.slice(0, GROUP_PREVIEW_SIZE);
+  const hiddenGroups = groups.length - visibleGroups.length;
+
+  return (
+    <div className="scan-diff-section">
+      <div className="scan-diff-section-heading">
+        <h3>{title}</h3>
+        <span>{groups.length} unieke controles</span>
+      </div>
+      <ul className="scan-diff-groups">
+        {visibleGroups.map((group) => (
+          <FindingGroupRow key={group.key} group={group} kind={kind} />
+        ))}
+      </ul>
+      {groups.length > GROUP_PREVIEW_SIZE && (
+        <button
+          type="button"
+          className="scan-diff-show-all"
+          aria-expanded={showAll}
+          onClick={() => setShowAll((current) => !current)}
+        >
+          {showAll ? "Toon minder" : `Toon ${hiddenGroups} overige controles`}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -171,6 +277,8 @@ export function DiffPanel({ scanId }: Props) {
   const regressedFindings = (data?.findings ?? []).filter((finding) =>
     regressedIds.has(finding.id),
   );
+  const newGroups = groupFindings(newFindings);
+  const regressedGroups = groupFindings(regressedFindings);
 
   const hasChanges =
     diff !== undefined &&
@@ -181,10 +289,16 @@ export function DiffPanel({ scanId }: Props) {
   if (!diff || !hasChanges) return null;
 
   return (
-    <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">Wijzigingen</h2>
-        <div className="flex flex-wrap gap-2">
+    <section className="scan-diff-panel mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+      <div className="scan-diff-header">
+        <div>
+          <h2 className="text-lg font-bold">Wijzigingen sinds de vorige scan</h2>
+          <p>
+            {newFindings.length + regressedFindings.length} bevindingen zijn gebundeld in{" "}
+            {newGroups.length + regressedGroups.length} unieke controles.
+          </p>
+        </div>
+        <div className="scan-diff-totals" aria-label="Samenvatting van wijzigingen">
           <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
             {totalCount(diff.new)} nieuw
           </span>
@@ -196,40 +310,21 @@ export function DiffPanel({ scanId }: Props) {
           </span>
         </div>
       </div>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="scan-diff-baseline">
         Vergeleken met de laatste schone scan (geen open kritieke/ernstige
         bevindingen of een score ≥ 80).
       </p>
 
-      {newFindings.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold text-slate-300">Nieuw</h3>
-          <ul className="mt-2 space-y-2">
-            {newFindings.map((finding) => (
-              <FindingRow key={finding.id} finding={finding} kind="new" />
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {regressedFindings.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold text-slate-300">Teruggekeerd</h3>
-          <ul className="mt-2 space-y-2">
-            {regressedFindings.map((finding) => (
-              <FindingRow key={finding.id} finding={finding} kind="regressed" />
-            ))}
-          </ul>
-        </div>
-      )}
+      <GroupSection title="Nieuw" groups={newGroups} kind="new" />
+      <GroupSection title="Teruggekeerd" groups={regressedGroups} kind="regressed" />
 
       {totalCount(diff.resolved) > 0 && (
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold text-slate-300">Opgelost</h3>
+        <div className="scan-diff-resolved">
+          <h3>Opgelost</h3>
           <div className="mt-2">
             <SeverityChips counts={diff.resolved} />
           </div>
-          <p className="mt-1 text-[10px] text-slate-600">
+          <p>
             Deze bevindingen staan niet meer in de laatste scan.
           </p>
         </div>

@@ -3,17 +3,26 @@ import { SettingsNav } from "@/components/settings-nav";
 
 export default async function SettingsNotificationsPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Notificatievoorkeuren</h1>
-      <p className="mt-1 text-sm text-slate-400">
-        Kies per type welke meldingen je per e-mail en in-app ontvangt. De
-        standaardinstellingen zijn: alles aan, behalve &ldquo;Scan
-        voltooid&rdquo;.
-      </p>
+    <div className="dashboard-home notifications-settings-page" data-design-direction="luminous-technical-calm">
+      <header className="dashboard-page-heading notifications-settings-heading">
+        <div>
+          <h1>Stem je meldingen af op wat telt.</h1>
+          <p>
+            Kies per type welke meldingen je per e-mail en in-app ontvangt.
+            Standaard staat alles aan, behalve <strong>&ldquo;Scan
+            voltooid&rdquo;</strong>.
+          </p>
+        </div>
+      </header>
 
       <SettingsNav />
 
       <NotificationPreferences />
+
+      <footer className="dashboard-page-footer">
+        <span>Alleen de signalen die je wilt ontvangen.</span>
+        <span>ScanPal · Notificatievoorkeuren</span>
+      </footer>
     </div>
   );
 }

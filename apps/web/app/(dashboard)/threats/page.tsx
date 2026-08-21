@@ -1,6 +1,10 @@
 import { pool } from "@/lib/db";
 import { getPlanForTeam } from "@/lib/credits";
-import { listThreatOverviews, listThreatRules } from "@/lib/threats-core";
+import {
+  listSitesWithoutHoneypot,
+  listThreatOverviews,
+  listThreatRules,
+} from "@/lib/threats-core";
 import { ThreatsOverview } from "@/components/threats/threats-overview";
 import { ThreatEvents } from "@/components/threats/threat-events";
 import { ThreatsUpsell } from "@/components/threats/threats-upsell";
@@ -43,9 +47,10 @@ export default async function ThreatsPage() {
     );
   }
 
-  const [overviews, rules] = await Promise.all([
+  const [overviews, rules, creatable] = await Promise.all([
     listThreatOverviews(pool, result.team.id),
     listThreatRules(pool),
+    listSitesWithoutHoneypot(pool, result.team.id),
   ]);
 
   return (
@@ -63,7 +68,7 @@ export default async function ThreatsPage() {
         </span>
       </header>
 
-      <ThreatsOverview initial={overviews} />
+      <ThreatsOverview initial={overviews} creatable={creatable} />
 
       <section className="threat-events-section">
         <div className="workspace-section-heading">

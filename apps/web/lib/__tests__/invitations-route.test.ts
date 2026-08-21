@@ -21,7 +21,7 @@ vi.mock("@/lib/credits", () => ({
   getPlanForTeam: vi.fn(),
 }));
 vi.mock("@/lib/email", () => ({
-  sendInviteEmail: vi.fn().mockResolvedValue(undefined),
+  sendInviteEmail: vi.fn().mockResolvedValue({ sent: true }),
 }));
 vi.mock("@/lib/invites-core", async () => {
   const actual = await vi.importActual<typeof import("@/lib/invites-core")>(
@@ -141,7 +141,36 @@ describe("POST /api/teams/:teamId/invitations (plan 64 stap 2 — seat-limiet)",
     } as never);
 
     const res = await inviteRequest({ email: "dave@example.com", role: "member" });
+    const data = await res.json();
+
     expect(res.status).toBe(201);
     expect(sendInviteEmailMock).toHaveBeenCalled();
+    expect(data.email).toEqual({ sent: true });
+  });
+
+  it("meldt een providerfout zonder de aangemaakte uitnodiging te verbergen", async () => {
+    const invitation = {
+      id: "invite-1",
+      team_id: TEAM_ID,
+      email: "dave@example.com",
+      role: "member",
+      token: "t".repeat(64),
+      expires_at: new Date().toISOString(),
+      invited_by: "u-owner",
+      created_at: new Date().toISOString(),
+      accepted_at: null,
+    };
+    createInvitationMock.mockResolvedValue(invitation as never);
+    sendInviteEmailMock.mockResolvedValueOnce({
+      sent: false,
+      reason: "provider_error",
+    });
+
+    const res = await inviteRequest({ email: "dave@example.com", role: "member" });
+    const data = await res.json();
+
+    expect(res.status).toBe(201);
+    expect(data.invitation).toEqual(invitation);
+    expect(data.email).toEqual({ sent: false, reason: "provider_error" });
   });
 });

@@ -38,53 +38,50 @@ export function ProfileSettings({ initialName, initialAvatarUrl }: Props) {
   }
 
   return (
-    <div className="mt-8">
+    <section className="settings-card">
       {(error || notice) && (
-        <div
-          className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
-            error
-              ? "border-red-500/30 bg-red-500/10 text-red-400"
-              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-          }`}
-        >
+        <p className={`workspace-alert${error ? " is-error" : ""}`} role="alert">
           {error ?? notice}
-        </div>
+        </p>
       )}
 
-      <form
-        onSubmit={save}
-        className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/50 p-6"
-      >
-        <div>
-          <label className="text-sm font-medium text-slate-300">Naam</label>
+      <h2>Profiel</h2>
+      <p className="settings-card-intro">
+        Werk je weergavenaam en avatar bij. Deze verschijnen in je account en in
+        rapporten.
+      </p>
+
+      <form onSubmit={save} className="settings-form">
+        <label className="settings-field">
+          <span>Naam</span>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Je naam"
-            className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none transition focus:border-brand"
+            className="settings-input"
           />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-slate-300">
-            Avatar-URL
-          </label>
+        </label>
+        <label className="settings-field">
+          <span>Avatar-URL</span>
           <input
             type="url"
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}
             placeholder="https://…/avatar.png"
-            className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm outline-none transition focus:border-brand"
+            className="settings-input"
           />
+        </label>
+        <div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="dashboard-primary-button"
+          >
+            {loading ? "Opslaan…" : "Opslaan"}
+          </button>
         </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
-        >
-          {loading ? "Opslaan…" : "Opslaan"}
-        </button>
       </form>
-    </div>
+    </section>
   );
 }

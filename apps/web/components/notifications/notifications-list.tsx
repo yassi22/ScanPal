@@ -2,7 +2,24 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
+import {
+  ArrowClockwise,
+  ArrowDown,
+  Bell,
+  CheckCircle,
+  CreditCard,
+  GitDiff,
+  GlobeHemisphereWest,
+  PlugsConnected,
+  SkipForward,
+  TrendDown,
+  Warning,
+  WifiSlash,
+  XCircle,
+  type Icon,
+} from "@phosphor-icons/react";
 import type { NotificationType, NotificationView } from "@scanpal/shared";
+import { emitNotificationsChanged } from "@/lib/notifications-events";
 
 const TYPE_LABELS: Record<NotificationType, string> = {
   scan_done: "Scan voltooid",
@@ -18,18 +35,22 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   domain_alert: "Domein-alert",
 };
 
-const TYPE_COLORS: Record<NotificationType, string> = {
-  scan_done: "bg-teal-500/15 text-teal-400",
-  score_drop: "bg-amber-500/15 text-amber-400",
-  scan_diff: "bg-sky-500/15 text-sky-400",
-  site_down: "bg-red-500/15 text-red-400",
-  site_recovered: "bg-emerald-500/15 text-emerald-400",
-  critical_finding: "bg-red-500/15 text-red-400",
-  credit_skip: "bg-slate-500/15 text-slate-400",
-  scan_failed: "bg-orange-500/15 text-orange-400",
-  webhook_disabled: "bg-purple-500/15 text-purple-400",
-  payment_failed: "bg-red-500/15 text-red-400",
-  domain_alert: "bg-amber-500/15 text-amber-400",
+// Tint follows the light "luminous-technical-calm" idiom: flat tinted tile,
+// one of a small set of semantic tones (success / warning / danger / info / neutral).
+type Tone = "success" | "warning" | "danger" | "info" | "neutral";
+
+const TYPE_META: Record<NotificationType, { icon: Icon; tone: Tone }> = {
+  scan_done: { icon: CheckCircle, tone: "success" },
+  score_drop: { icon: TrendDown, tone: "warning" },
+  scan_diff: { icon: GitDiff, tone: "info" },
+  site_down: { icon: WifiSlash, tone: "danger" },
+  site_recovered: { icon: ArrowClockwise, tone: "success" },
+  critical_finding: { icon: Warning, tone: "danger" },
+  credit_skip: { icon: SkipForward, tone: "neutral" },
+  scan_failed: { icon: XCircle, tone: "danger" },
+  webhook_disabled: { icon: PlugsConnected, tone: "neutral" },
+  payment_failed: { icon: CreditCard, tone: "danger" },
+  domain_alert: { icon: GlobeHemisphereWest, tone: "warning" },
 };
 
 const PAGE_SIZE = 20;
@@ -121,6 +142,9 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
         prev.map((n) => (n.id === notification.id ? data.notification : n)),
       );
       setUnread((u) => Math.max(0, u - 1));
+      // Count is unknown here (this list may be filtered); let listeners
+      // re-fetch the authoritative server count.
+      emitNotificationsChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Er ging iets mis");
     } finally {
@@ -139,32 +163,31 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
         ),
       );
       setUnread(0);
+      emitNotificationsChanged({ unread: 0 });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Er ging iets mis");
     }
   }
 
   return (
-    <div className="mt-8">
+    <section className="notifications-panel">
       {error && (
-        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <p className="workspace-alert is-error" role="alert">
           {error}
-        </div>
+        </p>
       )}
 
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <div className="flex gap-2 text-sm">
+      <div className="notifications-toolbar" aria-label="Meldingen filteren">
+        <div className="notifications-filter" role="tablist" aria-label="Filter meldingen">
           {(["all", "unread"] as const).map((option) => (
             <button
               key={option}
               type="button"
+              role="tab"
+              aria-selected={filter === option}
               onClick={() => switchFilter(option)}
               disabled={loading}
-              className={`rounded-lg px-3 py-1.5 text-sm transition disabled:opacity-50 ${
-                filter === option
-                  ? "bg-brand font-semibold text-slate-950"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
+              className={`notifications-filter-pill${filter === option ? " is-active" : ""}`}
             >
               {option === "all" ? "Alle" : `Ongelezen (${unread})`}
             </button>
@@ -173,106 +196,98 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
         {unread > 0 && (
           <button
             type="button"
-            onClick={markAllRead}
-            className="text-sm text-slate-400 underline-offset-2 transition hover:text-slate-200 hover:underline"
+            onClick={() => void markAllRead()}
+            className="notifications-mark-all"
           >
+            <CheckCircle size={15} aria-hidden="true" />
             Alles als gelezen markeren
           </button>
         )}
       </div>
 
-      {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 p-10 text-center">
-          <p className="font-medium">Geen meldingen</p>
-          <p className="mt-1 text-sm text-slate-400">
-            {filter === "unread"
-              ? "Je hebt geen ongelezen meldingen."
-              : "Nieuwe meldingen over scans, uptime en bevindingen verschijnen hier."}
-          </p>
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {items.map((notification) => (
-            <li
-              key={notification.id}
-              className={`rounded-2xl border px-4 py-3 transition ${
-                notification.read_at
-                  ? "border-slate-800 bg-slate-950/40"
-                  : "border-slate-700 bg-slate-900/60"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <Link
-                  href={notification.link}
-                  className="min-w-0"
-                  onClick={() => void markRead(notification)}
+      <div className={`notifications-archive${loading ? " is-loading" : ""}`} aria-busy={loading}>
+        {items.length === 0 ? (
+          <div className="notifications-empty-state">
+            <span className="notifications-empty-icon">
+              <Bell size={22} aria-hidden="true" />
+            </span>
+            <div>
+              <strong>Geen meldingen</strong>
+              <p>
+                {filter === "unread"
+                  ? "Je hebt geen ongelezen meldingen."
+                  : "Nieuwe meldingen over scans, uptime en bevindingen verschijnen hier."}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <ul className="notifications-list">
+            {items.map((notification) => {
+              const meta = TYPE_META[notification.type];
+              const NotificationIcon = meta.icon;
+              const isUnread = !notification.read_at;
+              return (
+                <li
+                  key={notification.id}
+                  className={`notification-row${isUnread ? " is-unread" : ""}`}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${TYPE_COLORS[notification.type]}`}
-                    >
-                      {TYPE_LABELS[notification.type]}
-                    </span>
-                    {!notification.read_at && (
-                      <span className="h-2 w-2 rounded-full bg-brand" />
-                    )}
-                    <span className="text-xs text-slate-500">
-                      {formatTime(notification.created_at)}
-                    </span>
-                  </div>
-                  <p
-                    className={`mt-1.5 text-sm ${
-                      notification.read_at
-                        ? "text-slate-400"
-                        : "font-medium text-slate-200"
-                    }`}
+                  <span
+                    className={`notification-icon is-${meta.tone}`}
+                    aria-hidden="true"
                   >
-                    {notification.title}
-                  </p>
-                  <p className="mt-0.5 line-clamp-2 text-sm text-slate-500">
-                    {notification.body}
-                  </p>
-                </Link>
-                {!notification.read_at && (
-                  <button
-                    type="button"
-                    disabled={busyId === notification.id}
+                    <NotificationIcon size={19} />
+                  </span>
+                  <Link
+                    href={notification.link}
+                    className="notification-body"
                     onClick={() => void markRead(notification)}
-                    className="shrink-0 text-xs text-slate-500 underline-offset-2 transition hover:text-slate-200 hover:underline disabled:opacity-50"
                   >
-                    Markeer gelezen
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                    <div className="notification-meta">
+                      <span className={`notification-tag is-${meta.tone}`}>
+                        {TYPE_LABELS[notification.type]}
+                      </span>
+                      {isUnread && <span className="notification-dot" aria-label="Ongelezen" />}
+                      <time>{formatTime(notification.created_at)}</time>
+                    </div>
+                    <strong>{notification.title}</strong>
+                    <p>{notification.body}</p>
+                  </Link>
+                  {isUnread && (
+                    <button
+                      type="button"
+                      disabled={busyId === notification.id}
+                      onClick={() => void markRead(notification)}
+                      className="notification-mark-read"
+                    >
+                      Markeer gelezen
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
-      {items.length < total && (
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => void loadMore()}
-            disabled={loading}
-            className="rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:text-slate-100 disabled:opacity-50"
-          >
-            {loading ? "Laden…" : "Meer laden"}
-          </button>
-        </div>
-      )}
+        {items.length < total && (
+          <div className="notifications-pagination">
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              disabled={loading}
+              className="dashboard-light-button"
+            >
+              <ArrowDown size={16} aria-hidden="true" />
+              {loading ? "Laden…" : "Meer laden"}
+            </button>
+          </div>
+        )}
+      </div>
 
-      <p className="mt-6 text-xs text-slate-600">
-        Meldingen ouder dan 90 dagen worden automatisch opgeruimd. Je
-        voorkeuren beheer je op{" "}
-        <Link
-          href="/settings/notifications"
-          className="text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline"
-        >
-          Notificatievoorkeuren
-        </Link>
-        .
+      <p className="notifications-note">
+        Meldingen ouder dan 90 dagen worden automatisch opgeruimd. Je voorkeuren
+        beheer je op{" "}
+        <Link href="/settings/notifications">Notificatievoorkeuren</Link>.
       </p>
-    </div>
+    </section>
   );
 }

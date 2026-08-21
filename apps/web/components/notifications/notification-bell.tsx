@@ -1,33 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-
-const POLL_INTERVAL_MS = 60000;
+import { useUnreadCount } from "@/lib/notifications-events";
 
 export function NotificationBell({ initialUnread }: { initialUnread: number }) {
-  const [unread, setUnread] = useState(initialUnread);
-
-  const refresh = useCallback(async () => {
-    try {
-      const res = await fetch("/api/notifications?unread=true&limit=1");
-      if (!res.ok) return;
-      const data = await res.json();
-      if (typeof data?.unread === "number") setUnread(data.unread);
-    } catch {
-      // netwerkfout — badge ongewijzigd laten
-    }
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => void refresh(), POLL_INTERVAL_MS);
-    const onFocus = () => void refresh();
-    window.addEventListener("focus", onFocus);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, [refresh]);
+  // Polls every 60s and on window focus, and updates instantly when
+  // notifications are marked read anywhere in the app.
+  const unread = useUnreadCount(initialUnread, { poll: true });
 
   return (
     <Link

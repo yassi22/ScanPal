@@ -47,13 +47,13 @@ export async function POST(
     ]);
     const teamName = (team.rows[0]?.name as string | undefined) ?? "je team";
 
-    await sendInviteEmail({
+    const email = await sendInviteEmail({
       to: invitation.email,
       teamName,
       inviteUrl: `${env.appUrl}/invite/${invitation.token}`,
     });
 
-    return NextResponse.json({ invitation }, { status: 201 });
+    return NextResponse.json({ invitation, email }, { status: 201 });
   } catch (err) {
     if (err instanceof InviteError) {
       if (err.code === "member_limit") {

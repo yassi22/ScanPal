@@ -111,3 +111,16 @@ Volledige feature-lijst met MVP-afbakening en plan-koppeling. Legenda:
 Features 52–64 komen uit een feature-vergelijking met [checkvibe.dev](https://checkvibe.dev/) (41 scanners / 200+ checks, AEO per-engine matrix, threat detection, domain watchtower, publieke statuspagina's, AI fix-prompts, white-label/portaal, MCP met 24 tools). Allemaal na-MVP-voorstellen; volgorde en prioriteit staan per plan. Opvallende meenemers voor de MVP-roadmap: **AI fix-prompts** (60, laaghangend fruit — remediatie bestaat al), **AEO per-engine matrix** (55, goedkoop te bouwen, groot onderscheid) en **route-discovery** (54, is eigenlijk een pipeline-uitbreiding van de bestaande mini-crawler 38). Threat detection (12) is bij CheckVibe al een headline-Pro-feature — heroverweeg of de v2-status niet naar vroege v2 verschuift.
 
 Zie `docs/ROADMAP.md` voor de fasering en `docs/plans/` voor de detailplannen.
+
+## CheckVibe `/security-checks`-gap (2026-08-21)
+
+Delta op de vergelijking hierboven, op basis van de detailpagina [checkvibe.dev/security-checks](https://checkvibe.dev/security-checks) (41 scanners). Volledige analyse + prioritering: `docs/gap-analysis-checkvibe-security-checks.md`. De 10 gaten zijn getrieerd naar bouwkost; **Tier 1 (68–71) zijn goedkope uitbreidingen van bestaande code en hebben een plan klaar.**
+
+| # | Feature | MVP | Plan | Status |
+|---|---|---|---|---|
+| 68 | DNS & e-mail security (SPF/DKIM/DMARC/MX) — uitbreiding van de bestaande DNS-resolver (`domain-net.ts`) | 🔶 | 68-dns-email-security | 📝 |
+| 69 | Hosting-fingerprint security (Vercel/Netlify/Cloudflare + WAF) — uitbreiding van `stack-detection` | 🔶 | 69-hosting-fingerprint | 📝 |
+| 70 | Browser storage & session-token scanner — uitbreiding van de Playwright-runner | 🔶 | 70-browser-storage-tokens | 📝 |
+| 71 | Client-side dependency & CVE — vult het gat dat `osv-scanner` (repo-only) laat vallen voor URL-only sites | 🔶 | 71-client-dep-cve | 📝 |
+
+**Tier 2 — echt nieuw, gemiddelde kost (nog geen plan, scope-keuze eerst):** Supabase/Firebase exposed-config · subdomain-takeover · WAF/CDN+API-rate-limit-inspectie · threat-intelligence/reputatie-lookup. **Tier 3 — nieuwe actieve tests (opt-in+Pro):** auth-flow-scanner (eigendom-geverifieerd) · file-upload-scanner. **Parkeren:** audit-logging (black-box niet zinvol te definiëren). Alle vier statussen 💡 — zie het gap-document voor scope en volgorde.

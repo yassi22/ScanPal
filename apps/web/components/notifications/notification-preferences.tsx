@@ -97,27 +97,22 @@ export function NotificationPreferences() {
   }
 
   return (
-    <div className="mt-8">
+    <section className="notification-prefs">
       {error && (
-        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <p className="workspace-alert is-error" role="alert">
           {error}
-        </div>
+        </p>
       )}
 
       {prefs === null ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 text-sm text-slate-400">
-          Voorkeuren laden…
-        </div>
+        <div className="notification-prefs-loading">Voorkeuren laden…</div>
       ) : (
-        <div className="space-y-3">
+        <div className="notification-prefs-list">
           {TYPE_META.map(({ type, label, description }) => (
-            <div
-              key={type}
-              className="flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-900/50 px-5 py-4"
-            >
+            <div key={type} className="notification-pref-row">
               <div>
-                <p className="font-medium text-slate-200">{label}</p>
-                <p className="mt-0.5 text-sm text-slate-400">{description}</p>
+                <strong>{label}</strong>
+                <p>{description}</p>
               </div>
               <button
                 type="button"
@@ -126,25 +121,19 @@ export function NotificationPreferences() {
                 aria-label={label}
                 disabled={busyType === type}
                 onClick={() => toggle(type, !prefs[type])}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                  prefs[type] ? "bg-brand" : "bg-slate-700"
-                }`}
+                className={`notification-toggle${prefs[type] ? " is-on" : ""}`}
               >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                    prefs[type] ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
+                <span className="notification-toggle-thumb" />
               </button>
             </div>
           ))}
         </div>
       )}
 
-      <p className="mt-6 text-xs text-slate-600">
+      <p className="notification-prefs-note">
         Uitgezet betekent: geen e-mail én geen in-app melding voor dat type.
         Wijzigingen zijn direct actief.
       </p>
-    </div>
+    </section>
   );
 }
