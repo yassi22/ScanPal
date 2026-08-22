@@ -103,7 +103,13 @@ function toSummary(
 export async function listUptimeSummaries(
   db: Pool,
   teamId: string,
+  workspaceId?: string | null,
 ): Promise<UptimeSummary[]> {
+  // Workspace-scoping (security-review T1, 2026-08-22): undefined = team-breed
+  // (owner/key), een string beperkt tot die workspace, null (ongekoppelde member)
+  // → `s.workspace_id = NULL` → geen sites.
+  const scope = workspaceId === undefined ? "" : " and s.workspace_id = $2";
+  const params = workspaceId === undefined ? [teamId] : [teamId, workspaceId];
   const [aggregates, sparkline] = await Promise.all([
     db.query<SiteAggRow>(
       `select s.id as site_id, s.url, s.label, s.uptime_state,
@@ -112,9 +118,9 @@ export async function listUptimeSummaries(
               coalesce((select max(e.checked_at) > now() - interval '3 minutes' from uptime_events e where e.site_id = s.id), false) as probe_fresh,
               ${AGGREGATE_SUBQUERIES}
        from sites s
-       where s.team_id = $1
+       where s.team_id = $1${scope}
        order by s.created_at desc`,
-      [teamId],
+      params,
     ),
     db.query<SparklineRow>(
       `select e.site_id,
@@ -124,9 +130,9 @@ export async function listUptimeSummaries(
               avg(e.latency_ms) as avg_latency
        from uptime_events e
        join sites s on s.id = e.site_id
-       where s.team_id = $1 and e.checked_at > now() - interval '24 hours'
+       where s.team_id = $1${scope} and e.checked_at > now() - interval '24 hours'
        group by e.site_id, date_trunc('hour', e.checked_at)`,
-      [teamId],
+      params,
     ),
   ]);
 
@@ -153,7 +159,11 @@ export async function getUptimeDetail(
   teamId: string,
   siteId: string,
   days: 30 | 90,
+  workspaceId?: string | null,
 ): Promise<UptimeDetail | null> {
+  // Workspace-scoping (security-review T1, 2026-08-22): een vreemde/andere-
+  // workspace site_id → geen match → null → 404 (geen lek).
+  const scope = workspaceId === undefined ? "" : " and s.workspace_id = $3";
   const site = await db.query<SiteWithAgg>(
     `select s.id as site_id, s.url, s.label, s.uptime_state,
             s.uptime_state_changed_at, s.uptime_enabled,
@@ -161,8 +171,8 @@ export async function getUptimeDetail(
             coalesce((select max(e.checked_at) > now() - interval '3 minutes' from uptime_events e where e.site_id = s.id), false) as probe_fresh,
             ${AGGREGATE_SUBQUERIES}
      from sites s
-     where s.team_id = $1 and s.id = $2`,
-    [teamId, siteId],
+     where s.team_id = $1 and s.id = $2${scope}`,
+    workspaceId === undefined ? [teamId, siteId] : [teamId, siteId, workspaceId],
   );
   if (site.rowCount === 0) return null;
 
@@ -244,10 +254,16 @@ export async function setUptimeMonitoring(
   teamId: string,
   siteId: string,
   enabled: boolean,
+  workspaceId?: string | null,
 ): Promise<boolean> {
+  // Workspace-scoping (security-review T1, 2026-08-22): een member mag de
+  // monitoring-toggle niet omzetten op sites buiten de eigen workspace.
+  const scope = workspaceId === undefined ? "" : " and workspace_id = $4";
   const result = await db.query(
-    "update sites set uptime_enabled = $3 where id = $1 and team_id = $2",
-    [siteId, teamId, enabled],
+    `update sites set uptime_enabled = $3 where id = $1 and team_id = $2${scope}`,
+    workspaceId === undefined
+      ? [siteId, teamId, enabled]
+      : [siteId, teamId, enabled, workspaceId],
   );
   return (result.rowCount ?? 0) > 0;
 }

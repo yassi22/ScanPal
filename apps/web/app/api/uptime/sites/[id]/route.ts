@@ -8,12 +8,13 @@ import {
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
 import { getUptimeDetail, setUptimeMonitoring } from "@/lib/uptime-core";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
 type AuthResult =
   | { response: NextResponse }
-  | { teamId: string };
+  | { teamId: string; workspaceId: string | null | undefined };
 
 async function authResult(request: NextRequest): Promise<AuthResult> {
   const auth = await requireTeam(request);
@@ -31,7 +32,10 @@ async function authResult(request: NextRequest): Promise<AuthResult> {
       ),
     };
   }
-  return { teamId: auth.ctx.teamId };
+  return {
+    teamId: auth.ctx.teamId,
+    workspaceId: workspaceIdForContext(auth.ctx),
+  };
 }
 
 export async function GET(
@@ -53,7 +57,13 @@ export async function GET(
     );
   }
 
-  const detail = await getUptimeDetail(pool, teamId, id, query.data.days);
+  const detail = await getUptimeDetail(
+    pool,
+    teamId,
+    id,
+    query.data.days,
+    auth.workspaceId,
+  );
   if (!detail) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -93,6 +103,7 @@ export async function PATCH(
     teamId,
     id,
     parsed.data.enabled,
+    auth.workspaceId,
   );
   if (!updated) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

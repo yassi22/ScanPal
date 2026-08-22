@@ -12,10 +12,15 @@ async function authorizeSite(siteId: string) {
   const user = await getSessionUser();
   if (!user) return null;
 
+  // Workspace-scoping consistent met sites/[id]/schedule (security-review T1,
+  // 2026-08-22): een member mag alleen sites in de eigen workspace beheren,
+  // een owner team-breed. Zonder deze clause kon een member honeypot-tokens
+  // roteren op sites uit een andere workspace binnen hetzelfde team.
   const result = await pool.query(
     `select s.team_id from sites s
      join memberships m on m.team_id = s.team_id
-     where s.id = $1 and m.user_id = $2 and m.status = 'accepted'`,
+     where s.id = $1 and m.user_id = $2 and m.status = 'accepted'
+       and (m.role = 'owner' or s.workspace_id = m.workspace_id)`,
     [siteId, user.id],
   );
   if (result.rowCount === 0) return null;
