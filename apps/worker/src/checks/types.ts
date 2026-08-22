@@ -168,11 +168,15 @@ function withBodyLimit(response: Response, maxBytes: number): Response {
       reader.cancel().catch(() => {});
     },
   });
-  return new Response(stream, {
+  const limited = new Response(stream, {
     status: response.status,
     statusText: response.statusText,
     headers: response.headers,
   });
+  // Preserve response.url: de Response-constructor zet url op "" en checks
+  // (https, redirects-mixed) vertrouwen op de final-URL uit response.url.
+  Object.defineProperty(limited, "url", { value: response.url });
+  return limited;
 }
 
 /**

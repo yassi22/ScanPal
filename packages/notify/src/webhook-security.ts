@@ -7,7 +7,29 @@ import { isIP } from "node:net";
  * DNS-resolutie (anti-DNS-rebinding) en bij elke redirect-stap.
  *
  * Dev-uitzondering: `http://localhost` alleen als NODE_ENV !== "production".
+ *
+ * DNS-rebinding TOCTOU: `isUrlAllowed` resolveert DNS en checkt het IP, maar
+ * `fetch` resolveert onafhankelijk opnieuw. De onderstaande DNS-cache (korte
+ * TTL) verkleint het venster aanzienlijk; een volledige fix vereist een custom
+ * HTTP-agent die het opgeloste IP pin't (toekomstige verbetering).
  */
+
+const DNS_CACHE_TTL_MS = 30_000;
+const dnsCache = new Map<string, { addresses: { address: string }[]; expires: number }>();
+
+async function resolveHost(host: string): Promise<{ address: string }[] | null> {
+  const cached = dnsCache.get(host);
+  if (cached && cached.expires > Date.now()) {
+    return cached.addresses;
+  }
+  try {
+    const addresses = await lookup(host, { all: true });
+    dnsCache.set(host, { addresses, expires: Date.now() + DNS_CACHE_TTL_MS });
+    return addresses;
+  } catch {
+    return null;
+  }
+}
 
 export type UrlAllowance =
   | { ok: true }
@@ -19,6 +41,7 @@ export function isBlockedIp(ip: string): boolean {
     const [a = 0, b = 0] = ip.split(".").map(Number);
     if (a === 0) return true; // 0.0.0.0/8
     if (a === 10) return true; // 10.0.0.0/8
+    if (a === 100 && b >= 64 && b <= 127) return true; // 100.64.0.0/10 (CGNAT)
     if (a === 127) return true; // 127.0.0.0/8
     if (a === 169 && b === 254) return true; // 169.254.0.0/16
     if (a === 172 && (b & 0xf0) === 16) return true; // 172.16.0.0/12
@@ -33,8 +56,12 @@ export function isBlockedIp(ip: string): boolean {
       // IPv4-mapped (::ffff:127.0.0.1) — de IPv4 kant checken
       return isBlockedIp(last);
     }
-    if (groups.every((g) => g === "0000" || g === last) && last === "0001") return true; // ::1
-    if (first === "fd00") return true; // fd00::/8
+    // ::1 (loopback): alle groepen 0000 behalve de laatste die 0001 is.
+    if (groups.slice(0, -1).every((g) => g === "0000") && last === "0001") return true;
+    if (first === "fd00") return true; // fd00::/8 (ULA)
+    // fe80::/10 (link-local): eerste groep in fe80–febf.
+    const firstNum = parseInt(first, 16);
+    if (firstNum >= 0xfe80 && firstNum <= 0xfebf) return true;
     return false;
   }
   return false;
