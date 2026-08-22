@@ -101,6 +101,27 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
     );
   }
 
+  // Free → Pro: start direct een Stripe-checkout. Bij succes navigeren we weg
+  // naar Stripe, dus `busy` wordt bewust niet gereset op de happy path.
+  async function upgradeToPro() {
+    setBusy(true);
+    setBanner(null);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: "pro", interval: "month" }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error ?? "Upgraden mislukt");
+      if (!data?.url) throw new Error("Geen checkout-URL ontvangen");
+      window.location.assign(data.url);
+    } catch (err) {
+      setBanner(err instanceof Error ? err.message : "Upgraden mislukt");
+      setBusy(false);
+    }
+  }
+
   const isPaidActive =
     isPaid && (subscription.status === "active" || subscription.status === "trialing");
 
@@ -144,6 +165,18 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
             )}
           </div>
         )}
+        {!isPaid && isOwner && (
+          <div>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={upgradeToPro}
+              className="billing-primary-action"
+            >
+              {busy ? "Bezig…" : "Upgrade naar Pro"}
+            </button>
+          </div>
+        )}
       </div>
 
       {confirmCancel && (
@@ -180,6 +213,85 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * Na een geslaagde Stripe-checkout landt de gebruiker op
+ * `/billing?checkout=success`. De webhook die het plan op `pro` zet komt vaak
+ * een paar seconden later binnen, dus tonen we een bevestiging en pollen we de
+ * subscription tot het plan omslaat — daarna `router.refresh()` zodat de
+ * server-gerenderde pagina de nieuwe stand oppikt. We lezen de query uit
+ * `window.location` (geen `useSearchParams`) zodat er geen Suspense-boundary
+ * nodig is, en schonen de URL op zodat een handmatige refresh niet opnieuw
+ * triggert.
+ */
+export function BillingCheckoutReturn() {
+  const router = useRouter();
+  const [state, setState] = useState<"idle" | "pending" | "done" | "slow">("idle");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "success") return;
+    window.history.replaceState({}, "", window.location.pathname);
+
+    let cancelled = false;
+    let tries = 0;
+    setState("pending");
+
+    const poll = async () => {
+      tries += 1;
+      try {
+        const res = await fetch("/api/billing/subscription", { cache: "no-store" });
+        const data = await res.json().catch(() => null);
+        if (!cancelled && res.ok && data?.subscription && data.subscription.plan !== "free") {
+          setState("done");
+          router.refresh();
+          return;
+        }
+      } catch {
+        // netwerkfout: gewoon opnieuw proberen tot de limiet
+      }
+      if (cancelled) return;
+      if (tries >= 10) {
+        // Webhook nog niet binnen — refresh één keer en laat het weten.
+        setState("slow");
+        router.refresh();
+        return;
+      }
+      setTimeout(poll, 2000);
+    };
+
+    void poll();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  if (state === "idle") return null;
+
+  return (
+    <div className={`billing-checkout-return is-${state}`} role="status">
+      {state === "done" ? (
+        <>
+          <CheckCircle size={16} aria-hidden="true" />
+          <span>Betaling gelukt — je Pro-abonnement is nu actief.</span>
+        </>
+      ) : state === "slow" ? (
+        <>
+          <WarningCircle size={16} aria-hidden="true" />
+          <span>
+            Betaling gelukt. Het abonnement wordt geactiveerd; ververs deze
+            pagina zo nog even als het plan nog niet is bijgewerkt.
+          </span>
+        </>
+      ) : (
+        <>
+          <CheckCircle size={16} aria-hidden="true" />
+          <span>Betaling gelukt — je Pro-abonnement wordt geactiveerd…</span>
+        </>
+      )}
+    </div>
   );
 }
 

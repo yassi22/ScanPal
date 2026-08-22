@@ -22,11 +22,21 @@ export async function POST(request: NextRequest) {
     event = constructWebhookEvent(rawBody, signature);
   } catch (err) {
     if (err instanceof BillingNotConfiguredError) {
+      console.error(
+        "stripe-webhook geweigerd: STRIPE_WEBHOOK_SECRET ontbreekt (Stripe niet geconfigureerd)",
+      );
       return NextResponse.json(
         { error: "Stripe is niet geconfigureerd" },
         { status: 503 },
       );
     }
+    // Meestal een verlopen/verkeerde STRIPE_WEBHOOK_SECRET (verandert per
+    // `stripe listen`-sessie). Zonder deze log faalt dit stil met een 400 en
+    // wordt er nooit een event verwerkt — dan blijft een betaald team op free.
+    console.error(
+      "stripe-webhook handtekening ongeldig — controleer STRIPE_WEBHOOK_SECRET:",
+      err instanceof Error ? err.message : err,
+    );
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 

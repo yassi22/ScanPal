@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function AuthLayout({
+export default function InviteLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (

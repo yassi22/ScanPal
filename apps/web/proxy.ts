@@ -11,6 +11,12 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
     pathname.startsWith("/api/auth") ||
+    // Inbound webhooks (Stripe/GitHub/Vercel) authenticeren via hun eigen
+    // handtekening, niet via de Supabase-cookie. Zonder deze bypass zou de
+    // auth-redirect hieronder een POST zonder sessie met een 307 naar /login
+    // sturen — dan bereikt het event de handler nooit en blijft een betaald
+    // team op free hangen.
+    pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/h/") ||
     pathname === "/api/health"
   ) {

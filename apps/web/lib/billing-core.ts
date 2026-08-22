@@ -79,7 +79,12 @@ export async function processStripeEvent(
     if (CHECKOUT_TYPES.has(event.type)) {
       await handleCheckoutCompleted(client, object);
     } else if (SUBSCRIPTION_TYPES.has(event.type)) {
-      await handleSubscriptionEvent(client, object, resolvePlanFromPrice);
+      await handleSubscriptionEvent(
+        client,
+        object,
+        resolvePlanFromPrice,
+        event.type === "customer.subscription.deleted",
+      );
     } else if (INVOICE_TYPES.has(event.type)) {
       // Geen DB-werk: alleen de idempotentie-registratie hierboven. De route
       // stuurt op basis hiervan de payment_failed-notificatie (plan 16) —
@@ -133,6 +138,7 @@ async function handleSubscriptionEvent(
   client: PoolClient,
   object: StripeObject,
   resolvePlanFromPrice: (priceId: string | undefined) => PlanId | null,
+  isDeletion: boolean,
 ): Promise<void> {
   const subscriptionId = object.id;
   const customerId = object.customer ?? undefined;
@@ -145,6 +151,26 @@ async function handleSubscriptionEvent(
     [subscriptionId ?? null, customerId ?? null],
   );
   if (found.rowCount === 0) return;
+
+  // Definitieve annulering (einde periode of directe cancel): het team valt
+  // terug naar een schone Free-staat. stripe_subscription_id wordt gewist zodat
+  // de UI de team als Free (active) toont en de Free-credits gelden; de
+  // stripe_customer_id blijft bewaard voor de facturenhistorie en hergebruik
+  // bij een volgend abonnement.
+  if (isDeletion) {
+    await client.query(
+      `update subscriptions set
+         plan = 'free',
+         status = 'active',
+         cancel_at_period_end = false,
+         stripe_subscription_id = null,
+         current_period_end = null,
+         updated_at = now()
+       where team_id = $1`,
+      [found.rows[0].team_id],
+    );
+    return;
+  }
 
   const priceId = object.items?.data?.[0]?.price?.id;
   const plan = resolvePlanFromPrice(priceId);

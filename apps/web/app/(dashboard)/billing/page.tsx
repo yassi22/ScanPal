@@ -4,6 +4,7 @@ import { getTeamUsage } from "@/lib/credits";
 import { getSubscriptionView } from "@/lib/billing";
 import { plans, isPaidPlan } from "@scanpal/shared";
 import {
+  BillingCheckoutReturn,
   BillingInvoices,
   BillingManager,
   PortalButton,
@@ -56,6 +57,8 @@ export default async function BillingPage() {
         <div><h1>Plan, usage, and payment in one place.</h1><p>Keep the subscription for <strong>{result.team.name}</strong> predictable and auditable.</p></div>
         <span className="dashboard-plan-chip">{plan.name} plan</span>
       </header>
+
+      <BillingCheckoutReturn />
 
       <section className="billing-cockpit">
         <div className="billing-plan-header">

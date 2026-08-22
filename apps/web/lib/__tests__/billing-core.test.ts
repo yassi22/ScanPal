@@ -84,6 +84,19 @@ function fakePool() {
       return { rowCount: rows.length, rows };
     }
 
+    if (text.startsWith("update subscriptions set plan = 'free', status = 'active'")) {
+      const teamId = params[0] as string;
+      const sub = subscriptions.find((s) => s.team_id === teamId);
+      if (sub) {
+        sub.plan = "free";
+        sub.status = "active";
+        sub.cancel_at_period_end = false;
+        sub.stripe_subscription_id = null;
+        sub.current_period_end = null;
+      }
+      return { rowCount: sub ? 1 : 0, rows: [] };
+    }
+
     if (text.startsWith("update subscriptions set status")) {
       const [teamId, status, periodEnd, customerId, subscriptionId, cancelAtPeriodEnd] = params as [
         string, string, Date | null, string | null, string | null, boolean | null,
@@ -253,7 +266,7 @@ describe("processStripeEvent", () => {
     expect(sub.plan).toBe("pro");
   });
 
-  it("verwerkt customer.subscription.deleted als geannuleerd", async () => {
+  it("valt terug naar een schone Free-staat bij customer.subscription.deleted", async () => {
     await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
     const outcome = await processStripeEvent(
@@ -269,7 +282,13 @@ describe("processStripeEvent", () => {
     );
 
     expect(outcome).toBe("processed");
-    expect(state.subscriptions[0].status).toBe("canceled");
+    const sub = state.subscriptions[0];
+    expect(sub.plan).toBe("free");
+    expect(sub.status).toBe("active");
+    expect(sub.cancel_at_period_end).toBe(false);
+    expect(sub.stripe_subscription_id).toBeNull();
+    // Customer blijft bewaard voor facturenhistorie + hergebruik.
+    expect(sub.stripe_customer_id).toBe("cus_1");
   });
 
   it("geeft ignored voor niet-ondersteunde event types", async () => {

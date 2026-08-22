@@ -21,7 +21,7 @@ import {
   BillingNotConfiguredError,
 } from "@/lib/billing";
 import { getSessionUser } from "@/lib/supabase/server";
-import { ensureUserTeam } from "@/lib/team";
+import { getOrCreateUserTeam } from "@/lib/team";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ pool: { query: vi.fn() } }));
@@ -44,7 +44,7 @@ vi.mock("@/lib/billing", () => ({
 vi.mock("@/lib/notify", () => ({ notifier: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ getSessionUser: vi.fn() }));
 vi.mock("@/lib/team", () => ({
-  ensureUserTeam: vi.fn(),
+  getOrCreateUserTeam: vi.fn(),
 }));
 
 const requireTeamMock = vi.mocked(requireTeam);
@@ -58,7 +58,7 @@ const switchMock = vi.mocked(switchSubscriptionInterval);
 const checkoutMock = vi.mocked(createCheckoutSession);
 const portalMock = vi.mocked(createPortalSession);
 const getSessionMock = vi.mocked(getSessionUser);
-const ensureTeamMock = vi.mocked(ensureUserTeam);
+const ensureTeamMock = vi.mocked(getOrCreateUserTeam);
 
 const TEAM_ID = "00000000-0000-4000-8000-0000000000a1";
 

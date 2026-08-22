@@ -76,8 +76,9 @@ export async function createCheckoutSession(
     params.customer = input.customerId;
     params.customer_update = { address: "auto" };
   } else {
-    // Nieuwe klant: altijd een Stripe-customer aanmaken (vereist voor Tax).
-    params.customer_creation = "always";
+    // Nieuwe klant: in subscription-mode maakt Stripe altijd zelf een customer
+    // aan (customer_creation is daar niet toegestaan). Adres voor Tax wordt
+    // tijdens de checkout verzameld via automatic_tax.
     params.customer_email = input.email;
   }
 

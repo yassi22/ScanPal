@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { UsersThree } from "@phosphor-icons/react";
 
 type Props = {
   token: string;
@@ -52,61 +53,59 @@ export function InviteAccept({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-8 text-center">
-      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand/15 text-2xl text-brand">
-        👥
+    <div className="auth-card auth-card--center">
+      <div className="auth-badge" aria-hidden="true">
+        <UsersThree size={26} weight="regular" />
       </div>
-      <h1 className="text-xl font-bold">Team-uitnodiging</h1>
-      <p className="mt-2 text-sm text-slate-400">
-        Je bent uitgenodigd om lid te worden van{" "}
-        <span className="font-semibold text-slate-200">{teamName}</span> op
-        ScanPal als <span className="text-slate-200">{role === "owner" ? "owner" : "lid"}</span>.
+      <span className="auth-eyebrow">Team-uitnodiging</span>
+      <h1 className="auth-title">Je bent uitgenodigd</h1>
+      <p className="auth-subtitle">
+        Word lid van <span className="auth-strong">{teamName}</span> op ScanPal
+        als <span className="auth-strong">{role === "owner" ? "owner" : "lid"}</span>.
       </p>
 
       {wrongEmail ? (
-        <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+        <div className="auth-notice auth-notice-warn">
           Deze uitnodiging is bestemd voor{" "}
-          <span className="font-medium">{email}</span>, maar je bent ingelogd
-          met <span className="font-medium">{loggedInEmail}</span>.{" "}
-          <Link href="/login" className="underline hover:text-amber-300">
+          <span className="auth-strong">{email}</span>, maar je bent ingelogd met{" "}
+          <span className="auth-strong">{loggedInEmail}</span>.{" "}
+          <Link href="/login">
             Log uit en log in met het juiste account
           </Link>{" "}
           of vraag een nieuwe uitnodiging aan.
         </div>
       ) : done ? (
-        <div className="mt-6 text-sm text-emerald-400">
+        <div className="auth-notice auth-notice-success">
           Uitnodiging geaccepteerd! Je wordt naar het dashboard gebracht…
         </div>
       ) : loggedIn ? (
         <>
-          {error && (
-            <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {error}
-            </div>
-          )}
+          {error && <div className="auth-error">{error}</div>}
           <button
+            type="button"
             onClick={accept}
             disabled={loading}
-            className="mt-6 w-full rounded-lg bg-brand px-4 py-2.5 font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
+            className="auth-primary"
+            style={{ marginTop: 24 }}
           >
             {loading ? "Accepteren…" : "Uitnodiging accepteren"}
           </button>
         </>
       ) : (
         <>
-          <p className="mt-6 text-sm text-slate-400">
+          <p className="auth-subtitle" style={{ marginTop: 18 }}>
             Log in of maak een account om de uitnodiging te accepteren.
           </p>
-          <div className="mt-4 space-y-3">
+          <div className="auth-actions">
             <Link
               href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`}
-              className="block w-full rounded-lg bg-brand px-4 py-2.5 font-semibold text-slate-950 transition hover:bg-brand/90"
+              className="auth-primary"
             >
               Log in
             </Link>
             <Link
               href={`/register?next=${encodeURIComponent(`/invite/${token}`)}`}
-              className="block w-full rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-medium transition hover:border-slate-500"
+              className="auth-oauth-button"
             >
               Account aanmaken
             </Link>

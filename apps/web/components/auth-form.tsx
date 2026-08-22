@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { EnvelopeSimple, GithubLogo, GoogleLogo } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -77,19 +78,20 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   if (sent) {
     return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand/15 text-2xl text-brand">
-          ✉️
+      <div className="auth-card auth-sent">
+        <div className="auth-sent-icon" aria-hidden="true">
+          <EnvelopeSimple size={26} weight="regular" />
         </div>
-        <h2 className="text-xl font-semibold">Check je inbox</h2>
-        <p className="mt-2 text-sm text-slate-400">
+        <h2 className="auth-title">Check je inbox</h2>
+        <p className="auth-subtitle" style={{ margin: "10px auto 0" }}>
           We hebben een magische link gestuurd naar{" "}
-          <span className="font-medium text-slate-200">{email}</span>. Klik op de
-          link om {mode === "login" ? "in te loggen" : "je account te activeren"}.
+          <span className="auth-sent-email">{email}</span>. Klik op de link om{" "}
+          {mode === "login" ? "in te loggen" : "je account te activeren"}.
         </p>
         <button
+          type="button"
           onClick={() => setSent(false)}
-          className="mt-6 text-sm text-brand hover:underline"
+          className="auth-sent-reset"
         >
           Ander e-mailadres gebruiken
         </button>
@@ -98,25 +100,24 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <h1 className="text-2xl font-bold">
+    <div className="auth-card">
+      <span className="auth-eyebrow">
+        {mode === "login" ? "Inloggen" : "Nieuw account"}
+      </span>
+      <h1 className="auth-title">
         {mode === "login" ? "Welkom terug" : "Account aanmaken"}
       </h1>
-      <p className="mt-1 text-sm text-slate-400">
+      <p className="auth-subtitle">
         {mode === "login"
           ? "Log in met een magische link — geen wachtwoord nodig."
           : "Je eerste scan staat klaar zodra je account actief is."}
       </p>
 
-      {error && (
-        <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {error}
-        </div>
-      )}
+      {error && <div className="auth-error">{error}</div>}
 
-      <form onSubmit={handleMagicLink} className="mt-6 space-y-4">
-        <label className="block">
-          <span className="text-sm font-medium text-slate-300">E-mailadres</span>
+      <form onSubmit={handleMagicLink} className="auth-form">
+        <label className="auth-field">
+          <span className="auth-label">E-mailadres</span>
           <input
             type="email"
             required
@@ -124,14 +125,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="jij@bedrijf.nl"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm outline-none transition focus:border-brand"
+            className="auth-input"
           />
         </label>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-brand px-4 py-2.5 font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading} className="auth-primary">
           {loading
             ? "Versturen…"
             : mode === "login"
@@ -140,39 +137,39 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </button>
       </form>
 
-      <div className="my-6 flex items-center gap-3 text-xs text-slate-500">
-        <div className="h-px flex-1 bg-slate-800" />
-        of
-        <div className="h-px flex-1 bg-slate-800" />
-      </div>
+      <div className="auth-divider">of</div>
 
-      <div className="space-y-3">
+      <div className="auth-oauth">
         <button
+          type="button"
           onClick={() => handleOAuth("google")}
-          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium transition hover:border-slate-500"
+          className="auth-oauth-button"
         >
+          <GoogleLogo size={18} weight="bold" aria-hidden="true" />
           Doorgaan met Google
         </button>
         <button
+          type="button"
           onClick={() => handleOAuth("github")}
-          className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium transition hover:border-slate-500"
+          className="auth-oauth-button"
         >
+          <GithubLogo size={18} weight="fill" aria-hidden="true" />
           Doorgaan met GitHub
         </button>
       </div>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="auth-footer">
         {mode === "login" ? (
           <>
             Nog geen account?{" "}
-            <a href="/register" className="text-brand hover:underline">
+            <a href="/register" className="auth-footer-link">
               Registreer
             </a>
           </>
         ) : (
           <>
             Al een account?{" "}
-            <a href="/login" className="text-brand hover:underline">
+            <a href="/login" className="auth-footer-link">
               Log in
             </a>
           </>
