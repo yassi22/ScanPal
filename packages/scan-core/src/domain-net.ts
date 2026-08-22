@@ -7,7 +7,10 @@ import {
   parseWhoisExpiry,
   normalizeNs,
   registrableDomain,
+  parseSpf,
+  parseDmarc,
   type DomainMeasurement,
+  type EmailDns,
   type RdapParsed,
 } from "@scanpal/shared";
 
@@ -99,6 +102,74 @@ export async function queryDnsRecords(
     () => [],
   );
   return { nameservers, dnssec_enabled, caa_records };
+}
+
+/**
+ * Bekende DKIM-selectors die geprobedeerd worden (plan 68, besluit 2 / open
+ * vraag 1). Afwezigheid van álle selectors ≠ "geen DKIM" — alleen info.
+ */
+const DKIM_SELECTORS = [
+  "google",
+  "selector1",
+  "selector2",
+  "k1",
+  "s1",
+  "s2",
+  "default",
+  "dkim",
+];
+
+/**
+ * E-mail-DNS-meting (plan 68): SPF (TXT op apex), DMARC (TXT op `_dmarc.<apex>`),
+ * MX, en best-effort DKIM-selector-probe. Hergebruikt de swappable `dnsResolver`
+ * uit {@link DomainDeps} — geen nieuw proces/queue. Failure-resistent: een
+ * falende query levert `null`/lege set (geen crash bij een domein zonder TXT/MX).
+ */
+export async function resolveEmailDns(
+  apexPunycode: string,
+  deps: DomainDeps = {},
+): Promise<EmailDns> {
+  const resolver = deps.dnsResolver ?? dns;
+
+  const txtRecords = await resolver.resolveTxt(apexPunycode).then(
+    (records) => records.flat(),
+    () => [],
+  );
+  const spfStrings = txtRecords.filter((t) => t.trim().startsWith("v=spf1"));
+  const spf = spfStrings.length > 0 ? parseSpf(spfStrings[0]) : null;
+  const spf_record_count = spfStrings.length;
+
+  const dmarcTxt = await resolver
+    .resolveTxt(`_dmarc.${apexPunycode}`)
+    .then((records) => records.flat())
+    .catch(() => [] as string[]);
+  const dmarc = extractDmarc(dmarcTxt);
+
+  const mx = await resolver.resolveMx(apexPunycode).then(
+    (records) => records.map((r) => r.exchange).filter((e) => e.length > 0).sort(),
+    () => [],
+  );
+
+  const dkim_selectors_found: string[] = [];
+  const dkimResults = await Promise.all(
+    DKIM_SELECTORS.map((selector) =>
+      resolver
+        .resolveTxt(`${selector}._domainkey.${apexPunycode}`)
+        .then((records) => ({ selector, found: records.flat().length > 0 }))
+        .catch(() => ({ selector, found: false })),
+    ),
+  );
+  for (const r of dkimResults) {
+    if (r.found) dkim_selectors_found.push(r.selector);
+  }
+
+  return { spf, spf_record_count, dmarc, mx, dkim_selectors_found };
+}
+
+function extractDmarc(txtRecords: string[]): EmailDns["dmarc"] {
+  const dmarcStrings = txtRecords.filter((t) => t.trim().startsWith("v=DMARC1"));
+  if (dmarcStrings.length === 0) return null;
+  return parseDmarc(dmarcStrings[0]);
 }
 
 function formatCaa(c: {

@@ -42,6 +42,9 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // TLS-runway (hergebruikt notAfter uit tls-cert). Stille check behalve bij
   // afwijking (expiry/runway/dnssec/ns-drift).
   { id: "domain-watchtower", category: "http", name: "Domain watchtower", active: false },
+  // Plan 68: DNS & e-mail (SPF/DKIM/DMARC/MX) — passieve publieke-DNS-meting,
+  // draait in de http-worker naast domain-watchtower. Geen active-gating.
+  { id: "dns-email", category: "http", name: "DNS & e-mail (SPF/DKIM/DMARC)", active: false },
   { id: "redirects-mixed", category: "http", name: "Redirects & mixed content", active: false },
   { id: "secrets-in-html", category: "http", name: "Secrets in HTML", active: false },
   { id: "secrets-in-bundles", category: "http", name: "Secrets in JS-bundles", active: false },
@@ -69,6 +72,9 @@ export const checkCatalog: CheckCatalogEntry[] = [
   { id: "console-errors", category: "aeo", name: "Console-errors & network-failures", active: false },
   // Feature 45: mobile/responsive basis-check (horizontal overflow + tap-targets).
   { id: "mobile-responsive", category: "aeo", name: "Mobile / responsive", active: false },
+  // Plan 70: browser storage & session-tokens — leest localStorage/sessionStorage
+  // na page-load (passief, geen interactie). Categorie aeo (browser-queue).
+  { id: "browser-storage", category: "aeo", name: "Browser storage & session-tokens", active: false },
   { id: "semgrep", category: "github", name: "Semgrep (SAST)", active: false },
   { id: "gitleaks", category: "github", name: "Gitleaks (secrets)", active: false },
   { id: "osv-scanner", category: "github", name: "OSV-Scanner (deps)", active: false },

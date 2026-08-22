@@ -327,3 +327,91 @@ export function domainAlerts(
 
   return alerts;
 }
+
+// --- E-mail DNS (plan 68, SPF/DKIM/DMARC/MX) -------------------------------
+
+/**
+ * Resultaat van de e-mail-DNS-meting (plan 68). Puur-gegevens — de netwerklaag
+ * (`resolveEmailDns` in scan-core) vult dit; de evaluatie (`evaluateEmailDns`)
+ * is puur en unit-testbaar op mock-data.
+ */
+export const emailDnsSchema = z.object({
+  spf: z
+    .object({
+      present: z.boolean(),
+      raw: z.string(),
+      all_qualifier: z.enum(["all", "+all", "-all", "~all", "?all"]).nullable(),
+    })
+    .nullable(),
+  /** Aantal SPF-records gevonden (RFC-overtreding als > 1). */
+  spf_record_count: z.number(),
+  dmarc: z
+    .object({
+      present: z.boolean(),
+      policy: z.enum(["none", "quarantine", "reject", "missing"]).nullable(),
+      rua_present: z.boolean(),
+    })
+    .nullable(),
+  mx: z.array(z.string()),
+  dkim_selectors_found: z.array(z.string()),
+});
+export type EmailDns = z.infer<typeof emailDnsSchema>;
+
+/**
+ * Parse een SPF-record (plan 68, besluit 3). `null` als de input geen geldig
+ * SPF-record is. `all_qualifier` is de qualifier vóór `all` (`+`/`-`/`~`/`?`
+ * of leeg = `all`); `null` als het record geen `all`-mechanisme bevat.
+ */
+export function parseSpf(txt: string): {
+  present: boolean;
+  raw: string;
+  all_qualifier: "all" | "+all" | "-all" | "~all" | "?all" | null;
+} | null {
+  const record = txt.trim();
+  if (!record.startsWith("v=spf1")) return null;
+  const allMatch = record.match(/(?:^|\s)([+\-~?]?)all\b/);
+  let all_qualifier: "all" | "+all" | "-all" | "~all" | "?all" | null = null;
+  if (allMatch) {
+    const q = allMatch[1];
+    all_qualifier = (q === "" ? "all" : `${q}all`) as "all" | "+all" | "-all" | "~all" | "?all";
+  }
+  return { present: true, raw: record, all_qualifier };
+}
+
+/**
+ * Parse een DMARC-record (plan 68, besluit 3). Verwacht de TXT-waarde van
+ * `_dmarc.<apex>`. `policy` is de `p=`-waarde (`none`/`quarantine`/`reject`);
+ * `missing` als het record geen `p=` bevat. `rua_present` geeft aan of er een
+ * aggregatie-rapportage-adres is.
+ */
+export function parseDmarc(txt: string): {
+  present: boolean;
+  policy: "none" | "quarantine" | "reject" | "missing";
+  rua_present: boolean;
+} | null {
+  const record = txt.trim();
+  if (!record.startsWith("v=DMARC1")) return null;
+  const pMatch = record.match(/\bp\s*=\s*(none|quarantine|reject)/i);
+  const policy: "none" | "quarantine" | "reject" | "missing" = pMatch
+    ? (pMatch[1].toLowerCase() as "none" | "quarantine" | "reject")
+    : "missing";
+  const rua_present = /\brua\s*=/.test(record);
+  return { present: true, policy, rua_present };
+}
+
+/**
+ * Heuristische telling van SPF-mechanismen die extra DNS-lookups vereisen
+ * (RFC 7208, max 10). Telt `include:`, `a`, `mx`, `exists:`, `redirect=`.
+ * Niet exact (recursief), maar voldoende voor een waarschuwing (plan 68,
+ * open vraag 2).
+ */
+export function spfLookupCount(txt: string): number {
+  const record = txt.trim();
+  let count = 0;
+  count += (record.match(/\binclude:/gi) ?? []).length;
+  count += (record.match(/(^|\s)a(?=[\s:]|$)/gi) ?? []).length;
+  count += (record.match(/(^|\s)mx(?=[\s:]|$)/gi) ?? []).length;
+  count += (record.match(/\bexists:/gi) ?? []).length;
+  count += (record.match(/\bredirect=/gi) ?? []).length;
+  return count;
+}

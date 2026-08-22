@@ -12,6 +12,7 @@ import { reachabilityCheck } from "./http/reachability";
 import { httpsCheck } from "./http/https";
 import { tlsCertCheck } from "./http/tls-cert";
 import { domainWatchtowerCheck } from "./http/domain-watchtower";
+import { dnsEmailCheck } from "./http/dns-email";
 import { SECURITY_HEADER_CHECK_IDS, securityHeadersCheck } from "./http/security-headers";
 import { metaTagsCheck } from "./http/meta-tags";
 import { COOKIE_CHECK_IDS, cookiesCheck } from "./http/cookies";
@@ -75,6 +76,8 @@ export function buildRegistry(
       toImplemented(httpsCheck),
       toImplemented(tlsCertCheck),
       toImplemented(domainWatchtowerCheck),
+      // Plan 68: DNS & e-mail (SPF/DKIM/DMARC/MX) — passieve publieke-DNS-meting.
+      toImplemented(dnsEmailCheck),
       toImplemented(securityHeadersCheck, [...SECURITY_HEADER_CHECK_IDS]),
       toImplemented(metaTagsCheck),
       toImplemented(cookiesCheck, [...COOKIE_CHECK_IDS]),

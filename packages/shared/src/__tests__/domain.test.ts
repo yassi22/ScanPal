@@ -7,6 +7,9 @@ import {
   normalizeNs,
   diffDomainMeasurement,
   domainAlerts,
+  parseSpf,
+  parseDmarc,
+  spfLookupCount,
   DOMAIN_EXPIRY_ALERT_DAYS,
   DOMAIN_TLS_ALERT_DAYS,
   type DomainMeasurement,
@@ -202,5 +205,78 @@ describe("domainAlerts — drempels", () => {
     const diffs = [{ field: "caa_present" as const, old_value: "false", new_value: "true" }];
     const alerts = domainAlerts(diffs, measurement({ caa_present: true }), NOW);
     expect(alerts[0].field).toBe("caa_present");
+  });
+});
+
+describe("parseSpf", () => {
+  it("herkent een geldig SPF-record met -all", () => {
+    const r = parseSpf("v=spf1 ip4:1.2.3.4 -all");
+    expect(r).not.toBeNull();
+    expect(r!.all_qualifier).toBe("-all");
+  });
+
+  it("herkent +all en ?all als permissief", () => {
+    expect(parseSpf("v=spf1 +all")!.all_qualifier).toBe("+all");
+    expect(parseSpf("v=spf1 ?all")!.all_qualifier).toBe("?all");
+  });
+
+  it("lege qualifier → 'all'", () => {
+    expect(parseSpf("v=spf1 all")!.all_qualifier).toBe("all");
+  });
+
+  it("~all is softfail", () => {
+    expect(parseSpf("v=spf1 a ~all")!.all_qualifier).toBe("~all");
+  });
+
+  it("geen all-mechanisme → null qualifier", () => {
+    expect(parseSpf("v=spf1 ip4:1.2.3.4")!.all_qualifier).toBeNull();
+  });
+
+  it("niet-SPF-record → null", () => {
+    expect(parseSpf("v=DMARC1; p=none")).toBeNull();
+    expect(parseSpf("some text")).toBeNull();
+  });
+
+  it("matcht 'all' niet in een include-domeinnaam (B1-regressie)", () => {
+    expect(parseSpf("v=spf1 include:_spf.all.example.com -all")!.all_qualifier).toBe("-all");
+    expect(parseSpf("v=spf1 include:spf.all.example.com ~all")!.all_qualifier).toBe("~all");
+  });
+});
+
+describe("parseDmarc", () => {
+  it("herkent p=reject met rua", () => {
+    const r = parseDmarc("v=DMARC1; p=reject; rua=mailto:dmarc@example.com");
+    expect(r).not.toBeNull();
+    expect(r!.policy).toBe("reject");
+    expect(r!.rua_present).toBe(true);
+  });
+
+  it("herkent p=none (monitor-only)", () => {
+    expect(parseDmarc("v=DMARC1; p=none")!.policy).toBe("none");
+  });
+
+  it("herkent p=quarantine zonder rua", () => {
+    const r = parseDmarc("v=DMARC1; p=quarantine");
+    expect(r!.policy).toBe("quarantine");
+    expect(r!.rua_present).toBe(false);
+  });
+
+  it("geen p= → policy missing", () => {
+    expect(parseDmarc("v=DMARC1; rua=mailto:x@example.com")!.policy).toBe("missing");
+  });
+
+  it("niet-DMARC-record → null", () => {
+    expect(parseDmarc("v=spf1 -all")).toBeNull();
+  });
+});
+
+describe("spfLookupCount", () => {
+  it("telt include, a, mx, exists, redirect", () => {
+    const record = "v=spf1 include:_spf.google.com a mx exists:%{i}.spf.example.com redirect=_spf2.example.com -all";
+    expect(spfLookupCount(record)).toBe(5);
+  });
+
+  it("enkelvoudig record zonder lookups → 0", () => {
+    expect(spfLookupCount("v=spf1 ip4:1.2.3.4 -all")).toBe(0);
   });
 });
