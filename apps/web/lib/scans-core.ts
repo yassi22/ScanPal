@@ -102,10 +102,14 @@ export async function createManualScan(
   try {
     await client.query("begin");
 
+    // `for update` lockt de sites-row zodat twee gelijktijdige scan-triggers voor
+    // dezelfde site serialiseren: de tweede transactie wacht tot de eerste commit
+    // en ziet dan de zojuist ingevoegde 'queued'-scan → overlap-fout i.p.v. een
+    // dubbele scan + dubbele credit-afboeking (security-review L1, 2026-08-22).
     const site = await client.query(
       input.workspaceId === undefined
-        ? "select url from sites where id = $1 and team_id = $2"
-        : "select url from sites where id = $1 and team_id = $2 and workspace_id = $3",
+        ? "select url from sites where id = $1 and team_id = $2 for update"
+        : "select url from sites where id = $1 and team_id = $2 and workspace_id = $3 for update",
       input.workspaceId === undefined
         ? [input.siteId, input.teamId]
         : [input.siteId, input.teamId, input.workspaceId],
