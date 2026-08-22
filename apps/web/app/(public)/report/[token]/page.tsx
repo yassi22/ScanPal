@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { pool } from "@/lib/db";
 import { getPublicReport } from "@/lib/public-report-core";
 import { severityLabel, categoryLabelEn } from "@/lib/report/data";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,28 @@ export default async function PublicReportPage({
 }: {
   params: Promise<{ token: string }>;
 }) {
-  const report = await getPublicReport(pool, (await params).token);
+  const { token } = await params;
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+  let rateLimited = false;
+  try {
+    const limit = await checkRateLimit(`public-report-ssr:${ip}`, 60);
+    rateLimited = !limit.ok;
+  } catch {
+    // rate-limit failure should not block the report
+  }
+
+  if (rateLimited) {
+    return (
+      <main className="flex-1 px-4 py-10">
+        <p className="mx-auto max-w-md text-center text-sm text-slate-400">
+          Too many requests. Please try again later.
+        </p>
+      </main>
+    );
+  }
+
+  const report = await getPublicReport(pool, token);
   if (!report) notFound();
   const { data, branding } = report;
   const title = branding.report_name ?? (branding.hide_branding ? "Report" : "ScanPal Report");
@@ -29,7 +52,7 @@ export default async function PublicReportPage({
     <main className="flex-1 px-4 py-10">
       <article className="mx-auto w-full max-w-4xl space-y-8">
         <header className="border-b border-slate-800 pb-6">
-          {branding.logo_url && <img src={branding.logo_url} alt="Logo" className="mb-5 h-10 max-w-48 object-contain object-left" />}
+          {branding.logo_url && <img src={branding.logo_url} alt="Logo" referrerPolicy="no-referrer" className="mb-5 h-10 max-w-48 object-contain object-left" />}
           <h1 className="text-3xl font-bold" style={{ color: branding.primary_color ?? undefined }}>{title}</h1>
           <p className="mt-2 text-slate-400">{data.site.label ?? data.site.url} · {data.score}/100</p>
         </header>

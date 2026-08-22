@@ -106,6 +106,12 @@ describe("brandingSchema (contract)", () => {
       false,
     );
   });
+
+  it("verwerpt http:// en javascript: logo_url (scheme-restrictie)", () => {
+    expect(brandingSchema.safeParse({ logo_url: "http://example.com/logo.png" }).success).toBe(false);
+    expect(brandingSchema.safeParse({ logo_url: "javascript:alert(1)" }).success).toBe(false);
+    expect(brandingSchema.safeParse({ logo_url: "data:image/png;base64,abc" }).success).toBe(false);
+  });
 });
 
 describe("workspaceSchemas (contract)", () => {

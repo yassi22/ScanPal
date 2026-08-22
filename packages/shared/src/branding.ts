@@ -6,8 +6,14 @@ import { z } from "zod";
  * `null` = "niet gezet", `undefined` = "ongewijzigd bij patch".
  */
 export const brandingSchema = z.object({
-  /** Absolute URL van het teamlogo. */
-  logo_url: z.string().url().max(2048).nullable().optional(),
+  /** Absolute HTTPS-URL van het teamlogo (geen http/javascript/data: i.v.m. SSRF/XSS). */
+  logo_url: z
+    .string()
+    .url()
+    .max(2048)
+    .refine((u) => u.startsWith("https://"), { message: "logo_url moet een https:// URL zijn" })
+    .nullable()
+    .optional(),
   /** Accentkleur als 6-cijferige hex (`#RRGGBB`). */
   primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
   /** Eigen naam van het rapport/de statuspagina i.p.v. "ScanPal". */
