@@ -18,6 +18,7 @@ function makeRunner(result: BrowserRunResult): BrowserRunner {
     captureConsole: vi.fn().mockResolvedValue({ ok: false, error: "not-used" }),
     captureResponsive: vi.fn().mockResolvedValue({ ok: false, error: "not-used" }),
     captureRenderCompare: vi.fn().mockResolvedValue({ ok: false, error: "not-used" }),
+    captureStorage: vi.fn().mockResolvedValue({ ok: false, error: "not-used" }),
   };
 }
 

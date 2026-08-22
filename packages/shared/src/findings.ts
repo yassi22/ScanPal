@@ -81,6 +81,10 @@ import {
   type RenderCompareEvidence,
 } from "./aeo-render";
 import {
+  browserStorageEvidenceSchema,
+  type BrowserStorageEvidence,
+} from "./browser-storage";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -141,6 +145,7 @@ export const findingSchema = z.object({
       consoleEvidenceSchema,
       responsiveEvidenceSchema,
       renderCompareEvidenceSchema,
+      browserStorageEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -300,6 +305,7 @@ export type InlineCheckLike = {
     | ConsoleEvidence
     | ResponsiveEvidence
     | RenderCompareEvidence
+    | BrowserStorageEvidence
     | string
     | null;
 };
@@ -332,6 +338,7 @@ export function evidenceText(
     | ConsoleEvidence
     | ResponsiveEvidence
     | RenderCompareEvidence
+    | BrowserStorageEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -450,6 +457,11 @@ export function evidenceText(
     }
     if (evidence.kind === "aeo-render") {
       return `server=${evidence.server.text_length}chars dom=${evidence.rendered.text_length}chars ratio=${evidence.text_ratio} ${evidence.issues.join(" | ")}`;
+    }
+    if (evidence.kind === "browser-storage") {
+      return evidence.entries
+        .map((e) => `${e.store}:${e.key} ${e.kind}${e.secret_type ? `(${e.secret_type})` : ""} ${e.masked}`)
+        .join(" | ");
     }
   }
   return `${evidence.request}\n${evidence.response}`;

@@ -10,6 +10,7 @@ const mockRunner: BrowserRunner = {
   captureConsole: () => Promise.resolve({ ok: false, error: "mock" }),
   captureResponsive: () => Promise.resolve({ ok: false, error: "mock" }),
   captureRenderCompare: () => Promise.resolve({ ok: false, error: "mock" }),
+  captureStorage: () => Promise.resolve({ ok: false, error: "mock" }),
 };
 
 describe("skeletonTotals (progress-skelet)", () => {
@@ -30,9 +31,11 @@ describe("skeletonTotals (progress-skelet)", () => {
     // Feature 44 (console-errors) + 45 (mobile-responsive) → aeo 3->5;
     // feature 43 (aeo-scan render-vergelijking) → aeo 5->6.
     // Plan 62: crux-field-data draait in de http-worker (aeo) → aeo 6->7.
-    expect(totals.http).toBe(22);
+    // Plan 68: dns-email is een nieuwe http-check → http 22->23.
+    // Plan 70: browser-storage is een nieuwe aeo-check → aeo 7->8.
+    expect(totals.http).toBe(23);
     expect(totals.seo).toBe(6);
-    expect(totals.aeo).toBe(7);
+    expect(totals.aeo).toBe(8);
     expect(totals.compliance).toBe(5);
     // Categorieën zonder queue-owner krijgen geen key (initialProgressDetails
     // default naar 0).
@@ -42,8 +45,8 @@ describe("skeletonTotals (progress-skelet)", () => {
   it("telt de actieve-test-checks mee met de flag aan", () => {
     const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
-    // 11 actieve-test-catalog-checks + 22 passieve http-checks.
-    expect(totals.http).toBe(33);
+    // 11 actieve-test-catalog-checks + 23 passieve http-checks.
+    expect(totals.http).toBe(34);
     expect(totals.compliance).toBe(5);
   });
 

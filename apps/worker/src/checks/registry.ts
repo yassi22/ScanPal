@@ -38,6 +38,7 @@ import { createCoreWebVitalsCheck } from "./browser/core-web-vitals";
 import { createAccessibilityCheck } from "./browser/accessibility";
 import { createConsoleErrorsCheck } from "./browser/console-errors";
 import { createMobileResponsiveCheck } from "./browser/mobile-responsive";
+import { createBrowserStorageCheck } from "./browser/browser-storage";
 import { createAeoRenderCheck } from "./browser/aeo-render";
 import type { BrowserRunner } from "./browser/runner";
 
@@ -120,6 +121,8 @@ export function buildRegistry(
       toImplemented(createConsoleErrorsCheck(browserRunner)),
       // Feature 45: mobile/responsive basis-check via Playwright.
       toImplemented(createMobileResponsiveCheck(browserRunner)),
+      // Plan 70: browser storage & session-tokens (passief, leest storage).
+      toImplemented(createBrowserStorageCheck(browserRunner)),
       // Feature 43: AEO JS-rendered content (server-HTML vs gerenderde DOM).
       toImplemented(createAeoRenderCheck(browserRunner)),
     ],

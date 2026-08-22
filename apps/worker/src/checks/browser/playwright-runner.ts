@@ -7,6 +7,7 @@ import type {
   ConsoleRunResult,
   ResponsiveRunResult,
   RenderRunResult,
+  StorageRunResult,
 } from "./runner";
 import { parseConsoleMessages, parseRequestFailures, extractServerProbe, parseRenderProbe } from "@scanpal/shared";
 import type {
@@ -14,6 +15,7 @@ import type {
   ConsoleCapture,
   ResponsiveCapture,
   RenderCompareCapture,
+  StorageSnapshot,
 } from "@scanpal/shared";
 
 /**
@@ -300,6 +302,47 @@ export function createPlaywrightRunner(): BrowserRunner {
 
         const capture: RenderCompareCapture = { server, rendered };
         return { ok: true, capture };
+      } catch (err) {
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      } finally {
+        await browser?.close().catch(() => {});
+      }
+    },
+    async captureStorage(url): Promise<StorageRunResult> {
+      let browser;
+      try {
+        browser = await chromium.launch({ headless: true });
+        const ctx = await browser.newContext();
+        const page = await ctx.newPage();
+        await page.goto(url, { waitUntil: "networkidle", timeout: 30_000 });
+        // Korte wacht zodat SPA's die pas na hydratatie in storage schrijven
+        // meetbaar zijn (plan 70, open vraag 1).
+        await page.waitForTimeout(1500).catch(() => {});
+
+        const snapshot = (await page.evaluate(
+          `() => {
+            const read = (store) => {
+              const out = {};
+              try {
+                for (let i = 0; i < store.length; i++) {
+                  const k = store.key(i);
+                  if (k === null) continue;
+                  const v = store.getItem(k);
+                  if (v !== null) out[k] = v;
+                }
+              } catch (e) {}
+              return out;
+            };
+            return {
+              local: read(window.localStorage),
+              session: read(window.sessionStorage),
+            };
+          }`,
+        )) as StorageSnapshot;
+        return { ok: true, snapshot };
       } catch (err) {
         return {
           ok: false,
