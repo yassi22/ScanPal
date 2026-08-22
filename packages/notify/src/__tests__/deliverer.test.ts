@@ -124,6 +124,10 @@ function fakePool(
     query: async (sql: string, params: unknown[] = []) => {
       const text = sql.replace(/\s+/g, " ").trim();
 
+      if (text === "begin" || text === "commit" || text === "rollback") {
+        return { rowCount: 0, rows: [] };
+      }
+
       if (text.startsWith("select d.id, d.webhook_id")) {
         if (text.includes("where d.id")) {
           return { rowCount: 1, rows: [joinedRow()] };
@@ -166,6 +170,10 @@ function fakePool(
 
       throw new Error(`onbekende query in test-fake: ${text}`);
     },
+    connect: async () => ({
+      query: (sql: string, params: unknown[] = []) => db.query(sql, params),
+      release: () => {},
+    }),
   };
 
   return { db: db as unknown as Pool, state };

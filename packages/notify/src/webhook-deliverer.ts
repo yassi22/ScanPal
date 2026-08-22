@@ -58,6 +58,13 @@ const BACKOFF_MS = [60_000, 5 * 60_000, 30 * 60_000, 2 * 3_600_000];
 export const MAX_ATTEMPTS = 5;
 export const DELIVERY_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 5;
+/**
+ * Lease-venster waarmee geclaimde due-rijen tijdelijk onzichtbaar worden voor
+ * een volgende poll-tick (security-review L2, 2026-08-22). Ruim boven de
+ * worst-case batchduur (50 rijen × 10s timeout) zodat een trage tick geen rij
+ * dubbel bezorgt; bij een crash mid-delivery keert de rij na dit venster terug.
+ */
+const CLAIM_LEASE_MS = 15 * 60_000;
 const PERMANENT_STATUS_CODES = new Set([400, 401, 403, 404, 410]);
 
 export type DeliveryRow = {
@@ -441,17 +448,45 @@ export function createWebhookDeliverer(deps: WebhookDelivererDeps) {
       disabled: 0,
     };
 
-    const due = await deps.db.query(
-      `${SELECT_JOIN}
-        where d.status in ('pending', 'failed')
-          and (d.next_attempt_at is null or d.next_attempt_at <= $1)
-        order by d.created_at
-        limit 50
-        for update skip locked`,
-      [now().toISOString()],
-    );
+    // Claim de due-rijen atomair in één transactie: `for update skip locked`
+    // houdt de rijlock alleen zolang de transactie loopt, dus zónder omringende
+    // BEGIN/COMMIT (zoals voorheen op de Pool) komt de lock direct vrij en pakt
+    // een overlappende tick — de scheduler awaakt de vorige `tick()` niet af —
+    // dezelfde nog-`pending` rijen opnieuw op → dubbele delivery. We leasen de
+    // geclaimde rijen (next_attempt_at vooruit) binnen de lock en verwerken ze
+    // daarna BUITEN de lock, zodat deliverOne's eigen updates niet op de lock
+    // wachten (security-review L2, 2026-08-22).
+    const client = await deps.db.connect();
+    let due: DeliveryJoinRow[];
+    try {
+      await client.query("begin");
+      const selected = await client.query(
+        `${SELECT_JOIN}
+          where d.status in ('pending', 'failed')
+            and (d.next_attempt_at is null or d.next_attempt_at <= $1)
+          order by d.created_at
+          limit 50
+          for update skip locked`,
+        [now().toISOString()],
+      );
+      due = selected.rows as DeliveryJoinRow[];
+      if (due.length > 0) {
+        const leaseUntil = new Date(now().getTime() + CLAIM_LEASE_MS).toISOString();
+        await client.query(
+          `update webhook_deliveries set next_attempt_at = $2
+           where id = any($1::uuid[])`,
+          [due.map((row) => row.id), leaseUntil],
+        );
+      }
+      await client.query("commit");
+    } catch (err) {
+      await client.query("rollback").catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
 
-    for (const row of due.rows as DeliveryJoinRow[]) {
+    for (const row of due) {
       result.attempted += 1;
       const outcome = await deliverOne(row.id);
       if (outcome.status === "ok") result.delivered += 1;
