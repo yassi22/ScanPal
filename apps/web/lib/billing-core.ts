@@ -39,12 +39,17 @@ const SUPPORTED_TYPES = new Set([
 const STATUS_MAP: Record<string, SubscriptionStatus> = {
   active: "active",
   trialing: "trialing",
+  // `past_due` = tijdgebonden grace (Stripe blijft de betaling proberen); credits
+  // blijven gelden tot `current_period_end`. De terminale/onbetaalde statussen
+  // mogen GEEN Pro-credits meer geven (security-review B1, 2026-08-22): ze vallen
+  // naar `canceled`. Een geslaagde herbetaling stuurt weer `active`; Stripe stuurt
+  // uiteindelijk `subscription.deleted` → schone Free-staat.
   past_due: "past_due",
   canceled: "canceled",
-  incomplete: "past_due",
+  incomplete: "canceled",
   incomplete_expired: "canceled",
-  unpaid: "past_due",
-  paused: "past_due",
+  unpaid: "canceled",
+  paused: "canceled",
 };
 
 function toDate(unixSeconds: number | null | undefined): Date | null {

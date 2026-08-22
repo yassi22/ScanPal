@@ -62,7 +62,13 @@ export async function getPlanForTeam(
   teamId: string,
 ): Promise<Plan> {
   const state = await getSubscriptionState(db, teamId);
-  return plans[state?.plan ?? "free"];
+  // Entitlements volgen de subscription-status, niet alleen de plan-kolom
+  // (security-review B2, 2026-08-22). Een `canceled`/`unpaid`/`paused`
+  // subscription waarvan de plan-kolom nog op "pro" staat mag géén Pro-features
+  // of Pro-rate-limit meer krijgen; alleen actieve statussen (incl. grace
+  // `past_due`) tellen. Reset naar "free" gebeurt pas bij `subscription.deleted`.
+  if (!state || !ACTIVE_STATUSES.has(state.status)) return plans.free;
+  return plans[state.plan ?? "free"];
 }
 
 export type TeamUsage = {

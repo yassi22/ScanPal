@@ -331,6 +331,35 @@ describe("getTeamUsage / getPlanForTeam / assertPlanFeature", () => {
     });
     expect((await getPlanForTeam(state.db, "team-1")).id).toBe("pro");
   });
+
+  it("geeft free-entitlements bij een niet-actieve subscription (B2)", async () => {
+    // Een canceled/unpaid/paused pro-sub waarvan de plan-kolom nog "pro" is mag
+    // GEEN Pro feature-gates of Pro rate-limit meer krijgen (security-review B2).
+    state.subscriptions.set("team-1", {
+      team_id: "team-1",
+      plan: "pro",
+      status: "canceled",
+      current_period_end: new Date(Date.now() + 100000),
+      credits_used: 0,
+      stripe_subscription_id: "sub_1",
+    });
+    expect((await getPlanForTeam(state.db, "team-1")).id).toBe("free");
+    await expect(
+      assertPlanFeature(state.db, "team-1", "uptime"),
+    ).rejects.toBeInstanceOf(PlanFeatureError);
+  });
+
+  it("houdt Pro-entitlements tijdens de grace-status past_due (B2)", async () => {
+    state.subscriptions.set("team-1", {
+      team_id: "team-1",
+      plan: "pro",
+      status: "past_due",
+      current_period_end: new Date(Date.now() + 100000),
+      credits_used: 0,
+      stripe_subscription_id: "sub_1",
+    });
+    expect((await getPlanForTeam(state.db, "team-1")).id).toBe("pro");
+  });
 });
 
 describe("refundCredit", () => {

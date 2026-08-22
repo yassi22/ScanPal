@@ -266,6 +266,32 @@ describe("processStripeEvent", () => {
     expect(sub.plan).toBe("pro");
   });
 
+  it("mapt een onbetaald abonnement (unpaid) naar canceled, niet naar credit-gevende past_due (B1)", async () => {
+    await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
+
+    const outcome = await processStripeEvent(
+      state.db,
+      {
+        id: "evt_sub_unpaid",
+        type: "customer.subscription.updated",
+        data: {
+          object: {
+            id: "sub_1",
+            customer: "cus_1",
+            status: "unpaid",
+            items: { data: [{ price: { id: "price_pro" } }] },
+          },
+        },
+      },
+      resolvePlanFromPrice,
+    );
+
+    expect(outcome).toBe("processed");
+    // `unpaid`/`paused`/`incomplete` mogen geen actieve (credit-gevende) status
+    // meer worden; alleen `subscription.deleted` reset plan → free.
+    expect(state.subscriptions[0].status).toBe("canceled");
+  });
+
   it("valt terug naar een schone Free-staat bij customer.subscription.deleted", async () => {
     await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
 
