@@ -217,10 +217,23 @@ export function parseRobotsTxt(robots: string): RobotsParseResult {
   return { sitemaps, disallowedPaths };
 }
 
-/** Matcht een pad tegen een robots-disallow-patroon (prefix of wildcard `*`). */
+/**
+ * Matcht een pad tegen een robots-disallow-patroon.
+ * Ondersteunt wildcard `*` (elke reeks) en `$`-eind-anchor (RFC 9309).
+ * `Disallow: /` wordt bewust overgeslagen: een security-scanner heeft
+ * expliciete toestemming om de site te crawlen, en een blanket-disallow
+ * zou elke scan blokkeren.
+ */
 export function isPathDisallowed(path: string, patterns: string[]): boolean {
   for (const pattern of patterns) {
     if (pattern === "/") continue;
+    if (pattern.endsWith("$")) {
+      const prefix = pattern.slice(0, -1).replace(/\*$/, "");
+      if (prefix === "") {
+        if (path === "") return true;
+      } else if (path.startsWith(prefix)) return true;
+      continue;
+    }
     if (pattern.endsWith("*")) {
       const prefix = pattern.slice(0, -1);
       if (path.startsWith(prefix)) return true;

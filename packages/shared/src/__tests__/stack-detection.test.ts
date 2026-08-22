@@ -43,12 +43,18 @@ describe("detectStack", () => {
     expect(matches.some((m) => m.id === "nginx")).toBe(true);
   });
 
-  it("herkent Django via cookies", () => {
+  it("herkent Django via csrftoken-cookie", () => {
     const matches = detectStack(headersFrom({}), "<html></html>", [
       "csrftoken=abc",
-      "sessionid=xyz",
     ]);
     expect(matches.some((m) => m.id === "django")).toBe(true);
+  });
+
+  it("detecteert Django NIET op alleen sessionid (te generisch)", () => {
+    const matches = detectStack(headersFrom({}), "<html></html>", [
+      "sessionid=xyz",
+    ]);
+    expect(matches.some((m) => m.id === "django")).toBe(false);
   });
 
   it("detecteert Django NIET op alleen een X-Frame-Options-header (false positive fix)", () => {

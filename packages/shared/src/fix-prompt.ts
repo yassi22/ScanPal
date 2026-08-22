@@ -262,16 +262,36 @@ const REQUIREMENTS = [
   "",
 ];
 
+/** Check-ids waarvan de evidence (deels) gemaskeerde secret-previews bevat. */
+const SECRET_CHECK_IDS = new Set([
+  "secrets-in-bundles",
+  "secrets-in-html",
+  "gitleaks",
+]);
+
+/**
+ * Redacteert secret-previews uit evidence-tekst voor secret-gerelateerde checks.
+ * De match_preview (eerste 4 + laatste 4 tekens van een secret) mag niet naar
+ * externe AI-editors lekken — zelfs gedeeltelijke secrets zijn een risico.
+ * Voor niet-secret-checks retourneert de tekst ongewijzigd.
+ */
+function redactEvidenceForPrompt(checkId: string, text: string): string {
+  if (!SECRET_CHECK_IDS.has(checkId)) return text;
+  // Vervang gemaskeerde previews (patroon: 4 tekens + … + 4 tekens) door [REDACTED].
+  return text.replace(/[\w\-+/.]{4}…[\w\-+/.]{4}/g, "[REDACTED]");
+}
+
 /** Eén copy-paste prompt voor één finding. */
 export function buildFindingFixPrompt(
   finding: Finding,
   scope: FixPromptScope,
 ): string {
   const template = fixPromptTemplateFor(finding.check_id);
-  const evidence = trimToChars(
+  const rawEvidence = trimToChars(
     evidenceText(finding.evidence),
     FIX_PROMPT_SINGLE_EVIDENCE_MAX,
   );
+  const evidence = redactEvidenceForPrompt(finding.check_id, rawEvidence);
   const lines: string[] = [];
   lines.push(promptHeader(scope), "");
   lines.push("## Role & goal", "", template, "");
@@ -318,9 +338,12 @@ export function buildScanFixPrompt(
     block.push(`- **Check:** ${checkNameOf(finding.check_id)}`);
     block.push(`- **Description:** ${singleLine(sanitizePromptText(finding.description))}`);
     block.push(`- **Remediation:** ${singleLine(sanitizePromptText(finding.remediation))}`);
-    const evidence = trimToChars(
-      evidenceText(finding.evidence),
-      FIX_PROMPT_GROUPED_EVIDENCE_MAX,
+    const evidence = redactEvidenceForPrompt(
+      finding.check_id,
+      trimToChars(
+        evidenceText(finding.evidence),
+        FIX_PROMPT_GROUPED_EVIDENCE_MAX,
+      ),
     );
     if (evidence) {
       block.push(`- **Evidence:** ${singleLine(sanitizePromptText(evidence))}`);

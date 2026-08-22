@@ -147,7 +147,7 @@ const SIGNATURES: Signature[] = [
     name: "Django",
     category: "framework",
     html: ["csrfmiddlewaretoken", "django.cookies"],
-    cookies: ["csrftoken", "sessionid"],
+    cookies: ["csrftoken"],
   },
   {
     id: "rails",

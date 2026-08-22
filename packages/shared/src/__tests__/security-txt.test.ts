@@ -53,6 +53,12 @@ describe("analyzeNotFoundPage", () => {
     const result = analyzeNotFoundPage("<html>home</html>", 200);
     expect(result.is404).toBe(false);
   });
+
+  it("server-default 404 (lange HTML, geen h1/search/home) is niet custom", () => {
+    const html = "<html><head><title>404 Not Found</title></head><body><center><hr><p>nginx</p></center></body></html>".padEnd(200, " ");
+    const result = analyzeNotFoundPage(html, 404);
+    expect(result.looksCustom).toBe(false);
+  });
 });
 
 describe("evaluateSecurityTxt", () => {

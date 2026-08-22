@@ -55,6 +55,16 @@ describe("detectCmp (bekende CMP's)", () => {
     const signals = detectCmp('<script src="https://cdn.consentmanager.net/x.js"></script>');
     expect(signals.map((s) => s.signal)).toContain("cmp:consentmanager");
   });
+
+  it("matcht 'sketch' niet als Ketch (false positive fix)", () => {
+    const signals = detectCmp("This is a sketch of the building. Ketchup is tasty.");
+    expect(signals.some((s) => s.signal === "cmp:ketch")).toBe(false);
+  });
+
+  it("herkent Ketch wel via specifieke markers", () => {
+    const signals = detectCmp('<script src="https://cdn.ketch.io/consent.js"></script>');
+    expect(signals.some((s) => s.signal === "cmp:ketch")).toBe(true);
+  });
 });
 
 describe("detectBannerElement (generiek)", () => {
@@ -170,6 +180,15 @@ describe("detectGdprSignals", () => {
 
   it("geeft niets terug zonder GDPR-signalen", () => {
     expect(detectGdprSignals("<html><body>Hello world</body></html>")).toEqual([]);
+  });
+
+  it("matcht 'average' niet als AVG/GDPR (false positive fix)", () => {
+    expect(detectGdprSignals("The average price is low. Salvage value.")).toEqual([]);
+  });
+
+  it("herkent AVG als los woord wel als GDPR-referentie", () => {
+    const signals = detectGdprSignals("Wij voldoen aan de AVG.");
+    expect(signals.some((s) => s.signal === "gdpr:gdpr-references")).toBe(true);
   });
 });
 

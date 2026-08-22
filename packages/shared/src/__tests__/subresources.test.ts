@@ -67,4 +67,19 @@ describe("subresources", () => {
     expect(evaluateSubresources(items).status).toBe("pass");
     expect(subresourcesEvidence(items).missing_integrity.length).toBe(0);
   });
+
+  it("vindt stylesheet met href vóór rel (attribuutvolgorde onafhankelijk)", () => {
+    const html = `<link href="https://cdn.example.com/style.css" rel="stylesheet">`;
+    const items = extractSubresources(html, "https://site.example/");
+    expect(items.length).toBe(1);
+    expect(items[0].tag).toBe("link");
+    expect(items[0].url).toBe("https://cdn.example.com/style.css");
+    expect(items[0].integrity).toBe(false);
+  });
+
+  it("negeert link-tags zonder rel=stylesheet (zoals preconnect/icon)", () => {
+    const html = `<link rel="preconnect" href="https://cdn.example.com"><link rel="icon" href="https://cdn.example.com/favicon.ico">`;
+    const items = extractSubresources(html, "https://site.example/");
+    expect(items.length).toBe(0);
+  });
 });

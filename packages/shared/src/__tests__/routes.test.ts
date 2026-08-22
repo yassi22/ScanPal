@@ -162,6 +162,12 @@ describe("route-discovery (plan 54)", () => {
       expect(isPathDisallowed("/public", ["/admin"])).toBe(false);
       expect(isPathDisallowed("/", ["/"])).toBe(false);
     });
+
+    it("isPathDisallowed: $-eind-anchor (RFC 9309)", () => {
+      expect(isPathDisallowed("/page.php", ["/*.php$"])).toBe(true);
+      expect(isPathDisallowed("/page.html", ["/*.php$"])).toBe(false);
+      expect(isPathDisallowed("/dir/page.php", ["/*.php$"])).toBe(true);
+    });
   });
 
   describe("SPA-heuristiek", () => {

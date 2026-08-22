@@ -105,6 +105,22 @@ describe("browser-runtime (features 44, 45)", () => {
       expect(consoleEvidence(capture).failed_requests).toBe(1);
     });
 
+    it("fail bij netwerkfout (status null)", () => {
+      const capture = {
+        messages: [],
+        failed_requests: [{ url: "https://x", method: "GET", status: null, error: "net::ERR_CONNECTION_REFUSED" }],
+      };
+      expect(consoleOverallStatus(capture)).toBe("fail");
+    });
+
+    it("warn bij 4xx (zoals 404 favicon), geen fail", () => {
+      const capture = {
+        messages: [],
+        failed_requests: [{ url: "https://x/favicon.ico", method: "GET", status: 404 }],
+      };
+      expect(consoleOverallStatus(capture)).toBe("warn");
+    });
+
     it("warn bij alleen warnings", () => {
       const capture = {
         messages: [{ type: "warning" as const, text: "deprecation" }],

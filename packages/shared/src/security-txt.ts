@@ -107,13 +107,16 @@ export type NotFoundPageAnalysis = {
 
 export function analyzeNotFoundPage(html: string, status: number): NotFoundPageAnalysis {
   const lower = html.toLowerCase();
+  const hasH1 = /<h1[^>]*>/.test(html);
+  const hasSearch = /<input[^>]+type\s*=\s*["']search["']/i.test(html) || /<form[^>]+role\s*=\s*["']search["']/i.test(html);
+  const hasHomeLink = /href\s*=\s*["'][^"']*["'][^>]*>.*?(home|terug naar begin|homepage)/i.test(lower) || /href\s*=\s*["']\/["']/i.test(html);
   return {
     status,
     is404: status === 404,
-    hasH1: /<h1[^>]*>/.test(html),
-    hasSearch: /<input[^>]+type\s*=\s*["']search["']/i.test(html) || /<form[^>]+role\s*=\s*["']search["']/i.test(html),
-    hasHomeLink: /href\s*=\s*["'][^"']*["'][^>]*>.*?(home|terug naar begin|homepage)/i.test(lower) || /href\s*=\s*["']\/["']/i.test(html),
-    looksCustom: /<h1[^>]*>/.test(html) || html.length > 100,
+    hasH1,
+    hasSearch,
+    hasHomeLink,
+    looksCustom: hasH1 || hasSearch || hasHomeLink,
   };
 }
 

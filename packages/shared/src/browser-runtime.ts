@@ -169,13 +169,21 @@ export function consoleEvidence(capture: ConsoleCapture): ConsoleEvidence {
 }
 
 /**
- * Overall-status: fail bij errors of failed-requests, warn bij warnings,
- * anders pass.
+ * Overall-status: fail bij console-errors, netwerkfouten (status === null) of
+ * 5xx-server-fouten. 4xx-client-fouten (zoals een missende favicon) zijn een
+ * warn, geen fail — anders faalt deze check op vrijwel élke site. warn bij
+ * warnings of 4xx, anders pass.
  */
 export function consoleOverallStatus(capture: ConsoleCapture): "pass" | "warn" | "fail" {
   if (capture.messages.some((m) => m.type === "error")) return "fail";
-  if (capture.failed_requests.length > 0) return "fail";
-  if (capture.messages.some((m) => m.type === "warning")) return "warn";
+  const hasNetworkFailure = capture.failed_requests.some(
+    (r) => r.status === null || (r.status !== null && r.status >= 500),
+  );
+  if (hasNetworkFailure) return "fail";
+  const hasClientError = capture.failed_requests.some(
+    (r) => r.status !== null && r.status >= 400 && r.status < 500,
+  );
+  if (capture.messages.some((m) => m.type === "warning") || hasClientError) return "warn";
   return "pass";
 }
 

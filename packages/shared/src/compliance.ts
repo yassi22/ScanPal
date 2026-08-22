@@ -59,7 +59,7 @@ export const CMP_PROVIDERS: CmpProvider[] = [
   { id: "consentmanager", name: "Consentmanager", patterns: ["consentmanager", "consentmanager.net"] },
   { id: "iubenda", name: "iubenda", patterns: ["iubenda", "iubenda_cs", "iubenda-consent"] },
   { id: "complianz", name: "Complianz", patterns: ["complianz", "cmplz-cookiebanner", "complianz-gdpr"] },
-  { id: "ketch", name: "Ketch", patterns: ["ketch", "ketch.io", "ketch-cmp"] },
+  { id: "ketch", name: "Ketch", patterns: ["ketch.io", "ketch-cmp", "ketchsdk"] },
   { id: "pandectes", name: "Pandectes", patterns: ["pandectes", "gdpr-ccpa", "ccpa-gdpr"] },
   { id: "cookieinformation", name: "Cookie Information", patterns: ["cookieinformation", "cookie-information", "cookieinfo"] },
   { id: "onetrust-geolocation", name: "OneTrust geolocation", patterns: ["geolocationrules", "georules"] },
@@ -303,11 +303,25 @@ const GDPR_MARKERS: { id: string; name: string; markers: string[] }[] = [
   },
 ];
 
+/**
+ * Markeert markers die als los woord moeten matchen (niet als substring in
+ * een langer woord) om false positives te voorkomen. Bijv. "avg" (NL voor
+ * GDPR) mag niet matchen in "average" of "salvage".
+ */
+const WORD_BOUNDARY_MARKERS = new Set(["avg"]);
+
+function markerMatches(lowered: string, marker: string): boolean {
+  if (WORD_BOUNDARY_MARKERS.has(marker)) {
+    return new RegExp(`\\b${marker}\\b`, "i").test(lowered);
+  }
+  return lowered.includes(marker);
+}
+
 /** Detecteert GDPR-signalen (DSAR/data-verwijdering, IAB-TCF, GDPR-referenties). */
 export function detectGdprSignals(html: string): ComplianceSignal[] {
   const lowered = html.toLowerCase();
   return GDPR_MARKERS.filter((marker) =>
-    marker.markers.some((m) => lowered.includes(m)),
+    marker.markers.some((m) => markerMatches(lowered, m)),
   ).map((marker) => ({
     signal: `gdpr:${marker.id}`,
     detail: `${marker.name} gevonden.`,

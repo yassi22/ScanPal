@@ -33,7 +33,7 @@ export type Subresource = {
 
 const SUBRESOURCE_PATTERNS = [
   { tag: "script", attr: "src", re: /<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi },
-  { tag: "link", attr: "href", re: /<link\b[^>]*\brel\s*=\s*["']stylesheet["'][^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi },
+  { tag: "link", attr: "href", re: /<link\b[^>]*>/gi },
 ];
 
 function isCrossOrigin(resourceUrl: string, pageUrl: string): boolean {
@@ -53,7 +53,18 @@ export function extractSubresources(html: string, pageUrl: string): Subresource[
     let match: RegExpExecArray | null;
     while ((match = re.exec(html)) !== null) {
       const tagText = match[0];
-      const url = match[1];
+      let url: string | null = null;
+      if (tag === "link") {
+        const relMatch = tagText.match(/\brel\s*=\s*["']([^"']*)["']/i);
+        const relValue = relMatch?.[1]?.toLowerCase().trim() ?? "";
+        if (!relValue.split(/\s+/).includes("stylesheet")) continue;
+        const hrefMatch = tagText.match(/\bhref\s*=\s*["']([^"']+)["']/i);
+        if (!hrefMatch) continue;
+        url = hrefMatch[1];
+      } else {
+        url = match[1];
+      }
+      if (!url) continue;
       // Only external resources (skip inline + relative same-origin without origin)
       if (!/^https?:\/\//i.test(url)) continue;
       const integrity = /\bintegrity\s*=/i.test(tagText);
