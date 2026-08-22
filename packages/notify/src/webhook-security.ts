@@ -49,19 +49,37 @@ export function isBlockedIp(ip: string): boolean {
     return false;
   }
   if (version === 6) {
-    const groups = expandIPv6(ip);
-    const first = groups[0];
-    const last = groups[groups.length - 1];
+    const parts = expandIPv6(ip);
+    const last = parts[parts.length - 1];
     if (last?.includes(".")) {
-      // IPv4-mapped (::ffff:127.0.0.1) — de IPv4 kant checken
+      // IPv4-mapped/-compatible in dotted vorm (::ffff:127.0.0.1) — check de v4-kant.
       return isBlockedIp(last);
     }
-    // ::1 (loopback): alle groepen 0000 behalve de laatste die 0001 is.
-    if (groups.slice(0, -1).every((g) => g === "0000") && last === "0001") return true;
-    if (first === "fd00") return true; // fd00::/8 (ULA)
+    // Numerieke groepen. `URL.hostname` normaliseert v4-mapped adressen NAAR hex
+    // (`::ffff:a9fe:a9fe`), dus de dotted-branch hierboven is dan dode code — we
+    // moeten de v4-kant ook uit de hex-groepen reconstrueren, anders is de hele
+    // blocklist te omzeilen via `::ffff:169.254.169.254` (SSRF naar metadata).
+    const g = parts.map((part) => parseInt(part, 16));
+    const firstFiveZero =
+      g[0] === 0 && g[1] === 0 && g[2] === 0 && g[3] === 0 && g[4] === 0;
+    // v4-mapped (`::ffff:a.b.c.d`, g[5]=ffff) of -compatible (`::a.b.c.d`, g[5]=0).
+    // Sluit `::` en `::1` uit — die blijven loopback/unspecified, geen 0.0.0.x.
+    const isLoopbackOrUnspecified =
+      firstFiveZero && g[5] === 0 && g[6] === 0 && (g[7] === 0 || g[7] === 1);
+    if (
+      firstFiveZero &&
+      (g[5] === 0xffff || g[5] === 0) &&
+      !isLoopbackOrUnspecified
+    ) {
+      const v4 = `${g[6] >>> 8}.${g[6] & 0xff}.${g[7] >>> 8}.${g[7] & 0xff}`;
+      return isBlockedIp(v4);
+    }
+    if (g.every((group) => group === 0)) return true; // :: (unspecified)
+    if (isLoopbackOrUnspecified && g[7] === 1) return true; // ::1 (loopback)
+    // fc00::/7 (ULA, fc00–fdff) — eerdere versie matchte alleen de string "fd00".
+    if (g[0] >= 0xfc00 && g[0] <= 0xfdff) return true;
     // fe80::/10 (link-local): eerste groep in fe80–febf.
-    const firstNum = parseInt(first, 16);
-    if (firstNum >= 0xfe80 && firstNum <= 0xfebf) return true;
+    if (g[0] >= 0xfe80 && g[0] <= 0xfebf) return true;
     return false;
   }
   return false;
