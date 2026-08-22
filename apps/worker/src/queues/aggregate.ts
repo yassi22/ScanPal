@@ -178,6 +178,11 @@ export function createAggregateProcessor(
         now: new Date().toISOString(),
       });
       await upsertDerivedFinding(db, { scanId, finding });
+      // Bij een aggregator-retry staat de crux-divergence-rij al in de DB-
+      // resultaten; vervang die in plaats van er een tweede aan toe te voegen
+      // (anders ontstaat een duplicate finding in de payload).
+      const derivedCheckId = finding.check_id;
+      checks.rows = checks.rows.filter((c) => c.check_id !== derivedCheckId);
       checks.rows.push({
         check_id: finding.check_id,
         category: finding.category,

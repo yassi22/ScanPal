@@ -1,4 +1,5 @@
 import type { Pool, PoolClient } from "pg";
+import { emptyScanDiff } from "@scanpal/shared";
 import { carryOverFindingStatuses } from "./finding-status";
 import { computeAndWriteScanDiff } from "./scan-diff";
 import { ScanError, type FinishScanInput, type ScanRowWithMeta } from "./types";
@@ -67,7 +68,7 @@ export async function finishScan(
     });
 
     let finalFindings = findings;
-    let diff: Record<string, unknown> = {};
+    let diff: Record<string, unknown> = emptyScanDiff();
     if (input.status === "completed") {
       const result = await computeAndWriteScanDiff(
         client,
@@ -76,7 +77,7 @@ export async function finishScan(
         findings,
       );
       finalFindings = result.findings;
-      diff = result.diff ?? {};
+      diff = result.diff ?? emptyScanDiff();
     }
 
     const updated = await client.query(
