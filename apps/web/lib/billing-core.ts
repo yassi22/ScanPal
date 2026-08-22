@@ -172,6 +172,7 @@ async function handleSubscriptionEvent(
          plan = 'free',
          status = 'active',
          cancel_at_period_end = false,
+         interval = 'month',
          stripe_subscription_id = null,
          current_period_end = null,
          updated_at = now()
