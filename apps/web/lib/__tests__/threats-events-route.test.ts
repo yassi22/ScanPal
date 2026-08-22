@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { GET } from "@/app/api/threats/events/route";
 import { getSessionUser } from "@/lib/supabase/server";
 import { pool } from "@/lib/db";
-import { ensureUserTeam } from "@/lib/team";
+import { getOrCreateUserTeam } from "@/lib/team";
 import { getPlanForTeam } from "@/lib/credits";
 import { listThreatEvents } from "@/lib/threats-core";
 
@@ -12,7 +12,7 @@ vi.mock("@/lib/supabase/server", () => ({
   getSessionUser: vi.fn(),
 }));
 vi.mock("@/lib/team", () => ({
-  ensureUserTeam: vi.fn(),
+  getOrCreateUserTeam: vi.fn(),
 }));
 vi.mock("@/lib/db", () => ({
   pool: { query: vi.fn() },
@@ -26,7 +26,7 @@ vi.mock("@/lib/threats-core", () => ({
 
 const queryMock = vi.mocked(pool.query);
 const getUserMock = vi.mocked(getSessionUser);
-const ensureTeamMock = vi.mocked(ensureUserTeam);
+const ensureTeamMock = vi.mocked(getOrCreateUserTeam);
 const planMock = vi.mocked(getPlanForTeam);
 const eventsMock = vi.mocked(listThreatEvents);
 

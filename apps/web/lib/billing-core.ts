@@ -143,12 +143,21 @@ async function handleSubscriptionEvent(
   const subscriptionId = object.id;
   const customerId = object.customer ?? undefined;
 
+  // Bij een definitieve annulering matchen we uitsluitend op
+  // stripe_subscription_id: dat is precies het abonnement dat wordt
+  // verwijderd. Matchen op customer_id zou een vertraagd/oud deleted-event
+  // (andere event-id, dus voorbij de webhook_events-dedup) een ná een nieuw
+  // abonnement van dezelfde customer kunnen laten wippen naar free.
   const found = await client.query(
-    `select team_id from subscriptions
-     where (stripe_subscription_id = $1 and $1 is not null)
-        or (stripe_customer_id = $2 and $2 is not null)
-     limit 1`,
-    [subscriptionId ?? null, customerId ?? null],
+    isDeletion
+      ? `select team_id from subscriptions
+         where stripe_subscription_id = $1
+         limit 1`
+      : `select team_id from subscriptions
+         where (stripe_subscription_id = $1 and $1 is not null)
+            or (stripe_customer_id = $2 and $2 is not null)
+         limit 1`,
+    isDeletion ? [subscriptionId ?? null] : [subscriptionId ?? null, customerId ?? null],
   );
   if (found.rowCount === 0) return;
 

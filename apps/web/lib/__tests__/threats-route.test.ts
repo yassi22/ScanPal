@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/threats/route";
 import { getSessionUser } from "@/lib/supabase/server";
 import { pool } from "@/lib/db";
-import { ensureUserTeam } from "@/lib/team";
+import { getOrCreateUserTeam } from "@/lib/team";
 import { getPlanForTeam } from "@/lib/credits";
 import { listThreatOverviews } from "@/lib/threats-core";
 
@@ -11,7 +11,7 @@ vi.mock("@/lib/supabase/server", () => ({
   getSessionUser: vi.fn(),
 }));
 vi.mock("@/lib/team", () => ({
-  ensureUserTeam: vi.fn(),
+  getOrCreateUserTeam: vi.fn(),
 }));
 vi.mock("@/lib/db", () => ({
   pool: { query: vi.fn() },
@@ -25,7 +25,7 @@ vi.mock("@/lib/threats-core", () => ({
 
 const queryMock = vi.mocked(pool.query);
 const getUserMock = vi.mocked(getSessionUser);
-const ensureTeamMock = vi.mocked(ensureUserTeam);
+const ensureTeamMock = vi.mocked(getOrCreateUserTeam);
 const planMock = vi.mocked(getPlanForTeam);
 const overviewMock = vi.mocked(listThreatOverviews);
 

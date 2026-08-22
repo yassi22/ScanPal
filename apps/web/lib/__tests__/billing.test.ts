@@ -76,7 +76,9 @@ describe("createCheckoutSession", () => {
     expect(params.mode).toBe("subscription");
     expect(params.line_items[0].price).toBe("price_pro_month");
     expect(params.automatic_tax).toEqual({ enabled: true });
-    expect(params.customer_creation).toBe("always");
+    // In subscription-mode maakt Stripe zelf de customer aan; customer_creation
+    // is daar niet toegestaan. Adres voor Tax wordt tijdens checkout verzameld.
+    expect(params.customer_creation).toBeUndefined();
     expect(params.customer_email).toBe("a@b.nl");
     expect(params.customer).toBeUndefined();
     expect(params.subscription_data.metadata).toMatchObject({

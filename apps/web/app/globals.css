@@ -4113,6 +4113,23 @@ body {
   flex-shrink: 0;
 }
 
+.billing-checkout-retry {
+  margin-left: auto;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  padding: 5px 11px;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.billing-checkout-retry:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .billing-portal-control {
   display: inline-flex;
   align-items: flex-end;

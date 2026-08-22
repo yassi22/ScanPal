@@ -291,6 +291,60 @@ describe("processStripeEvent", () => {
     expect(sub.stripe_customer_id).toBe("cus_1");
   });
 
+  it("een vertraagd deleted-event voor een oud abonnement wist geen nieuw abonnement van dezelfde customer", async () => {
+    // Eerste abonnement: sub_1 / cus_1, pro.
+    await processStripeEvent(state.db, checkoutEvent(), resolvePlanFromPrice);
+    // Annuleer sub_1 → schone Free-staat, subscription_id gewist.
+    await processStripeEvent(
+      state.db,
+      {
+        id: "evt_sub_deleted",
+        type: "customer.subscription.deleted",
+        data: { object: { id: "sub_1", customer: "cus_1", status: "canceled" } },
+      },
+      resolvePlanFromPrice,
+    );
+    expect(state.subscriptions[0].plan).toBe("free");
+    expect(state.subscriptions[0].stripe_subscription_id).toBeNull();
+
+    // Nieuw abonnement: sub_2 / cus_1, pro (eigen checkout-event-id).
+    await processStripeEvent(
+      state.db,
+      {
+        id: "evt_checkout_2",
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_2",
+            subscription: "sub_2",
+            customer: "cus_1",
+            metadata: { team_id: "team-1", plan_id: "pro" },
+          },
+        },
+      },
+      resolvePlanFromPrice,
+    );
+    expect(state.subscriptions[0].plan).toBe("pro");
+    expect(state.subscriptions[0].stripe_subscription_id).toBe("sub_2");
+
+    // Vertraagd deleted-event voor het oude sub_1 (andere event-id, dus voorbij
+    // de webhook_events-dedup). Mag het nieuwe sub_2-abonnement niet wippen.
+    const outcome = await processStripeEvent(
+      state.db,
+      {
+        id: "evt_sub_deleted_late",
+        type: "customer.subscription.deleted",
+        data: { object: { id: "sub_1", customer: "cus_1", status: "canceled" } },
+      },
+      resolvePlanFromPrice,
+    );
+
+    expect(outcome).toBe("processed");
+    const sub = state.subscriptions[0];
+    expect(sub.plan).toBe("pro");
+    expect(sub.stripe_subscription_id).toBe("sub_2");
+  });
+
   it("geeft ignored voor niet-ondersteunde event types", async () => {
     const outcome = await processStripeEvent(
       state.db,

@@ -22,9 +22,15 @@ vi.mock("@/lib/supabase/server", () => ({
       })),
     },
   })),
+  getSessionUser: vi.fn(async () => ({
+    id: "user-1",
+    email: "owner@example.com",
+    user_metadata: {},
+    app_metadata: {},
+  })),
 }));
 vi.mock("@/lib/team", () => ({
-  ensureUserTeam: vi.fn(async () => ({
+  getOrCreateUserTeam: vi.fn(async () => ({
     team: { id: "team-1", name: "Acme Studio" },
     membership: { role: "owner" },
   })),

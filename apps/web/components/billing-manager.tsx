@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { InvoiceView, SubscriptionView } from "@scanpal/shared";
 import { useAccessibleDialog } from "@/lib/use-accessible-dialog";
@@ -102,7 +102,9 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
   }
 
   // Free → Pro: start direct een Stripe-checkout. Bij succes navigeren we weg
-  // naar Stripe, dus `busy` wordt bewust niet gereset op de happy path.
+  // naar Stripe. `window.location.assign` geeft geen fout bij een geblokkeerde
+  // navigatie, dus bewaken we met een timeout: als we na 5s nog op de pagina
+  // zijn, is de redirect waarschijnlijk tegengehouden en resetten we `busy`.
   async function upgradeToPro() {
     setBusy(true);
     setBanner(null);
@@ -115,7 +117,10 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "Upgraden mislukt");
       if (!data?.url) throw new Error("Geen checkout-URL ontvangen");
+      const reset = setTimeout(() => setBusy(false), 5000);
       window.location.assign(data.url);
+      // Navigatie gelukt: de timer wordt nutteloos maar mag rustig aflopen.
+      void reset;
     } catch (err) {
       setBanner(err instanceof Error ? err.message : "Upgraden mislukt");
       setBusy(false);
@@ -229,6 +234,7 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
 export function BillingCheckoutReturn() {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "pending" | "done" | "slow">("idle");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -259,12 +265,13 @@ export function BillingCheckoutReturn() {
         router.refresh();
         return;
       }
-      setTimeout(poll, 2000);
+      timerRef.current = setTimeout(poll, 2000);
     };
 
     void poll();
     return () => {
       cancelled = true;
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [router]);
 
@@ -284,6 +291,13 @@ export function BillingCheckoutReturn() {
             Betaling gelukt. Het abonnement wordt geactiveerd; ververs deze
             pagina zo nog even als het plan nog niet is bijgewerkt.
           </span>
+          <button
+            type="button"
+            className="billing-checkout-retry"
+            onClick={() => router.refresh()}
+          >
+            Opnieuw controleren
+          </button>
         </>
       ) : (
         <>
