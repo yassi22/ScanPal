@@ -92,7 +92,7 @@ function ExistingDashboardShell({
               <>
                 <Link href="/dashboard" className="transition hover:text-slate-200">Dashboard</Link>
                 <Link href="/sites" className="transition hover:text-slate-200">Sites</Link>
-                <Link href="/reports" className="transition hover:text-slate-200">Rapporten</Link>
+                <Link href="/reports" className="transition hover:text-slate-200">Reports</Link>
                 <Link href="/uptime" className="transition hover:text-slate-200">Uptime</Link>
                 <Link href="/threats" className="transition hover:text-slate-200">Threats</Link>
                 <Link href="/settings/team" className="transition hover:text-slate-200">Team</Link>
@@ -204,7 +204,14 @@ export function DashboardShell(props: DashboardShellProps) {
     "/billing",
   ].some(
     (route) => pathname === route || pathname === `${route}/`,
-  ) || pathname.startsWith("/sites/") || pathname.startsWith("/scans/") || pathname.startsWith("/settings");
+  ) ||
+    pathname.startsWith("/sites/") ||
+    pathname.startsWith("/scans/") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/uptime/") ||
+    pathname.startsWith("/threats/") ||
+    pathname.startsWith("/notifications/") ||
+    pathname.startsWith("/billing/");
 
   if (usesWorkspaceShell) {
     return <DashboardHomeShell {...props} />;

@@ -64,7 +64,7 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
       await refresh();
       router.refresh();
     } catch (err) {
-      setBanner(err instanceof Error ? err.message : "Er ging iets mis");
+      setBanner(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setBusy(false);
       setConfirmCancel(false);
@@ -115,14 +115,14 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
         body: JSON.stringify({ planId: "pro", interval: "month" }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error ?? "Upgraden mislukt");
-      if (!data?.url) throw new Error("Geen checkout-URL ontvangen");
+      if (!res.ok) throw new Error(data?.error ?? "Failed to upgrade");
+      if (!data?.url) throw new Error("No checkout URL received");
       const reset = setTimeout(() => setBusy(false), 5000);
       window.location.assign(data.url);
       // Navigatie gelukt: de timer wordt nutteloos maar mag rustig aflopen.
       void reset;
     } catch (err) {
-      setBanner(err instanceof Error ? err.message : "Upgraden mislukt");
+      setBanner(err instanceof Error ? err.message : "Failed to upgrade");
       setBusy(false);
     }
   }
@@ -178,7 +178,7 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
               onClick={upgradeToPro}
               className="billing-primary-action"
             >
-              {busy ? "Bezig…" : "Upgrade naar Pro"}
+              {busy ? "Busy…" : "Upgrade to Pro"}
             </button>
           </div>
         )}
@@ -193,7 +193,7 @@ export function BillingManager({ isOwner, isPaid, subscription: initial }: Props
             <p>
               Access remains available until the end of the current period
               ({subscription.current_period_end
-                ? new Date(subscription.current_period_end).toLocaleDateString("nl-NL")
+                ? new Date(subscription.current_period_end).toLocaleDateString("en-GB")
                 : "the current billing period"}
               ). New scans pause afterward; properties and reports stay stored.
             </p>
@@ -282,14 +282,14 @@ export function BillingCheckoutReturn() {
       {state === "done" ? (
         <>
           <CheckCircle size={16} aria-hidden="true" />
-          <span>Betaling gelukt — je Pro-abonnement is nu actief.</span>
+          <span>Payment successful — your Pro subscription is now active.</span>
         </>
       ) : state === "slow" ? (
         <>
           <WarningCircle size={16} aria-hidden="true" />
           <span>
-            Betaling gelukt. Het abonnement wordt geactiveerd; ververs deze
-            pagina zo nog even als het plan nog niet is bijgewerkt.
+            Payment successful. The subscription is being activated; refresh this
+            page in a moment if the plan has not updated yet.
           </span>
           <button
             type="button"
@@ -302,7 +302,7 @@ export function BillingCheckoutReturn() {
       ) : (
         <>
           <CheckCircle size={16} aria-hidden="true" />
-          <span>Betaling gelukt — je Pro-abonnement wordt geactiveerd…</span>
+          <span>Payment successful — your Pro subscription is being activated…</span>
         </>
       )}
     </div>
@@ -361,7 +361,7 @@ export function BillingInvoices() {
         return res.json();
       })
       .then((data) => setInvoices(data?.invoices ?? []))
-      .catch((err) => setError(err instanceof Error ? err.message : "Er ging iets mis"));
+      .catch((err) => setError(err instanceof Error ? err.message : "Something went wrong"));
   }, []);
 
   return (

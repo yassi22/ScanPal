@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const subscription = await getSubscriptionState(pool, auth.ctx.teamId);
   if (!subscription?.stripe_customer_id) {
     // Geen klant bij Stripe (free): geen facturen — geen data-lek.
-    return NextResponse.json({ error: "Geen facturen" }, { status: 404 });
+    return NextResponse.json({ error: "No invoices" }, { status: 404 });
   }
 
   try {

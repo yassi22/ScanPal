@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const url = canonicalizeSiteUrl(parsed.data.url);
   if (!url) {
     return NextResponse.json(
-      { error: "Voer een geldige URL in, bijvoorbeeld https://voorbeeld.nl" },
+      { error: "Enter a valid URL, e.g. https://example.com" },
       { status: 400 },
     );
   }

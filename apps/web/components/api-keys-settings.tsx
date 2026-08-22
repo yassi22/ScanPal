@@ -34,7 +34,7 @@ export function ApiKeysSettings({ isOwner, initialKeys }: Props) {
       setCreatedKey(data.full_key);
       setName("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis");
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ export function ApiKeysSettings({ isOwner, initialKeys }: Props) {
     const res = await fetch(`/api/api-keys/${keyId}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      setError(data?.error ?? "Intrekken mislukt");
+      setError(data?.error ?? "Failed to revoke");
       return;
     }
     setKeys((prev) =>
@@ -58,7 +58,7 @@ export function ApiKeysSettings({ isOwner, initialKeys }: Props) {
   async function copyKey() {
     if (!createdKey) return;
     await navigator.clipboard.writeText(createdKey);
-    setNotice("Key gekopieerd — bewaar hem goed, hij wordt niet meer getoond.");
+    setNotice("Key copied — keep it safe, it will not be shown again.");
   }
 
   if (!isOwner) {
@@ -71,8 +71,8 @@ export function ApiKeysSettings({ isOwner, initialKeys }: Props) {
         )}
         <section className="settings-card">
           <p className="settings-muted">
-            Alleen de team-owner kan API-keys aanmaken en beheren. Vraag de owner
-            van dit team om een key.
+            Only the team owner can create and manage API keys. Ask the owner
+            of this team for a key.
           </p>
         </section>
       </div>
@@ -91,8 +91,8 @@ export function ApiKeysSettings({ isOwner, initialKeys }: Props) {
         <div className="settings-secret-card">
           <h2>Key aangemaakt — bewaar hem nu</h2>
           <p>
-            De volledige key wordt maar één keer getoond. Kopieer hem direct;
-            ScanPal slaat alleen een hash op.
+            The full key is shown only once. Copy it immediately;
+            ScanPal stores only a hash.
           </p>
           <div className="settings-secret-reveal">
             <code className="settings-secret-value">{createdKey}</code>
@@ -106,7 +106,7 @@ export function ApiKeysSettings({ isOwner, initialKeys }: Props) {
       <section className="settings-card">
         <h2>Nieuwe key aanmaken</h2>
         <p className="settings-card-intro">
-          Een key geeft volledige API-toegang voor je team — gebruik hem voor de
+          A key grants full API access for your team — use it for the
           MCP-server of je eigen integraties.
         </p>
         <form onSubmit={createKey} className="settings-form">
@@ -134,7 +134,7 @@ export function ApiKeysSettings({ isOwner, initialKeys }: Props) {
         <h2>Keys ({keys.length})</h2>
         {keys.length === 0 ? (
           <p className="settings-note">
-            Nog geen API-keys. Maak er één aan om de REST API of MCP-server te
+            No API keys yet. Create one to use the REST API or MCP server
             gebruiken.
           </p>
         ) : (
@@ -153,10 +153,10 @@ export function ApiKeysSettings({ isOwner, initialKeys }: Props) {
                       </p>
                       <p className="settings-item-sub">
                         <code>{key.prefix}…</code> · aangemaakt{" "}
-                        {new Date(key.created_at).toLocaleDateString("nl-NL")}
+                        {new Date(key.created_at).toLocaleDateString("en-GB")}
                         {key.last_used_at
-                          ? ` · laatst gebruikt ${new Date(key.last_used_at).toLocaleDateString("nl-NL")}`
-                          : " · nog niet gebruikt"}
+                          ? ` · laatst gebruikt ${new Date(key.last_used_at).toLocaleDateString("en-GB")}`
+                          : " · not used yet"}
                       </p>
                     </div>
                     <button
@@ -173,7 +173,7 @@ export function ApiKeysSettings({ isOwner, initialKeys }: Props) {
           </ul>
         )}
         <p className="settings-note">
-          Request-limiet geldt per key én per team (afhankelijk van je plan).
+          Request limit applies per key and per team (depending on your plan).
         </p>
       </section>
     </div>

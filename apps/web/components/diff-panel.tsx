@@ -21,10 +21,10 @@ type DiffData = {
 };
 
 const SEVERITY_LABELS: Record<FindingSeverity, string> = {
-  critical: "Kritiek",
-  high: "Hoog",
+  critical: "Critical",
+  high: "High",
   medium: "Medium",
-  low: "Laag",
+  low: "Low",
   info: "Info",
 };
 
@@ -103,7 +103,7 @@ function groupFindings(findings: Finding[]): FindingGroup[] {
     if (a.findings.length !== b.findings.length) {
       return b.findings.length - a.findings.length;
     }
-    return a.title.localeCompare(b.title, "nl");
+    return a.title.localeCompare(b.title, "en");
   });
 }
 
@@ -128,7 +128,7 @@ function FindingGroupRow({
           </span>
           <span className="scan-diff-group-title">{group.title}</span>
           <span className="scan-diff-group-count">
-            {count} {count === 1 ? "bevinding" : "bevindingen"}
+            {count} {count === 1 ? "finding" : "findings"}
           </span>
           <span className="scan-diff-group-category">
             {categoryLabels[group.category]}
@@ -138,31 +138,31 @@ function FindingGroupRow({
 
         <div className="scan-diff-group-details">
           <p>
-            {kind === "new" ? "Nieuw aangetroffen" : "Opnieuw aangetroffen"} op{" "}
+            {kind === "new" ? "Newly found" : "Recurring"} on{" "}
             {group.routes.length > 0
               ? `${group.routes.length} ${group.routes.length === 1 ? "route" : "routes"}`
-              : `${count} ${count === 1 ? "controlepunt" : "controlepunten"}`}.
+              : `${count} ${count === 1 ? "check" : "checks"}`}.
           </p>
           {group.routes.length > 0 && (
-            <ul className="scan-diff-routes" aria-label={`Getroffen routes voor ${group.title}`}>
+            <ul className="scan-diff-routes" aria-label={`Affected routes for ${group.title}`}>
               {group.routes.slice(0, ROUTE_PREVIEW_SIZE).map((route) => (
                 <li key={route} title={route}>
                   {routePath(route)}
                 </li>
               ))}
               {hiddenRouteCount > 0 && (
-                <li className="scan-diff-routes-more">+ {hiddenRouteCount} meer</li>
+                <li className="scan-diff-routes-more">+ {hiddenRouteCount} more</li>
               )}
             </ul>
           )}
           <div className="scan-diff-group-footer">
             {group.snoozed > 0 && (
               <span>
-                {group.snoozed} {group.snoozed === 1 ? "bevinding is" : "bevindingen zijn"}{" "}
-                gesnoozd
+                {group.snoozed} {group.snoozed === 1 ? "finding is" : "findings are"}{" "}
+                snoozed
               </span>
             )}
-            <a href="#scan-findings">Bekijk in alle bevindingen</a>
+            <a href="#scan-findings">View in all findings</a>
           </div>
         </div>
       </details>
@@ -189,7 +189,7 @@ function GroupSection({
     <div className="scan-diff-section">
       <div className="scan-diff-section-heading">
         <h3>{title}</h3>
-        <span>{groups.length} unieke controles</span>
+        <span>{groups.length} unique checks</span>
       </div>
       <ul className="scan-diff-groups">
         {visibleGroups.map((group) => (
@@ -203,7 +203,7 @@ function GroupSection({
           aria-expanded={showAll}
           onClick={() => setShowAll((current) => !current)}
         >
-          {showAll ? "Toon minder" : `Toon ${hiddenGroups} overige controles`}
+          {showAll ? "Show less" : `Show ${hiddenGroups} more checks`}
         </button>
       )}
     </div>
@@ -241,14 +241,14 @@ export function DiffPanel({ scanId }: Props) {
     let cancelled = false;
     fetch(`/api/scans/${scanId}/diff`)
       .then(async (res) => {
-        if (!res.ok) throw new Error("Ophalen mislukt");
+        if (!res.ok) throw new Error("Failed to fetch");
         return res.json() as Promise<DiffData>;
       })
       .then((page) => {
         if (!cancelled) setData(page);
       })
       .catch(() => {
-        if (!cancelled) setError("Wijzigingen ophalen mislukt.");
+        if (!cancelled) setError("Failed to fetch changes.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -262,7 +262,7 @@ export function DiffPanel({ scanId }: Props) {
   if (error) {
     return (
       <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-        <h2 className="text-lg font-bold">Wijzigingen</h2>
+        <h2 className="text-lg font-bold">Changes</h2>
         <p className="mt-2 text-sm text-red-400">{error}</p>
       </section>
     );
@@ -292,40 +292,40 @@ export function DiffPanel({ scanId }: Props) {
     <section className="scan-diff-panel mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <div className="scan-diff-header">
         <div>
-          <h2 className="text-lg font-bold">Wijzigingen sinds de vorige scan</h2>
+          <h2 className="text-lg font-bold">Changes since the previous scan</h2>
           <p>
-            {newFindings.length + regressedFindings.length} bevindingen zijn gebundeld in{" "}
-            {newGroups.length + regressedGroups.length} unieke controles.
+            {newFindings.length + regressedFindings.length} findings bundled into{" "}
+            {newGroups.length + regressedGroups.length} unique checks.
           </p>
         </div>
-        <div className="scan-diff-totals" aria-label="Samenvatting van wijzigingen">
+        <div className="scan-diff-totals" aria-label="Summary of changes">
           <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
-            {totalCount(diff.new)} nieuw
+            {totalCount(diff.new)} new
           </span>
           <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
-            {totalCount(diff.resolved)} opgelost
+            {totalCount(diff.resolved)} resolved
           </span>
           <span className="rounded-full bg-violet-500/15 px-2.5 py-0.5 text-xs font-semibold text-violet-400">
-            {totalCount(diff.regressed)} teruggekeerd
+            {totalCount(diff.regressed)} regressed
           </span>
         </div>
       </div>
       <p className="scan-diff-baseline">
-        Vergeleken met de laatste schone scan (geen open kritieke/ernstige
-        bevindingen of een score ≥ 80).
+        Compared with the last clean scan (no open critical/severe
+        findings or a score ≥ 80).
       </p>
 
-      <GroupSection title="Nieuw" groups={newGroups} kind="new" />
-      <GroupSection title="Teruggekeerd" groups={regressedGroups} kind="regressed" />
+      <GroupSection title="New" groups={newGroups} kind="new" />
+      <GroupSection title="Regressed" groups={regressedGroups} kind="regressed" />
 
       {totalCount(diff.resolved) > 0 && (
         <div className="scan-diff-resolved">
-          <h3>Opgelost</h3>
+          <h3>Resolved</h3>
           <div className="mt-2">
             <SeverityChips counts={diff.resolved} />
           </div>
           <p>
-            Deze bevindingen staan niet meer in de laatste scan.
+            These findings no longer appear in the latest scan.
           </p>
         </div>
       )}

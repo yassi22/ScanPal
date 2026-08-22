@@ -50,7 +50,7 @@ export async function PATCH(
     if (!isPaidPlan(plan.id)) {
       return NextResponse.json(
         {
-          error: "Geplande scans zijn alleen beschikbaar op Pro.",
+          error: "Scheduled scans are only available on Pro.",
           upsell: { plan: "pro" },
           feature: "schedule",
         },

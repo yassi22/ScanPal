@@ -22,17 +22,17 @@ import type { NotificationType, NotificationView } from "@scanpal/shared";
 import { emitNotificationsChanged } from "@/lib/notifications-events";
 
 const TYPE_LABELS: Record<NotificationType, string> = {
-  scan_done: "Scan voltooid",
-  score_drop: "Score gedaald",
-  scan_diff: "Wijzigingen gedetecteerd",
+  scan_done: "Scan completed",
+  score_drop: "Score dropped",
+  scan_diff: "Changes detected",
   site_down: "Site down",
-  site_recovered: "Site hersteld",
-  critical_finding: "Kritieke bevinding",
-  credit_skip: "Scan overgeslagen",
-  scan_failed: "Scan mislukt",
-  webhook_disabled: "Webhook uitgeschakeld",
-  payment_failed: "Betalingsfout",
-  domain_alert: "Domein-alert",
+  site_recovered: "Site recovered",
+  critical_finding: "Critical finding",
+  credit_skip: "Scan skipped",
+  scan_failed: "Scan failed",
+  webhook_disabled: "Webhook disabled",
+  payment_failed: "Payment failed",
+  domain_alert: "Domain alert",
 };
 
 // Tint follows the light "luminous-technical-calm" idiom: flat tinted tile,
@@ -62,7 +62,7 @@ type Props = {
 };
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleString("nl-NL", {
+  return new Date(iso).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -87,7 +87,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
       });
       if (nextFilter === "unread") params.set("unread", "true");
       const res = await fetch(`/api/notifications?${params}`);
-      if (!res.ok) throw new Error("Meldingen laden mislukt");
+      if (!res.ok) throw new Error("Failed to load notifications");
       return (await res.json()) as {
         notifications: NotificationView[];
         unread: number;
@@ -107,7 +107,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
       setUnread(data.unread);
       setTotal(data.total);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis");
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -122,7 +122,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
       setUnread(data.unread);
       setTotal(data.total);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis");
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -136,7 +136,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
       const res = await fetch(`/api/notifications/${notification.id}/read`, {
         method: "POST",
       });
-      if (!res.ok) throw new Error("Markeren als gelezen mislukt");
+      if (!res.ok) throw new Error("Failed to mark as read");
       const data = await res.json();
       setItems((prev) =>
         prev.map((n) => (n.id === notification.id ? data.notification : n)),
@@ -146,7 +146,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
       // re-fetch the authoritative server count.
       emitNotificationsChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis");
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setBusyId(null);
     }
@@ -156,7 +156,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
     setError(null);
     try {
       const res = await fetch("/api/notifications/read-all", { method: "POST" });
-      if (!res.ok) throw new Error("Alles gelezen markeren mislukt");
+      if (!res.ok) throw new Error("Failed to mark all as read");
       setItems((prev) =>
         prev.map((n) =>
           n.read_at ? n : { ...n, read_at: new Date().toISOString() },
@@ -165,7 +165,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
       setUnread(0);
       emitNotificationsChanged({ unread: 0 });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis");
+      setError(err instanceof Error ? err.message : "Something went wrong");
     }
   }
 
@@ -177,8 +177,8 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
         </p>
       )}
 
-      <div className="notifications-toolbar" aria-label="Meldingen filteren">
-        <div className="notifications-filter" role="tablist" aria-label="Filter meldingen">
+      <div className="notifications-toolbar" aria-label="Filter notifications">
+        <div className="notifications-filter" role="tablist" aria-label="Filter notifications">
           {(["all", "unread"] as const).map((option) => (
             <button
               key={option}
@@ -189,7 +189,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
               disabled={loading}
               className={`notifications-filter-pill${filter === option ? " is-active" : ""}`}
             >
-              {option === "all" ? "Alle" : `Ongelezen (${unread})`}
+              {option === "all" ? "All" : `Unread (${unread})`}
             </button>
           ))}
         </div>
@@ -212,11 +212,11 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
               <Bell size={22} aria-hidden="true" />
             </span>
             <div>
-              <strong>Geen meldingen</strong>
+              <strong>No notifications</strong>
               <p>
                 {filter === "unread"
-                  ? "Je hebt geen ongelezen meldingen."
-                  : "Nieuwe meldingen over scans, uptime en bevindingen verschijnen hier."}
+                  ? "You have no unread notifications."
+                  : "New notifications about scans, uptime and findings appear here."}
               </p>
             </div>
           </div>
@@ -246,7 +246,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
                       <span className={`notification-tag is-${meta.tone}`}>
                         {TYPE_LABELS[notification.type]}
                       </span>
-                      {isUnread && <span className="notification-dot" aria-label="Ongelezen" />}
+                      {isUnread && <span className="notification-dot" aria-label="Unread" />}
                       <time>{formatTime(notification.created_at)}</time>
                     </div>
                     <strong>{notification.title}</strong>
@@ -259,7 +259,7 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
                       onClick={() => void markRead(notification)}
                       className="notification-mark-read"
                     >
-                      Markeer gelezen
+                      Mark read
                     </button>
                   )}
                 </li>
@@ -277,16 +277,16 @@ export function NotificationsList({ initial, initialUnread, initialTotal }: Prop
               className="dashboard-light-button"
             >
               <ArrowDown size={16} aria-hidden="true" />
-              {loading ? "Laden…" : "Meer laden"}
+              {loading ? "Loading…" : "Load more"}
             </button>
           </div>
         )}
       </div>
 
       <p className="notifications-note">
-        Meldingen ouder dan 90 dagen worden automatisch opgeruimd. Je voorkeuren
-        beheer je op{" "}
-        <Link href="/settings/notifications">Notificatievoorkeuren</Link>.
+        Notifications older than 90 days are automatically cleaned up. Manage your
+        preferences at{" "}
+        <Link href="/settings/notifications">notification preferences</Link>.
       </p>
     </section>
   );

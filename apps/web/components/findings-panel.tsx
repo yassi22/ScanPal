@@ -27,10 +27,10 @@ type Props = {
 };
 
 const SEVERITY_LABELS: Record<FindingSeverity, string> = {
-  critical: "Kritiek",
-  high: "Hoog",
+  critical: "Critical",
+  high: "High",
   medium: "Medium",
-  low: "Laag",
+  low: "Low",
   info: "Info",
 };
 
@@ -44,8 +44,8 @@ const SEVERITY_COLORS: Record<FindingSeverity, string> = {
 
 const STATUS_LABELS: Record<FindingStatus, string> = {
   open: "Open",
-  fixed: "Opgelost",
-  ignored: "Genegeerd",
+  fixed: "Resolved",
+  ignored: "Ignored",
 };
 
 const STATUS_COLORS: Record<FindingStatus, string> = {
@@ -165,13 +165,13 @@ function EngineMatrixEvidenceNote({
   const reachable = evidence.engine_matrix.filter((r) => r.reachable).length;
   const parseable = evidence.engine_matrix.filter((r) => r.parseable).length;
   const llms = evidence.llms_txt.present
-    ? `llms.txt aanwezig (parseerbaar: ${evidence.llms_txt.parseable ? "ja" : "nee"})`
-    : "llms.txt afwezig";
+    ? `llms.txt present (parseable: ${evidence.llms_txt.parseable ? "yes" : "no"})`
+    : "llms.txt absent";
   return (
     <p className="text-xs text-slate-400">
-      {reachable}/{evidence.engine_matrix.length} bots bereikbaar,{" "}
-      {parseable}/{evidence.engine_matrix.length} bots parseerbaar; {llms}. De
-      volledige per-engine matrix staat bovenaan de resultatenpagina.
+      {reachable}/{evidence.engine_matrix.length} bots reachable,{" "}
+      {parseable}/{evidence.engine_matrix.length} bots parseable; {llms}. The
+      full per-engine matrix is at the top of the results page.
     </p>
   );
 }
@@ -254,17 +254,17 @@ function CopyFindingPromptButton({
       const res = await fetch(
         `/api/scans/${scanId}/findings/${encodeURIComponent(finding.id)}/prompt`,
       );
-      if (!res.ok) throw new Error("Ophalen mislukt");
+      if (!res.ok) throw new Error("Failed to fetch");
       const data = (await res.json()) as { prompt: string };
       const ok = await copyToClipboard(data.prompt);
       if (ok) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } else {
-        setError("Kopiëren mislukt");
+        setError("Failed to copy");
       }
     } catch {
-      setError("Prompt ophalen mislukt");
+      setError("Failed to fetch prompt");
     } finally {
       setBusy(false);
     }
@@ -278,7 +278,7 @@ function CopyFindingPromptButton({
         onClick={handleClick}
         className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-slate-500 disabled:opacity-50"
       >
-        {busy ? "Laden…" : copied ? "Gekopieerd ✓" : "Kopieer prompt"}
+        {busy ? "Loading…" : copied ? "Copied ✓" : "Copy prompt"}
       </button>
       {error && <span className="text-xs text-red-400">{error}</span>}
     </div>
@@ -300,10 +300,10 @@ function ScanFixPromptPanel({ scanId }: { scanId: string }) {
     setError(null);
     try {
       const res = await fetch(`/api/scans/${scanId}/fix-prompt`);
-      if (!res.ok) throw new Error("Ophalen mislukt");
+      if (!res.ok) throw new Error("Failed to fetch");
       setPrompt((await res.json()) as FixPrompt);
     } catch {
-      setError("Fix-prompt genereren mislukt. Probeer het opnieuw.");
+      setError("Failed to generate fix-prompt. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -316,7 +316,7 @@ function ScanFixPromptPanel({ scanId }: { scanId: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } else {
-      setError("Kopiëren mislukt");
+      setError("Failed to copy");
     }
   }
 
@@ -328,20 +328,20 @@ function ScanFixPromptPanel({ scanId }: { scanId: string }) {
         onClick={generate}
         className="rounded-lg bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand transition hover:bg-brand/20 disabled:opacity-50"
       >
-        {loading ? "Genereren…" : "Genereer fix-prompt"}
+        {loading ? "Generating…" : "Generate fix-prompt"}
       </button>
       {error && <p className="text-xs text-red-400">{error}</p>}
       {prompt && (
         <div className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950/60 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Fix-prompt (Engels, voor AI-editors)
+              Fix-prompt (English, for AI editors)
             </p>
             <div className="flex items-center gap-3 text-xs text-slate-500">
               <span>{prompt.findings_covered} open findings</span>
               {prompt.truncated && (
                 <span className="rounded-full bg-amber-500/10 px-2 py-0.5 font-semibold text-amber-400">
-                  Afgekapt
+                  Truncated
                 </span>
               )}
               <button
@@ -349,7 +349,7 @@ function ScanFixPromptPanel({ scanId }: { scanId: string }) {
                 onClick={copy}
                 className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-brand/90"
               >
-                {copied ? "Gekopieerd ✓" : "Kopieer"}
+                {copied ? "Copied ✓" : "Copy"}
               </button>
             </div>
           </div>
@@ -407,7 +407,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
       setError(null);
       try {
         const res = await fetch(`/api/scans/${scanId}/findings?${params}`);
-        if (!res.ok) throw new Error("Ophalen mislukt");
+        if (!res.ok) throw new Error("Failed to fetch");
         const page = (await res.json()) as PanelData;
         setData((prev) => ({
           findings: replace ? page.findings : [...(prev?.findings ?? []), ...page.findings],
@@ -418,7 +418,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
           routes: page.routes,
         }));
       } catch {
-        setError("Findings ophalen mislukt. Probeer het opnieuw.");
+        setError("Failed to fetch findings. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -443,13 +443,13 @@ export function FindingsPanel({ scanId, legacy }: Props) {
           body: JSON.stringify(note !== undefined ? { status, note } : { status }),
         },
       );
-      if (!res.ok) throw new Error("Bijwerken mislukt");
+      if (!res.ok) throw new Error("Failed to update");
       setExpandedId(null);
       setIgnoreTarget(null);
       setIgnoreNote("");
       await fetchPage(0, true);
     } catch {
-      setError("Status bijwerken mislukt. Probeer het opnieuw.");
+      setError("Failed to update status. Please try again.");
     } finally {
       setUpdatingId(null);
     }
@@ -467,10 +467,10 @@ export function FindingsPanel({ scanId, legacy }: Props) {
           body: JSON.stringify({ snooze_until: snoozeUntil }),
         },
       );
-      if (!res.ok) throw new Error("Snooze mislukt");
+      if (!res.ok) throw new Error("Snooze failed");
       await fetchPage(0, true);
     } catch {
-      setError("Snooze bijwerken mislukt. Probeer het opnieuw.");
+      setError("Failed to update snooze. Please try again.");
     } finally {
       setUpdatingId(null);
     }
@@ -515,26 +515,26 @@ export function FindingsPanel({ scanId, legacy }: Props) {
     <section className="scan-findings-panel rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <div className="scan-findings-header">
         <div>
-          <h2 className="text-lg font-bold">Bevindingen</h2>
-          <p>Filter op prioriteit of route en open alleen de details die je nodig hebt.</p>
+          <h2 className="text-lg font-bold">Findings</h2>
+          <p>Filter by priority or route and open only the details you need.</p>
         </div>
         <div className="scan-findings-header-actions">
           <span className="scan-findings-count">
-            {data ? `${findings.length} van ${data.total} getoond` : "Laden…"}
+            {data ? `${findings.length} of ${data.total} shown` : "Loading…"}
           </span>
           <ScanFixPromptPanel scanId={scanId} />
         </div>
       </div>
 
       <div className="scan-findings-filters">
-        <div className="scan-findings-severity-filters" aria-label="Filter op ernst">
+        <div className="scan-findings-severity-filters" aria-label="Filter by severity">
           {severityOrder.map((severity) => (
             <button
               key={severity}
               type="button"
               onClick={() => toggleSeverity(severity)}
               aria-pressed={filters.severity === severity}
-              aria-label={`Filter op ${SEVERITY_LABELS[severity]}: ${counts[severity]} bevindingen`}
+              aria-label={`Filter by ${SEVERITY_LABELS[severity]}: ${counts[severity]} findings`}
               className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                 filters.severity === severity
                   ? "ring-1 ring-brand/60"
@@ -551,17 +551,17 @@ export function FindingsPanel({ scanId, legacy }: Props) {
             <MagnifyingGlass size={17} aria-hidden="true" />
             <input
               type="search"
-              aria-label="Zoek in bevindingen"
+              aria-label="Search findings"
               value={filters.q}
               onChange={(event) =>
                 setFilters((prev) => ({ ...prev, q: event.target.value }))
               }
-              placeholder="Zoek op controle of uitleg…"
+              placeholder="Search by check or explanation…"
             />
           </label>
 
           <select
-            aria-label="Filter bevindingen op categorie"
+            aria-label="Filter findings by category"
             value={filters.category ?? ""}
             onChange={(event) =>
               setFilters((prev) => ({
@@ -571,7 +571,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
             }
             className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-300"
           >
-            <option value="">Alle categorieën</option>
+            <option value="">All categories</option>
             {(data?.categories ?? []).map((category) => (
               <option key={category} value={category}>
                 {categoryLabels[category]}
@@ -580,7 +580,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
           </select>
 
           <select
-            aria-label="Filter bevindingen op status"
+            aria-label="Filter findings by status"
             value={filters.status ?? ""}
             onChange={(event) =>
               setFilters((prev) => ({
@@ -590,7 +590,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
             }
             className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-300"
           >
-            <option value="">Alle statussen</option>
+            <option value="">All statuses</option>
             {(Object.keys(STATUS_LABELS) as FindingStatus[]).map((status) => (
               <option key={status} value={status}>
                 {STATUS_LABELS[status]}
@@ -600,7 +600,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
 
           {(data?.key_types.length ?? 0) > 0 && (
             <select
-              aria-label="Filter findings op key-type"
+              aria-label="Filter findings by key type"
               value={filters.keyType ?? ""}
               onChange={(event) =>
                 setFilters((prev) => ({
@@ -610,7 +610,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
               }
               className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-300"
             >
-              <option value="">Alle key-types</option>
+              <option value="">All key types</option>
               {data!.key_types.map((keyType) => (
                 <option key={keyType} value={keyType}>
                   {bundleKeyTypeLabels[keyType as keyof typeof bundleKeyTypeLabels] ?? keyType}
@@ -621,7 +621,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
 
           {(data?.routes.length ?? 0) > 0 && (
             <select
-              aria-label="Filter findings op route"
+              aria-label="Filter findings by route"
               value={filters.routeUrl ?? ""}
               onChange={(event) =>
                 setFilters((prev) => ({
@@ -631,7 +631,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
               }
               className="max-w-[16rem] truncate rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-300"
             >
-              <option value="">Alle routes</option>
+              <option value="">All routes</option>
               {data!.routes.map((route) => (
                 <option key={route} value={route}>
                   {route}
@@ -642,7 +642,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
 
           {hasFilters && (
             <button type="button" className="scan-findings-reset" onClick={resetFilters}>
-              Filters wissen
+              Clear filters
             </button>
           )}
         </div>
@@ -653,10 +653,10 @@ export function FindingsPanel({ scanId, legacy }: Props) {
       {data && findings.length === 0 && (
         <div className="mt-6 rounded-lg border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
           {legacy
-            ? "Geen findings — herscan deze site voor het nieuwe findings-formaat."
+            ? "No findings — rescan this site for the new findings format."
             : hasFilters
-              ? "Geen findings gevonden — filter aanpassen."
-              : "Geen findings gevonden."}
+              ? "No findings found — adjust filters."
+              : "No findings found."}
         </div>
       )}
 
@@ -703,7 +703,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                 </span>
                 {finding.snooze_until && (
                   <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-400">
-                    Gesnoozd
+                    Snoozed
                   </span>
                 )}
                 <CaretDown
@@ -735,7 +735,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                         <>
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              Verzoek
+                              Request
                             </p>
                             <pre className="mt-1 overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-300">
                               {finding.evidence.request}
@@ -766,7 +766,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                   )}
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Remediatie
+                      Remediation
                     </p>
                     <p className="mt-1 text-sm text-slate-300">
                       {finding.remediation}
@@ -775,7 +775,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                   {finding.note && (
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Notitie
+                        Note
                       </p>
                       <p className="mt-1 text-sm text-slate-300">
                         {finding.note}
@@ -791,7 +791,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                         onClick={() => changeStatus(finding, "fixed")}
                         className="rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/25 disabled:opacity-50"
                       >
-                        Markeer als opgelost
+                        Mark as resolved
                       </button>
                     )}
                     {finding.status !== "ignored" && !ignoring && (
@@ -804,7 +804,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                         }}
                         className="rounded-lg bg-slate-500/15 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-500/25 disabled:opacity-50"
                       >
-                        Negeren
+                        Ignore
                       </button>
                     )}
                     {ignoring && (
@@ -813,7 +813,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                           type="text"
                           value={ignoreNote}
                           onChange={(event) => setIgnoreNote(event.target.value)}
-                          placeholder="Waarom genegeerd? (optioneel)"
+                          placeholder="Why ignored? (optional)"
                           className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 placeholder:text-slate-600 sm:w-72"
                         />
                         <button
@@ -828,14 +828,14 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                           }
                           className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
                         >
-                          Bevestig
+                          Confirm
                         </button>
                         <button
                           type="button"
                           onClick={() => setIgnoreTarget(null)}
                           className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-400 transition hover:border-slate-500"
                         >
-                          Annuleren
+                          Cancel
                         </button>
                       </div>
                     )}
@@ -854,7 +854,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
 
                   <div className="flex flex-wrap items-center gap-2 border-t border-slate-800 pt-3">
                     <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                      Snooze-alert
+                      Snooze alert
                     </span>
                     {finding.snooze_until ? (
                       <button
@@ -863,7 +863,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                         onClick={() => snoozeFinding(finding, null)}
                         className="rounded-lg border border-sky-500/40 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:border-sky-500 disabled:opacity-50"
                       >
-                        Snooze opheffen
+                        Clear snooze
                       </button>
                     ) : (
                       <>
@@ -873,7 +873,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                           onClick={() => snoozeFinding(finding, snoozeDays(7))}
                           className="rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-sky-500/20 disabled:opacity-50"
                         >
-                          7 dagen
+                          7 days
                         </button>
                         <button
                           type="button"
@@ -881,7 +881,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                           onClick={() => snoozeFinding(finding, snoozeDays(30))}
                           className="rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-sky-500/20 disabled:opacity-50"
                         >
-                          30 dagen
+                          30 days
                         </button>
                         <button
                           type="button"
@@ -889,7 +889,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
                           onClick={() => snoozeFinding(finding, "next-scan")}
                           className="rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-400 transition hover:bg-sky-500/20 disabled:opacity-50"
                         >
-                          Tot volgende scan
+                          Until next scan
                         </button>
                       </>
                     )}
@@ -909,7 +909,7 @@ export function FindingsPanel({ scanId, legacy }: Props) {
             onClick={() => fetchPage(findings.length, false)}
             className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500 disabled:opacity-50"
           >
-            {loading ? "Laden…" : `Toon volgende ${Math.min(PAGE_SIZE, data.total - findings.length)}`}
+            {loading ? "Loading…" : `Show next ${Math.min(PAGE_SIZE, data.total - findings.length)}`}
           </button>
         </div>
       )}

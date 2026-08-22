@@ -52,7 +52,7 @@ function hostOf(url: string): string {
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString("nl-NL", {
+  return new Date(value).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -61,7 +61,7 @@ function formatDate(value: string | null): string {
 
 function formatDateTime(value: string | null): string {
   if (!value) return "—";
-  return new Date(value).toLocaleString("nl-NL", {
+  return new Date(value).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -70,7 +70,7 @@ function formatDateTime(value: string | null): string {
 }
 
 const SCHEDULE_LABELS: Record<string, string> = {
-  none: "Geen",
+  none: "None",
   daily: "Dagelijks",
   weekly: "Wekelijks",
 };
@@ -136,7 +136,7 @@ export function SitesManager({
     if (detected) {
       setGithubRepo(detected);
       setRepoHint(
-        `GitHub-repo herkend als ${detected} — vul ook een website-URL in`,
+        `GitHub repo detected as ${detected} — also enter a website URL`,
       );
     } else {
       setRepoHint(null);
@@ -201,7 +201,7 @@ export function SitesManager({
         return;
       }
       if (!res.ok) {
-        setFormError(data?.error ?? "Scan starten mislukt");
+        setFormError(data?.error ?? "Failed to start scan");
         return;
       }
       setDuplicate(null);
@@ -233,8 +233,8 @@ export function SitesManager({
       }
       setNotice(
         frequency === "none"
-          ? "Geplande scans uitgezet"
-          : `Geplande scans ingesteld (${SCHEDULE_LABELS[frequency]})`,
+          ? "Scheduled scans turned off"
+          : `Scheduled scans set (${SCHEDULE_LABELS[frequency]})`,
       );
       await refresh();
     } finally {
@@ -271,7 +271,7 @@ export function SitesManager({
       }
       if (res.status === 409) {
         if (data?.site) setDuplicate(data.site);
-        setFormError(data?.error ?? "Deze site staat al op je lijst");
+        setFormError(data?.error ?? "This site is already on your list");
         return;
       }
       if (!res.ok) {
@@ -282,7 +282,7 @@ export function SitesManager({
       setLabel("");
       setShowErrors(false);
       setFieldErrors({});
-      setNotice(`"${hostOf(data.site.url)}" toegevoegd`);
+      setNotice(`"${hostOf(data.site.url)}" added`);
       await refresh();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Er ging iets mis");
@@ -323,7 +323,7 @@ export function SitesManager({
         return;
       }
       setEditingId(null);
-      setNotice("Site bijgewerkt");
+      setNotice("Site updated");
       await refresh();
     } finally {
       setBusyId(null);
@@ -332,7 +332,7 @@ export function SitesManager({
 
   async function removeSite(site: SiteWithStatus) {
     const name = site.label ?? hostOf(site.url);
-    if (!window.confirm(`Verwijder "${name}" en alle scans van deze site?`)) return;
+    if (!window.confirm(`Remove "${name}" and all scans for this site??`)) return;
     setBusyId(site.id);
     setFormError(null);
     setNotice(null);
@@ -340,11 +340,11 @@ export function SitesManager({
       const res = await fetch(`/api/sites/${site.id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setFormError(data?.error ?? "Verwijderen mislukt");
+        setFormError(data?.error ?? "Removeen mislukt");
         return;
       }
       setSites((prev) => prev.filter((s) => s.id !== site.id));
-      setNotice("Site verwijderd");
+      setNotice("Site removed");
     } finally {
       setBusyId(null);
     }

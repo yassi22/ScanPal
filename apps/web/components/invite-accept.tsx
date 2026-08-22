@@ -41,13 +41,13 @@ export function InviteAccept({
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error(data?.error ?? "Accepteren mislukt");
+        throw new Error(data?.error ?? "Failed to accept");
       }
       setDone(true);
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis");
+      setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
     }
   }
@@ -57,26 +57,26 @@ export function InviteAccept({
       <div className="auth-badge" aria-hidden="true">
         <UsersThree size={26} weight="regular" />
       </div>
-      <span className="auth-eyebrow">Team-uitnodiging</span>
-      <h1 className="auth-title">Je bent uitgenodigd</h1>
+      <span className="auth-eyebrow">Team invitation</span>
+      <h1 className="auth-title">You have been invited</h1>
       <p className="auth-subtitle">
-        Word lid van <span className="auth-strong">{teamName}</span> op ScanPal
-        als <span className="auth-strong">{role === "owner" ? "owner" : "lid"}</span>.
+        Join <span className="auth-strong">{teamName}</span> on ScanPal
+        as <span className="auth-strong">{role === "owner" ? "owner" : "member"}</span>.
       </p>
 
       {wrongEmail ? (
         <div className="auth-notice auth-notice-warn">
-          Deze uitnodiging is bestemd voor{" "}
-          <span className="auth-strong">{email}</span>, maar je bent ingelogd met{" "}
+          This invitation is for{" "}
+          <span className="auth-strong">{email}</span>, but you are logged in with{" "}
           <span className="auth-strong">{loggedInEmail}</span>.{" "}
           <Link href="/login">
-            Log uit en log in met het juiste account
+            Log out and log in with the correct account
           </Link>{" "}
-          of vraag een nieuwe uitnodiging aan.
+          or request a new invitation.
         </div>
       ) : done ? (
         <div className="auth-notice auth-notice-success">
-          Uitnodiging geaccepteerd! Je wordt naar het dashboard gebracht…
+          Invitation accepted! Taking you to the dashboard…
         </div>
       ) : loggedIn ? (
         <>
@@ -88,13 +88,13 @@ export function InviteAccept({
             className="auth-primary"
             style={{ marginTop: 24 }}
           >
-            {loading ? "Accepteren…" : "Uitnodiging accepteren"}
+            {loading ? "Accepting…" : "Accept invitation"}
           </button>
         </>
       ) : (
         <>
           <p className="auth-subtitle" style={{ marginTop: 18 }}>
-            Log in of maak een account om de uitnodiging te accepteren.
+            Log in or create an account to accept the invitation.
           </p>
           <div className="auth-actions">
             <Link
@@ -107,7 +107,7 @@ export function InviteAccept({
               href={`/register?next=${encodeURIComponent(`/invite/${token}`)}`}
               className="auth-oauth-button"
             >
-              Account aanmaken
+              Create account
             </Link>
           </div>
         </>

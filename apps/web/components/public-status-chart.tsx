@@ -56,7 +56,7 @@ export function PublicStatusChart({ slug, initial }: Props) {
     const count = Math.max(1, Math.floor(series.length / 5));
     if (index % count !== 0) return null;
     const [y, m, d] = series[index].day.split("-").map(Number);
-    return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("nl-NL", {
+    return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
     });

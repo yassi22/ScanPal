@@ -9,23 +9,23 @@ import type {
 import { notificationTypes } from "@scanpal/shared";
 
 const EVENT_LABELS: Record<NotificationType, string> = {
-  scan_done: "Scan voltooid",
-  score_drop: "Score gedaald",
-  scan_diff: "Wijzigingen gedetecteerd",
+  scan_done: "Scan completed",
+  score_drop: "Score dropped",
+  scan_diff: "Changes detected",
   site_down: "Site down",
-  site_recovered: "Site hersteld",
-  critical_finding: "Kritieke bevinding",
-  credit_skip: "Scan overgeslagen",
-  scan_failed: "Scan mislukt",
-  webhook_disabled: "Webhook uitgeschakeld",
-  payment_failed: "Betalingsfout",
-  domain_alert: "Domein-alert",
+  site_recovered: "Site recovered",
+  critical_finding: "Critical finding",
+  credit_skip: "Scan skipped",
+  scan_failed: "Scan failed",
+  webhook_disabled: "Webhook disabled",
+  payment_failed: "Payment failed",
+  domain_alert: "Domain alert",
 };
 
 const DELIVERY_LABELS: Record<string, string> = {
   pending: "Wachtend",
   ok: "Bezorgd",
-  failed: "Mislukt",
+  failed: "Failed",
   rejected: "Geweigerd",
   disabled: "Uitgeschakeld",
 };
@@ -71,7 +71,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
         body: JSON.stringify({ name, url, events }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error ?? "Aanmaken mislukt");
+      if (!res.ok) throw new Error(data?.error ?? "Failed to create");
       setWebhooks((prev) => [data.webhook, ...prev]);
       setCreatedSecret(data.secret);
       setName("");
@@ -93,7 +93,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      setBanner(data?.error ?? "Opslaan mislukt");
+      setBanner(data?.error ?? "Failed to save");
       return;
     }
     const updated = await res.json();
@@ -110,7 +110,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
     const res = await fetch(`/api/webhooks/${webhook.id}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      setBanner(data?.error ?? "Verwijderen mislukt");
+      setBanner(data?.error ?? "Failed to delete");
       return;
     }
     setWebhooks((prev) => prev.filter((w) => w.id !== webhook.id));
@@ -123,14 +123,14 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
     const res = await fetch(`/api/webhooks/${webhookId}/test`, { method: "POST" });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      setBanner(data?.error ?? "Test-delivery mislukt");
+      setBanner(data?.error ?? "Test delivery failed");
       return;
     }
     const status = data.delivery?.status;
     setNotice(
       status === "ok"
-        ? `Test-delivery bezorgd (HTTP ${data.delivery.http_status})`
-        : `Test-delivery ${DELIVERY_LABELS[status] ?? status ?? "mislukt"}`,
+        ? `Test delivery sent (HTTP ${data.delivery.http_status})`
+        : `Test-delivery ${DELIVERY_LABELS[status] ?? status ?? "failed"}`,
     );
   }
 
@@ -141,7 +141,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
     const res = await fetch(`/api/webhooks/${webhookId}/secret`, { method: "POST" });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      setBanner(data?.error ?? "Roteren mislukt");
+      setBanner(data?.error ?? "Failed to rotate");
       return;
     }
     setWebhooks((prev) => prev.map((w) => (w.id === webhookId ? data.webhook : w)));
@@ -158,7 +158,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
     const res = await fetch(`/api/webhooks/${webhookId}/deliveries?limit=20`);
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      setBanner(data?.error ?? "Log ophalen mislukt");
+      setBanner(data?.error ?? "Failed to fetch log");
       return;
     }
     setLogFor(webhookId);
@@ -225,7 +225,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
               required
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://api.voorbeeld.nl/scanpal-webhook"
+              placeholder="https://api.example.com/scanpal-webhook"
               className="settings-input"
             />
           </div>
@@ -260,7 +260,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
         <h2>Webhooks ({webhooks.length})</h2>
         {webhooks.length === 0 ? (
           <p className="settings-note">
-            Nog geen webhooks. Maak er één aan om notificatie-events naar je
+            No webhooks yet. Create one to send notification events to your
             eigen infrastructuur te sturen.
           </p>
         ) : (
@@ -278,15 +278,15 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
                       )}
                       {webhook.failure_count > 0 && (
                         <span className="settings-chip is-warning">
-                          {webhook.failure_count} mislukt
+                          {webhook.failure_count} failed
                         </span>
                       )}
                     </p>
                     <p className="settings-item-sub">
                       <code>{webhook.url}</code>
                       {webhook.last_delivery_at
-                        ? ` · laatste bezorging ${new Date(webhook.last_delivery_at).toLocaleString("nl-NL")}`
-                        : " · nog geen bezorging"}
+                        ? ` · last delivery ${new Date(webhook.last_delivery_at).toLocaleString("en-GB")}`
+                        : " · no delivery yet"}
                     </p>
                     <div className="settings-event-tags">
                       {webhook.events.map((event) => (
@@ -346,7 +346,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
                                 {EVENT_LABELS[delivery.event as NotificationType] ??
                                   delivery.event}
                               </strong>{" "}
-                              · {new Date(delivery.created_at).toLocaleString("nl-NL")}
+                              · {new Date(delivery.created_at).toLocaleString("en-GB")}
                               {delivery.http_status
                                 ? ` · HTTP ${delivery.http_status}`
                                 : ""}
@@ -365,9 +365,9 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
                               >
                                 {DELIVERY_LABELS[delivery.status] ?? delivery.status}
                               </span>
-                              {delivery.attempts > 0 && ` · poging ${delivery.attempts}`}
+                              {delivery.attempts > 0 && ` · attempt ${delivery.attempts}`}
                               {delivery.next_attempt_at &&
-                                ` · volgende ${new Date(delivery.next_attempt_at).toLocaleString("nl-NL")}`}
+                                ` · next ${new Date(delivery.next_attempt_at).toLocaleString("en-GB")}`}
                               {delivery.error && <code>{delivery.error}</code>}
                             </span>
                           </li>
@@ -383,7 +383,7 @@ export function WebhooksSettings({ isOwner, initialWebhooks }: Props) {
         <p className="settings-note">
           Bezorging is HMAC-SHA256-gesigneerd ({`sha256=…`} in{" "}
           <code className="settings-code">x-scanpal-signature</code>) met
-          retry/backoff; na 5 mislukte pogingen wordt de webhook automatisch
+          retry/backoff; na 5 failed attempts wordt de webhook automatisch
           uitgeschakeld. Endpoints op loopback/private netwerken worden
           geweigerd.
         </p>

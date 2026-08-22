@@ -44,7 +44,7 @@ export async function PATCH(
     }
     const response = webhookViewSchema.safeParse(view);
     if (!response.success) {
-      console.error("bijgewerkte webhook voldoet niet aan het contract:", response.error);
+      console.error("updated webhook does not match contract:", response.error);
       return NextResponse.json(
         { error: "Opslaan mislukt. Probeer het opnieuw." },
         { status: 500 },

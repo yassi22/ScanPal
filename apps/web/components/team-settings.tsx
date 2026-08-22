@@ -92,10 +92,10 @@ export function TeamSettings({
       setInvitations((prev) => [...prev, data.invitation]);
       if (data.email?.sent === false) {
         setError(
-          "Uitnodiging aangemaakt, maar de e-mail kon niet worden verzonden. Controleer de Resend-configuratie.",
+          "Invitation created, but the email could not be sent. Check the Resend configuration.",
         );
       } else {
-        setNotice(`Uitnodiging gestuurd naar ${email}`);
+        setNotice(`Invitation sent to ${email}`);
       }
       router.refresh();
     } catch (err) {
@@ -131,7 +131,7 @@ export function TeamSettings({
     );
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      setError(data?.error ?? "Annuleren mislukt");
+      setError(data?.error ?? "Failed to cancel");
       return;
     }
     setInvitations((prev) => prev.filter((i) => i.id !== invitationId));
@@ -165,7 +165,7 @@ export function TeamSettings({
     });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      setError(data?.error ?? "Verwijderen mislukt");
+      setError(data?.error ?? "Failed to delete");
       return;
     }
     setMembers((prev) => prev.filter((m) => m.user_id !== userId));
@@ -284,7 +284,7 @@ export function TeamSettings({
                       <strong>{invite.email}</strong>
                       <span>
                         {invite.role === "owner" ? "Owner" : "Member"} · expires{" "}
-                        {new Date(invite.expires_at).toLocaleDateString("nl-NL")}
+                        {new Date(invite.expires_at).toLocaleDateString("en-GB")}
                       </span>
                     </div>
                     <button

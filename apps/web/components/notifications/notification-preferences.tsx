@@ -6,44 +6,44 @@ import type { NotificationType } from "@scanpal/shared";
 const TYPE_META: { type: NotificationType; label: string; description: string }[] = [
   {
     type: "score_drop",
-    label: "Score gedaald",
-    description: "Wanneer de score van een site daalt bij een geplande scan.",
+    label: "Score dropped",
+    description: "When a site's score drops during a scheduled scan.",
   },
   {
     type: "scan_diff",
-    label: "Wijzigingen gedetecteerd",
+    label: "Changes detected",
     description:
-      "Wanneer een geplande scan nieuwe of teruggekeerde bevindingen toont (vanaf medium) of de score ≥ 5 punten daalt.",
+      "When a scheduled scan shows new or regressed findings (from medium) or the score drops ≥ 5 points.",
   },
   {
     type: "critical_finding",
-    label: "Kritieke bevinding",
-    description: "Wanneer een scan een of meer kritieke bevindingen oplevert.",
+    label: "Critical finding",
+    description: "When a scan produces one or more critical findings.",
   },
   {
     type: "site_down",
     label: "Site down",
-    description: "Wanneer een site twee opeenvolgende checks faalt.",
+    description: "When a site fails two consecutive checks.",
   },
   {
     type: "site_recovered",
-    label: "Site hersteld",
-    description: "Wanneer een site weer bereikbaar is na een storing.",
+    label: "Site recovered",
+    description: "When a site is reachable again after an outage.",
   },
   {
     type: "credit_skip",
-    label: "Scan overgeslagen",
-    description: "Wanneer een geplande scan wordt overgeslagen door de credit-limiet.",
+    label: "Scan skipped",
+    description: "When a scheduled scan is skipped due to the credit limit.",
   },
   {
     type: "scan_failed",
-    label: "Scan mislukt",
-    description: "Wanneer een geplande scan mislukt.",
+    label: "Scan failed",
+    description: "When a scheduled scan fails.",
   },
   {
     type: "scan_done",
-    label: "Scan voltooid",
-    description: "Wanneer een scan klaar is. Staat standaard uit.",
+    label: "Scan completed",
+    description: "When a scan is complete. Off by default.",
   },
 ];
 

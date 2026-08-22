@@ -21,15 +21,15 @@ export default async function InvitePage({
           <WarningCircle size={26} weight="regular" />
         </div>
         <h1 className="auth-title">
-          {invitation ? "Uitnodiging verlopen" : "Uitnodiging niet gevonden"}
+          {invitation ? "Invitation expired" : "Invitation not found"}
         </h1>
         <p className="auth-subtitle">
           {invitation
-            ? "Deze uitnodiging is ouder dan 7 dagen. Vraag de owner om een nieuwe."
-            : "Deze link bestaat niet of is al gebruikt."}
+            ? "This invitation is older than 7 days. Ask the owner for a new one."
+            : "This link does not exist or has already been used."}
         </p>
         <Link href="/" className="auth-primary auth-primary--inline">
-          Naar ScanPal
+          Go to ScanPal
         </Link>
       </div>
     );
@@ -43,7 +43,7 @@ export default async function InvitePage({
   return (
     <InviteAccept
       token={token}
-      teamName={invitation.team_name ?? "het team"}
+      teamName={invitation.team_name ?? "the team"}
       email={invitation.email}
       role={invitation.role}
       loggedIn={Boolean(user)}

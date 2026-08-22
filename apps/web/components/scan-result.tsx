@@ -39,10 +39,10 @@ type Props = {
 };
 
 const SEVERITY_LABELS: Record<keyof SeverityCounts, string> = {
-  critical: "Kritiek",
-  high: "Hoog",
+  critical: "Critical",
+  high: "High",
   medium: "Medium",
-  low: "Laag",
+  low: "Low",
   info: "Info",
 };
 
@@ -61,14 +61,14 @@ function ActiveTestsSection({ items }: { items: Finding[] }) {
   return (
     <section className="mt-6 rounded-2xl border border-brand/30 bg-slate-900/50 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">Actieve tests</h2>
+        <h2 className="text-lg font-bold">Active tests</h2>
         <span className="rounded-full border border-brand/40 bg-brand/10 px-2.5 py-0.5 text-[10px] font-semibold text-brand">
           Pro
         </span>
       </div>
       <p className="mt-1 text-xs text-slate-500">
-        Actieve vulnerability-tests (opt-in). Deze findings tellen niet mee in
-        de overall-score.
+        Active vulnerability tests (opt-in). These findings do not count toward
+        the overall score.
       </p>
 
       <ul className="mt-4 space-y-2">
@@ -99,7 +99,7 @@ function ActiveTestsSection({ items }: { items: Finding[] }) {
                     <div className="space-y-2">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Verzoek
+                          Request
                         </p>
                         <pre className="mt-1 overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-300">
                           {finding.evidence.request}
@@ -117,7 +117,7 @@ function ActiveTestsSection({ items }: { items: Finding[] }) {
                   )}
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Remediatie
+                    Remediation
                   </p>
                   <p className="mt-1 text-sm text-slate-300">
                     {finding.remediation}
@@ -171,13 +171,13 @@ function EngineMatrixSection({ items }: { items: Finding[] }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-bold">AEO engine-matrix</h2>
         <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-sky-400">
-          Indicatief
+          Indicative
         </span>
       </div>
       <p className="mt-1 text-xs text-slate-500">
-        Proxy-meting: of AI-crawlers (op basis van hun bot-UA) de site kunnen
-        bereiken en de kerncontent zonder JavaScript te parsen is. Een
-        UA-probe is indicatief — sommige engines gebruiken ook IP-allowlists.
+        Proxy measurement: whether AI crawlers (based on their bot UA) can reach
+        the site and parse core content without JavaScript. A UA probe is
+        indicative — some engines also use IP allowlists.
       </p>
 
       <div className="mt-4 overflow-x-auto">
@@ -185,9 +185,9 @@ function EngineMatrixSection({ items }: { items: Finding[] }) {
           <thead>
             <tr className="border-b border-slate-800 text-left text-xs text-slate-500">
               <th className="py-2 pr-4 font-semibold">Engine</th>
-              <th className="py-2 pr-4 font-semibold">Bereikbaar</th>
-              <th className="py-2 pr-4 font-semibold">Parseerbaar</th>
-              <th className="py-2 font-semibold">Reden</th>
+              <th className="py-2 pr-4 font-semibold">Reachable</th>
+              <th className="py-2 pr-4 font-semibold">Parseable</th>
+              <th className="py-2 font-semibold">Reason</th>
             </tr>
           </thead>
           <tbody>
@@ -208,7 +208,7 @@ function EngineMatrixSection({ items }: { items: Finding[] }) {
                     <ParseBadge ok={row?.parseable ?? false} />
                   </td>
                   <td className="py-2 text-xs text-slate-400">
-                    {row?.reason ?? "niet getest"}
+                    {row?.reason ?? "not tested"}
                   </td>
                 </tr>
               );
@@ -223,7 +223,7 @@ function EngineMatrixSection({ items }: { items: Finding[] }) {
           {llms_txt.present ? (
             <>
               <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
-                Aanwezig
+                Present
               </span>
               <span
                 className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -232,17 +232,17 @@ function EngineMatrixSection({ items }: { items: Finding[] }) {
                     : "border border-amber-500/30 bg-amber-500/10 text-amber-400"
                 }`}
               >
-                {llms_txt.parseable ? "Parseerbaar" : "Niet parseerbaar"}
+                {llms_txt.parseable ? "Parseable" : "Not parseable"}
               </span>
               {llms_txt.link_errors.length > 0 && (
                 <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-xs font-semibold text-red-400">
-                  {llms_txt.link_errors.length} ongeldige link(s)
+                  {llms_txt.link_errors.length} invalid link(s)
                 </span>
               )}
             </>
           ) : (
             <span className="rounded-full border border-slate-600 bg-slate-800/60 px-2.5 py-0.5 text-xs font-semibold text-slate-300">
-              Afwezig
+              Absent
             </span>
           )}
         </div>
@@ -271,14 +271,14 @@ function ComplianceSection({ items }: { items: Finding[] }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-bold">Compliance & privacy</h2>
         <span className="rounded-full border border-slate-600 bg-slate-800/60 px-2.5 py-0.5 text-[10px] font-semibold text-slate-300">
-          Indicatief
+          Indicative
         </span>
       </div>
       <p className="mt-1 text-xs text-slate-500">{COMPLIANCE_DISCLAIMER}</p>
       <p className="mt-3 text-xs text-slate-400">
-        Passieve detectie op basis van de publieke HTML — de site wordt niet
-        aangeraakt en er worden geen cookies geplaatst. Bekijk de details van
-        elke bevinding voor de uitleg waarom dit een signaal is.
+        Passive detection based on the public HTML — the site is not touched
+        and no cookies are set. Open each finding&apos;s details for an explanation
+        of why it is a signal.
       </p>
     </section>
   );
@@ -368,28 +368,28 @@ function CruxSection({ items, crux }: { items: Finding[]; crux: CruxData | null 
   return (
     <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">Prestatie: lab vs field</h2>
+        <h2 className="text-lg font-bold">Performance: lab vs field</h2>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-sky-400">
             Field data (CrUX)
           </span>
           {divergences.length > 0 && (
             <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">
-              {divergences.length} divergentie(s) — zie findings
+              {divergences.length} divergence(s) — see findings
             </span>
           )}
         </div>
       </div>
       <p className="mt-1 text-xs text-slate-500">
-        Lab = Playwright-meting in deze scan; field = p75 van echte
-        Chrome-gebruikers (Chrome UX Report, periode {crux?.collection_period ?? "—"}).
-        Google rankt op field data, niet op lab-guesses.
+        Lab = Playwright measurement in this scan; field = p75 from real
+        Chrome users (Chrome UX Report, period {crux?.collection_period ?? "—"}).
+        Google ranks on field data, not lab guesses.
       </p>
 
       {!crux && (
         <p className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
-          Geen field data beschikbaar — CrUX dekt alleen voldoende bezochte
-          origins (laag verkeer of nieuw domein). Geen score-straf.
+          No field data available — CrUX only covers sufficiently visited
+          origins (low traffic or new domain). No score penalty.
         </p>
       )}
 
@@ -400,7 +400,7 @@ function CruxSection({ items, crux }: { items: Finding[]; crux: CruxData | null 
               <th className="py-2 pr-4 font-semibold">Vital</th>
               <th className="py-2 pr-4 font-semibold">Lab</th>
               <th className="py-2 pr-4 font-semibold">Field p75</th>
-              <th className="py-2 pr-4 font-semibold">Field fracties</th>
+              <th className="py-2 pr-4 font-semibold">Field fractions</th>
               <th className="py-2 font-semibold">Status</th>
             </tr>
           </thead>
@@ -441,7 +441,7 @@ function CruxSection({ items, crux }: { items: Finding[]; crux: CruxData | null 
                   <td className="py-2.5">
                     {divergedVitals.has(key) ? (
                       <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
-                        Afwijkend
+                        Diverging
                       </span>
                     ) : (
                       <span className="text-xs text-slate-600">—</span>
@@ -460,11 +460,11 @@ function CruxSection({ items, crux }: { items: Finding[]; crux: CruxData | null 
 function ReachBadge({ ok }: { ok: boolean }) {
   return ok ? (
     <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
-      Ja
+      Yes
     </span>
   ) : (
     <span className="rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-0.5 text-xs font-semibold text-red-400">
-      Nee
+      No
     </span>
   );
 }
@@ -472,11 +472,11 @@ function ReachBadge({ ok }: { ok: boolean }) {
 function ParseBadge({ ok }: { ok: boolean }) {
   return ok ? (
     <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
-      Ja
+      Yes
     </span>
   ) : (
     <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
-      Nee
+      No
     </span>
   );
 }
@@ -507,28 +507,28 @@ function StatusBadge({ status }: { status: ScanViewState["status"] }) {
   if (status === "completed") {
     return (
       <span className="scan-status is-completed">
-        Voltooid
+        Complete
       </span>
     );
   }
   if (status === "failed") {
     return (
       <span className="scan-status is-failed">
-        Mislukt
+        Failed
       </span>
     );
   }
   if (status === "canceled") {
     return (
       <span className="scan-status is-canceled">
-        Geannuleerd
+        Canceled
       </span>
     );
   }
   return (
     <span className="scan-status is-running">
       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
-      {status === "queued" ? "In de wachtrij" : "Scannen…"}
+      {status === "queued" ? "Queued" : "Scanning…"}
     </span>
   );
 }
@@ -555,7 +555,7 @@ function ExportMenu({ scanId }: { scanId: string }) {
         className="scan-secondary-button rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500"
       >
         <DownloadSimple size={17} aria-hidden="true" />
-        Exporteren
+        Export
       </button>
       {open && (
         <div
@@ -567,7 +567,7 @@ function ExportMenu({ scanId }: { scanId: string }) {
             onClick={close}
             className="flex w-full items-center justify-between px-4 py-2.5 text-sm text-slate-200 transition hover:bg-slate-800"
           >
-            PDF rapport
+            PDF report
             <span className="text-xs text-slate-500">.pdf</span>
           </a>
           <a
@@ -585,7 +585,7 @@ function ExportMenu({ scanId }: { scanId: string }) {
               onChange={(event) => setIncludePrompts(event.target.checked)}
               className="accent-brand"
             />
-            AI fix-prompts meenemen
+            Include AI fix-prompts
           </label>
         </div>
       )}
@@ -607,11 +607,11 @@ function ShareReportButton({ scanId }: { scanId: string }) {
         body: JSON.stringify({}),
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.error ?? "Link maken mislukt");
+      if (!response.ok) throw new Error(data?.error ?? "Failed to create link");
       await navigator.clipboard.writeText(data.url);
-      setMessage("Link gekopieerd");
+      setMessage("Link copied");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Link maken mislukt");
+      setMessage(error instanceof Error ? error.message : "Failed to create link");
     } finally {
       setLoading(false);
     }
@@ -626,7 +626,7 @@ function ShareReportButton({ scanId }: { scanId: string }) {
         className="scan-secondary-button rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 disabled:opacity-50"
       >
         <LinkSimple size={17} aria-hidden="true" />
-        {loading ? "Link maken…" : "Publieke link"}
+        {loading ? "Creating link…" : "Public link"}
       </button>
       {message && (
         <span className="text-xs text-slate-400" role="status" aria-live="polite">
@@ -706,7 +706,7 @@ function CategoryCard({
               {check.name}
               {isCurrent && (
                 <span className="ml-auto animate-pulse text-[10px] uppercase tracking-wide text-brand">
-                  bezig
+                  running
                 </span>
               )}
             </li>
@@ -715,7 +715,7 @@ function CategoryCard({
       </ul>
       {!active && (
         <p className="mt-3 text-[10px] text-slate-600">
-          Geen checks in deze run
+          No checks in this run
         </p>
       )}
     </div>
@@ -729,7 +729,7 @@ function ProgressView({ state }: { state: ScanViewState }) {
       <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
         <div className="flex items-center justify-between text-sm">
           <span className="text-slate-400">
-            {state.status === "queued" ? "In de wachtrij…" : "Checks uitvoeren…"}
+            {state.status === "queued" ? "Queued…" : "Running checks…"}
           </span>
           <span className="font-semibold text-brand">{state.progress}%</span>
         </div>
@@ -741,12 +741,12 @@ function ProgressView({ state }: { state: ScanViewState }) {
         </div>
         <p className="mt-3 text-xs text-slate-500">
           {details
-            ? `${details.checks_done}/${details.checks_total} checks voltooid`
-            : "Bezig met opzetten…"}
+            ? `${details.checks_done}/${details.checks_total} checks completed`
+            : "Setting up…"}
         </p>
         {state.routeCount !== null && state.routeCount > 0 && (
           <p className="mt-1 text-xs text-slate-500">
-            {state.routeCount} route(s) ontdekt
+            {state.routeCount} route(s) discovered
           </p>
         )}
       </div>
@@ -780,7 +780,7 @@ function CategoryScore({
         <p className="text-xs font-semibold text-slate-400">
           {categoryLabels[category]}
         </p>
-        <p className="mt-1 text-xs text-slate-600">Geen checks uitgevoerd</p>
+        <p className="mt-1 text-xs text-slate-600">No checks run</p>
       </div>
     );
   }
@@ -799,7 +799,7 @@ function CategoryScore({
         </span>
       </div>
       <p className="mt-1 text-xs text-slate-500">
-        {passed}/{relevant.length} checks doorstaan
+        {passed}/{relevant.length} checks passed
       </p>
     </div>
   );
@@ -832,7 +832,7 @@ export function ScanResultView({
       const res = await fetch(`/api/scans/${scanId}/cancel`, { method: "POST" });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setActionError(data?.error ?? "Scan annuleren mislukt");
+        setActionError(data?.error ?? "Failed to cancel scan");
         return;
       }
       router.refresh();
@@ -857,7 +857,7 @@ export function ScanResultView({
         return;
       }
       if (!res.ok) {
-        setActionError(data?.error ?? "Scan starten mislukt");
+        setActionError(data?.error ?? "Failed to start scan");
         return;
       }
       router.push(`/scans/${data.scan.id}`);
@@ -879,7 +879,7 @@ export function ScanResultView({
   const blockingFindings =
     (state.summary?.critical ?? 0) + (state.summary?.high ?? 0);
   const completedLabel = state.completedAt
-    ? new Date(state.completedAt).toLocaleString("nl-NL", {
+    ? new Date(state.completedAt).toLocaleString("en-GB", {
         day: "numeric",
         month: "short",
         hour: "2-digit",
@@ -888,10 +888,10 @@ export function ScanResultView({
     : null;
   const scoreHeading =
     (state.score ?? 0) >= 80
-      ? "Gezonde basis"
+      ? "Healthy foundation"
       : (state.score ?? 0) >= 50
-        ? "Verbeteringen aanbevolen"
-        : "Direct aandacht nodig";
+        ? "Improvements recommended"
+        : "Needs immediate attention";
 
   return (
     <div className="scan-detail-page">
@@ -902,7 +902,7 @@ export function ScanResultView({
             className="scan-back-link"
           >
             <ArrowLeft size={16} aria-hidden="true" />
-            {needsOnboarding ? "Terug naar onboarding" : "Terug naar sites"}
+            {needsOnboarding ? "Back to onboarding" : "Back to sites"}
           </Link>
           <h1>
             {siteLabel ?? hostOf(siteUrl)}
@@ -926,16 +926,16 @@ export function ScanResultView({
         <div className="scan-terminal-view">
           {state.status === "failed" ? (
             <section className="scan-state-panel scan-state-panel-error">
-              <h2>Scan mislukt</h2>
+              <h2>Scan failed</h2>
               <p>
-                {state.error ?? "De scan is mislukt. Probeer het opnieuw."}
+                {state.error ?? "The scan failed. Please try again."}
               </p>
             </section>
           ) : state.status === "canceled" ? (
             <section className="scan-state-panel">
-              <h2>Scan geannuleerd</h2>
+              <h2>Scan canceled</h2>
               <p>
-                De scan is geannuleerd en de credit is teruggeboekt.
+                The scan was canceled and the credit has been refunded.
               </p>
             </section>
           ) : (
@@ -954,18 +954,18 @@ export function ScanResultView({
                       <h2 id="scan-result-heading">{scoreHeading}</h2>
                       <p>
                         {blockingFindings > 0
-                          ? `${blockingFindings} bevinding${blockingFindings === 1 ? "" : "en"} met hoge prioriteit vragen om actie.`
-                          : "Geen kritieke of ernstige bevindingen in deze scan."}
+                          ? `${blockingFindings} finding${blockingFindings === 1 ? "" : "s"} with high priority require action.`
+                          : "No critical or severe findings in this scan."}
                       </p>
                       <a href="#scan-findings" className="scan-primary-link">
-                        Bekijk bevindingen
+                        View findings
                       </a>
                     </div>
                   </div>
 
                   <dl className="scan-summary-facts">
                     <div>
-                      <dt>Bevindingen</dt>
+                      <dt>Findings</dt>
                       <dd>{findingsItems.length}</dd>
                     </div>
                     <div>
@@ -973,14 +973,14 @@ export function ScanResultView({
                       <dd>{state.routeCount ?? "—"}</dd>
                     </div>
                     <div>
-                      <dt>Afgerond</dt>
-                      <dd>{completedLabel ?? "Zojuist"}</dd>
+                      <dt>Completed</dt>
+                      <dd>{completedLabel ?? "Just now"}</dd>
                     </div>
                   </dl>
                 </section>
 
                 {state.summary && (
-                  <div className="scan-severity-summary" aria-label="Bevindingen per ernst">
+                  <div className="scan-severity-summary" aria-label="Findings by severity">
                     {(Object.keys(SEVERITY_LABELS) as (keyof SeverityCounts)[]).map(
                       (severity) => (
                         <div
@@ -1001,8 +1001,8 @@ export function ScanResultView({
               <section className="scan-category-section" aria-labelledby="scan-category-heading">
                 <div className="scan-section-heading">
                   <div>
-                    <h2 id="scan-category-heading">Dekking per categorie</h2>
-                    <p>Waar de basis sterk is en waar verbetering het meeste effect heeft.</p>
+                    <h2 id="scan-category-heading">Coverage by category</h2>
+                    <p>Where the foundation is strong and where improvement has the most impact.</p>
                   </div>
                 </div>
                 <div className="scan-category-grid">
@@ -1038,7 +1038,7 @@ export function ScanResultView({
               className="scan-rescan-button"
             >
               <ArrowClockwise size={17} aria-hidden="true" />
-              {busy ? "Starten…" : state.status === "failed" ? "Opnieuw proberen" : "Opnieuw scannen"}
+              {busy ? "Starting…" : state.status === "failed" ? "Retry" : "Rescan"}
             </button>
             {needsOnboarding && (
               <button
@@ -1046,7 +1046,7 @@ export function ScanResultView({
                 onClick={finishOnboarding}
                 className="scan-secondary-button"
               >
-                Naar dashboard
+                Go to dashboard
               </button>
             )}
             {actionError && (
@@ -1061,7 +1061,7 @@ export function ScanResultView({
             {confirmingCancel ? (
               <>
                 <span>
-                  De lopende scan annuleren?
+                  Cancel the running scan?
                 </span>
                 <button
                   type="button"
@@ -1069,7 +1069,7 @@ export function ScanResultView({
                   disabled={canceling}
                   className="scan-danger-button"
                 >
-                  {canceling ? "Annuleren…" : "Ja, annuleren"}
+                  {canceling ? "Canceling…" : "Yes, cancel"}
                 </button>
                 <button
                   type="button"
@@ -1077,7 +1077,7 @@ export function ScanResultView({
                   disabled={canceling}
                   className="scan-secondary-button"
                 >
-                  Nee
+                  No
                 </button>
               </>
             ) : (
@@ -1086,7 +1086,7 @@ export function ScanResultView({
                 onClick={() => setConfirmingCancel(true)}
                 className="scan-secondary-button"
               >
-                Scan annuleren
+                Cancel scan
               </button>
             )}
             {actionError && (

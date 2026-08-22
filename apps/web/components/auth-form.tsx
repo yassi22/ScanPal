@@ -23,7 +23,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(
-    oauthError === "auth" ? "Inloggen is mislukt. Probeer het opnieuw." : null,
+    oauthError === "auth" ? "Login failed. Please try again." : null,
   );
   const [loading, setLoading] = useState(false);
 
@@ -55,11 +55,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error ?? "Er ging iets mis");
+        throw new Error(data?.error ?? "Something went wrong");
       }
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis");
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -82,18 +82,18 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <div className="auth-sent-icon" aria-hidden="true">
           <EnvelopeSimple size={26} weight="regular" />
         </div>
-        <h2 className="auth-title">Check je inbox</h2>
+        <h2 className="auth-title">Check your inbox</h2>
         <p className="auth-subtitle" style={{ margin: "10px auto 0" }}>
-          We hebben een magische link gestuurd naar{" "}
-          <span className="auth-sent-email">{email}</span>. Klik op de link om{" "}
-          {mode === "login" ? "in te loggen" : "je account te activeren"}.
+          We sent a magic link to{" "}
+          <span className="auth-sent-email">{email}</span>. Click the link to{" "}
+          {mode === "login" ? "log in" : "activate your account"}.
         </p>
         <button
           type="button"
           onClick={() => setSent(false)}
           className="auth-sent-reset"
         >
-          Ander e-mailadres gebruiken
+          Use a different email
         </button>
       </div>
     );
@@ -102,38 +102,38 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <div className="auth-card">
       <span className="auth-eyebrow">
-        {mode === "login" ? "Inloggen" : "Nieuw account"}
+        {mode === "login" ? "Log in" : "Create account"}
       </span>
       <h1 className="auth-title">
-        {mode === "login" ? "Welkom terug" : "Account aanmaken"}
+        {mode === "login" ? "Welcome back" : "Create account"}
       </h1>
       <p className="auth-subtitle">
         {mode === "login"
-          ? "Log in met een magische link — geen wachtwoord nodig."
-          : "Je eerste scan staat klaar zodra je account actief is."}
+          ? "Log in with a magic link — no password needed."
+          : "Your first scan is ready once your account is active."}
       </p>
 
       {error && <div className="auth-error">{error}</div>}
 
       <form onSubmit={handleMagicLink} className="auth-form">
         <label className="auth-field">
-          <span className="auth-label">E-mailadres</span>
+          <span className="auth-label">Email address</span>
           <input
             type="email"
             required
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="jij@bedrijf.nl"
+            placeholder="you@company.com"
             className="auth-input"
           />
         </label>
         <button type="submit" disabled={loading} className="auth-primary">
           {loading
-            ? "Versturen…"
+            ? "Sending…"
             : mode === "login"
-              ? "Stuur magische link"
-              : "Maak account aan"}
+              ? "Send magic link"
+              : "Create account"}
         </button>
       </form>
 
@@ -146,7 +146,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           className="auth-oauth-button"
         >
           <GoogleLogo size={18} weight="bold" aria-hidden="true" />
-          Doorgaan met Google
+          Continue with Google
         </button>
         <button
           type="button"
@@ -154,21 +154,21 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           className="auth-oauth-button"
         >
           <GithubLogo size={18} weight="fill" aria-hidden="true" />
-          Doorgaan met GitHub
+          Continue with GitHub
         </button>
       </div>
 
       <p className="auth-footer">
         {mode === "login" ? (
           <>
-            Nog geen account?{" "}
+            No account yet?{" "}
             <a href="/register" className="auth-footer-link">
-              Registreer
+              Sign up
             </a>
           </>
         ) : (
           <>
-            Al een account?{" "}
+            Already have an account?{" "}
             <a href="/login" className="auth-footer-link">
               Log in
             </a>

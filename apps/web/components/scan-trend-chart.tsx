@@ -101,7 +101,7 @@ export function ScanTrendChart({ points }: Props) {
     if (index % count !== 0) return null;
     const p = points[index];
     if (!p) return null;
-    return new Date(p.created_at).toLocaleDateString("nl-NL", {
+    return new Date(p.created_at).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
     });

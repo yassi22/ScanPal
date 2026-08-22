@@ -73,9 +73,9 @@ export function UptimeChart({ siteId, initial }: Props) {
     if (index % count !== 0) return null;
     const date = new Date(series[index].at);
     if (days === 30) {
-      return date.toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+      return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
     }
-    return date.toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   };
 
   return (

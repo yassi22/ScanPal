@@ -39,9 +39,9 @@ export function UptimeDetailView({ siteId, initial }: Props) {
 
   const incidentLabel = incident
     ? incident.ended_at === null
-      ? "Lopend"
+      ? "Ongoing"
       : incidentDuration(incident.started_at, incident.ended_at)
-    : "Geen";
+    : "None";
 
   return (
     <div className="mt-8 space-y-6">

@@ -12,7 +12,7 @@ export function NotificationBell({ initialUnread }: { initialUnread: number }) {
     <Link
       href="/notifications"
       aria-label={
-        unread > 0 ? `Meldingen, ${unread} ongelezen` : "Meldingen"
+        unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
       }
       className="relative inline-flex items-center gap-1.5 transition hover:text-slate-200"
     >

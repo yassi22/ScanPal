@@ -46,12 +46,12 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = subscriptionUpdateSchema.safeParse(body ?? {});
   if (!parsed.success || (parsed.data.interval === undefined && parsed.data.reactivate !== true)) {
-    return toError(400, "Geen geldige wijziging (interval of reactivate)");
+    return toError(400, "Invalid change (interval or reactivate)");
   }
 
   const subscription = await getSubscriptionState(pool, auth.ctx.teamId);
   if (!subscription?.stripe_subscription_id) {
-    return toError(404, "Geen abonnement om te wijzigen");
+    return toError(404, "No subscription to modify");
   }
 
   try {
@@ -89,7 +89,7 @@ export async function DELETE() {
 
   const subscription = await getSubscriptionState(pool, auth.ctx.teamId);
   if (!subscription?.stripe_subscription_id) {
-    return toError(404, "Geen abonnement om op te zeggen");
+    return toError(404, "No subscription to cancel");
   }
 
   try {

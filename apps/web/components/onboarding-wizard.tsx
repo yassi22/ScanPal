@@ -51,10 +51,10 @@ export function OnboardingWizard() {
         body: JSON.stringify({ planId: upsell?.plan ?? "pro" }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error ?? "Checkout starten mislukt");
+      if (!res.ok) throw new Error(data?.error ?? "Failed to start checkout");
       window.location.assign(data.url);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Checkout starten mislukt");
+      alert(err instanceof Error ? err.message : "Failed to start checkout");
       setUpgrading(false);
     }
   }
@@ -65,10 +65,10 @@ export function OnboardingWizard() {
         onSubmit={startScan}
         className="rounded-2xl border border-slate-800 bg-slate-900/50 p-8"
       >
-        <h1 className="text-2xl font-bold">Scan je eerste website</h1>
+        <h1 className="text-2xl font-bold">Scan your first website</h1>
         <p className="mt-2 text-sm text-slate-400">
-          Voer de URL van een website in. ScanPal voert direct een eerste set
-          checks uit — straks worden dat er 100+.
+          Enter a website URL. ScanPal immediately runs an initial set
+          of checks — soon 100+.
         </p>
 
         {formError && (
@@ -85,7 +85,7 @@ export function OnboardingWizard() {
             autoFocus
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="voorbeeld.nl"
+            placeholder="example.com"
             className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition focus:border-brand"
           />
         </label>
@@ -95,7 +95,7 @@ export function OnboardingWizard() {
           disabled={submitting}
           className="mt-6 w-full rounded-lg bg-brand px-4 py-3 font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
         >
-          {submitting ? "Starten…" : "Start scan"}
+          {submitting ? "Starting…" : "Start scan"}
         </button>
       </form>
 
