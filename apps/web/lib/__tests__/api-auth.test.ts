@@ -114,6 +114,7 @@ function makeKeyRow(overrides: Record<string, unknown> = {}) {
 
 describe("requireTeam", () => {
   beforeEach(() => {
+    vi.stubEnv("API_HMAC_SIGNING_SECRET", "test-derivation-domain");
     vi.clearAllMocks();
     getUserMock.mockResolvedValue(USER as never);
     teamContextMock.mockResolvedValue({
@@ -128,6 +129,7 @@ describe("requireTeam", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it("401 zonder sessie en zonder key", async () => {
@@ -336,6 +338,7 @@ describe("requireTeam", () => {
 
 describe("requireSessionOwner", () => {
   beforeEach(() => {
+    vi.stubEnv("API_HMAC_SIGNING_SECRET", "test-derivation-domain");
     vi.clearAllMocks();
     getUserMock.mockResolvedValue(USER as never);
     teamContextMock.mockResolvedValue({
@@ -347,6 +350,7 @@ describe("requireSessionOwner", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it("401 zonder sessie", async () => {

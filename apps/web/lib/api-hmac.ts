@@ -31,7 +31,12 @@ export const HMAC_SIGNING_SECRET_ENV = "API_HMAC_SIGNING_SECRET";
  * Een DB-leak alleen is onvoldoende om requests te forgen.
  */
 export function deriveHmacSigningSecret(keyHash: string): string {
-  const domain = process.env[HMAC_SIGNING_SECRET_ENV] ?? "scanpal-api-hmac-v1";
+  const domain = process.env[HMAC_SIGNING_SECRET_ENV];
+  if (!domain) {
+    throw new Error(
+      `Missing ${HMAC_SIGNING_SECRET_ENV}: HMAC request signing is disabled until the env var is set. Refusing to derive a signing secret from a hardcoded fallback (DB-leak would allow signature forgery).`,
+    );
+  }
   return sha256Hex(`${domain}:${keyHash}`);
 }
 

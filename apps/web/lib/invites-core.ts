@@ -204,6 +204,13 @@ export async function acceptInvitation(
   try {
     await client.query("begin");
 
+    // Lock het team-row om seat-limit TOCTOU te voorkomen: twee gelijktijdige
+    // acceptances zouden anders allebei de seat-count lezen vóór de insert.
+    await client.query(
+      "select 1 from teams where id = $1 for update",
+      [invitation.team_id],
+    );
+
     const alreadyMember = await client.query(
       `select 1 from memberships
        where team_id = $1 and user_id = $2 and status = 'accepted'`,

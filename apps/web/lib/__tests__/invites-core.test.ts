@@ -230,6 +230,12 @@ function fakePool() {
       return { rowCount: 1, rows: [] };
     }
 
+    if (text.startsWith("select 1 from teams where id")) {
+      const [teamId] = params as [string];
+      const exists = teams.some((t) => t.id === teamId);
+      return { rowCount: exists ? 1 : 0, rows: [] };
+    }
+
     throw new Error(`Onverwachte query in test-fake: ${text}`);
   }
 

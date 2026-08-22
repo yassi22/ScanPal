@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
@@ -19,6 +19,14 @@ const SECRET = "abc123secret";
 const CANONICAL = "GET\n/api/scans\n\n1700000000\ne3b0c44298fc1c149afbf4c8996fb924";
 
 describe("api-hmac (feature 25)", () => {
+  beforeEach(() => {
+    vi.stubEnv("API_HMAC_SIGNING_SECRET", "test-derivation-domain");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   describe("canonicalRequestString", () => {
     it("bouwt METHOD\\nPATH\\nQUERY\\nTIMESTAMP\\nBODY_HASH", () => {
       expect(
@@ -48,6 +56,11 @@ describe("api-hmac (feature 25)", () => {
       expect(secret).not.toBe(keyHash);
       expect(deriveHmacSigningSecret(keyHash)).toBe(secret);
       expect(deriveHmacSigningSecret(sha256Hex("ander"))).not.toBe(secret);
+    });
+
+    it("throwt als API_HMAC_SIGNING_SECRET ontbreekt (fail-closed)", () => {
+      vi.stubEnv("API_HMAC_SIGNING_SECRET", "");
+      expect(() => deriveHmacSigningSecret("anyhash")).toThrow();
     });
   });
 

@@ -16,6 +16,13 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (!user.email_confirmed_at) {
+    return NextResponse.json(
+      { error: "Confirm your email address before accepting an invitation" },
+      { status: 403 },
+    );
+  }
+
   try {
     const result = await acceptInvitation(pool, {
       token,

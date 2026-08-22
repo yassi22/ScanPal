@@ -17,22 +17,29 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = billingCheckoutSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ongeldig plan" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
   if (parsed.data.planId === "free") {
     return NextResponse.json(
-      { error: "Het Free-plan heeft geen checkout" },
+      { error: "The Free plan does not require checkout" },
       { status: 400 },
     );
   }
 
-  const { team } = await getOrCreateUserTeam(pool, {
+  const { team, membership } = await getOrCreateUserTeam(pool, {
     id: user.id,
     email: user.email ?? "",
     name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
     avatar_url: user.user_metadata?.avatar_url ?? null,
     auth_provider: user.app_metadata?.provider ?? null,
   });
+
+  if (membership.role !== "owner") {
+    return NextResponse.json(
+      { error: "Only the owner can manage subscriptions" },
+      { status: 403 },
+    );
+  }
 
   const subscription = await getSubscriptionState(pool, team.id);
 
@@ -51,13 +58,13 @@ export async function POST(request: Request) {
   } catch (err) {
     if (err instanceof BillingNotConfiguredError) {
       return NextResponse.json(
-        { error: "Betalingen zijn nog niet geconfigureerd" },
+        { error: "Payments are not configured yet" },
         { status: 503 },
       );
     }
-    console.error("checkout mislukt:", err);
+    console.error("checkout failed:", err);
     return NextResponse.json(
-      { error: "Checkout starten mislukt. Probeer het opnieuw." },
+      { error: "Failed to start checkout. Please try again." },
       { status: 500 },
     );
   }

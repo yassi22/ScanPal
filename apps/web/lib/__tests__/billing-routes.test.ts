@@ -277,7 +277,7 @@ describe("POST /api/billing/checkout", () => {
 
   it("200: checkout met jaar-interval", async () => {
     getSessionMock.mockResolvedValue({ id: "user-1", email: "a@b.nl" } as never);
-    ensureTeamMock.mockResolvedValue({ team: { id: TEAM_ID, name: "Team" } } as never);
+    ensureTeamMock.mockResolvedValue({ team: { id: TEAM_ID, name: "Team" }, membership: { role: "owner" } } as never);
     getSubMock.mockResolvedValue(PRO_SUB as never);
     checkoutMock.mockResolvedValue({ url: "https://checkout.stripe.com/y" } as never);
 
@@ -293,7 +293,7 @@ describe("POST /api/billing/checkout", () => {
 
   it("200: checkout met het max-plan", async () => {
     getSessionMock.mockResolvedValue({ id: "user-1", email: "a@b.nl" } as never);
-    ensureTeamMock.mockResolvedValue({ team: { id: TEAM_ID, name: "Team" } } as never);
+    ensureTeamMock.mockResolvedValue({ team: { id: TEAM_ID, name: "Team" }, membership: { role: "owner" } } as never);
     getSubMock.mockResolvedValue(PRO_SUB as never);
     checkoutMock.mockResolvedValue({ url: "https://checkout.stripe.com/mx" } as never);
 

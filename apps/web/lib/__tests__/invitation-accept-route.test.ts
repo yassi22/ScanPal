@@ -25,7 +25,7 @@ const getSessionUserMock = vi.mocked(getSessionUser);
 const acceptInvitationMock = vi.mocked(acceptInvitation);
 
 const TOKEN = "a".repeat(64);
-const USER = { id: "u-carol", email: "carol@example.com", user_metadata: {}, app_metadata: {} };
+const USER = { id: "u-carol", email: "carol@example.com", email_confirmed_at: "2025-01-01T00:00:00Z", user_metadata: {}, app_metadata: {} };
 
 function acceptRequest(): Promise<Response> {
   const request = new NextRequest(`http://localhost/api/invitations/${TOKEN}/accept`, {

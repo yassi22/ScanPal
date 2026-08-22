@@ -8,14 +8,15 @@ import {
 } from "@scanpal/shared";
 import { requireTeam } from "@/lib/api-auth";
 import { pool } from "@/lib/db";
+import { workspaceIdForContext } from "@/lib/workspace-scope";
 
 export const runtime = "nodejs";
 
 /**
  * GET /api/scans/[id]/findings/[findingId]/prompt — één copy-paste prompt
  * voor één finding (plan 60). Zelfde authz als de andere scans-routes (scans
- * JOIN sites op team_id); onbekende scan of finding → 404. Retourneert het
- * fixPromptSchema met `findings_covered: 1`.
+ * JOIN sites op team_id + workspace-scoping); onbekende scan of finding → 404.
+ * Retourneert het fixPromptSchema met `findings_covered: 1`.
  */
 export async function GET(
   request: NextRequest,
@@ -35,6 +36,7 @@ export async function GET(
     );
   }
   const teamId = auth.ctx.teamId;
+  const workspaceId = workspaceIdForContext(auth.ctx);
 
   const { id, findingId } = await params;
 
@@ -43,8 +45,8 @@ export async function GET(
             st.github_repo
      from scans s
      join sites st on st.id = s.site_id
-     where s.id = $1 and st.team_id = $2`,
-    [id, teamId],
+     where s.id = $1 and st.team_id = $2${workspaceId === undefined ? "" : " and st.workspace_id = $3"}`,
+    workspaceId === undefined ? [id, teamId] : [id, teamId, workspaceId],
   );
   if (result.rowCount === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
