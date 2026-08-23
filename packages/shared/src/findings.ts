@@ -685,6 +685,16 @@ const ISSUE_TITLES: Record<
     warn: "robots.txt of sitemap is onvolledig",
     fail: "robots.txt of sitemap ontbreekt of is ongeldig",
   },
+  "subdomain-takeover": {
+    warn: "Mogelijk vatbaar subdomein (dangling CNAME naar onbekend target)",
+    fail: "Dangling CNAME naar bekende vulnerable service (subdomain-takeover)",
+  },
+  "waf-resilience": {
+    warn: "Geen WAF/CDN of rate-limit-headers gedetecteerd",
+  },
+  "rate-limit-burst": {
+    warn: "Geen rate-limiting waargenomen onder een request-burst",
+  },
 };
 
 const REMEDIATION: Record<string, string> = {
@@ -752,6 +762,12 @@ const REMEDIATION: Record<string, string> = {
     "Publiceer een /.well-known/security.txt volgens RFC 9116 met verplichte velden `Contact:` en `Expires:` (in de toekomst), plus een favicon op /favicon.ico en een custom 404-pagina met h1, zoekfunctie en een link naar de homepage.",
   "robots-sitemap":
     "Publiceer een /robots.txt met een `User-agent: *`-groep en geldige Disallow/Allow-regels, en verwijs via een `Sitemap:`-directive naar je sitemap. Publiceer een geldige sitemap.xml (urlset of sitemapindex) met alleen absolute http(s)-URL's naar bestaande pagina's, en houd de URL's in robots.txt en sitemap gesynchroniseerd met de daadwerkelijke site.",
+  "subdomain-takeover":
+    "Verwijder de dangling CNAME uit je DNS-zone of her-claim het eindpunt bij de provider (bijv. maak de Heroku-app / S3-bucket / GitHub Pages-repo opnieuw aan met dezelfde naam). Verifieer per gerapporteerd subdomein of het target nog van jou is; ruim CNAME-records op zodra je een externe service opzegt. Automatiseer detectie van niet-resolvende CNAME-targets in je DNS-monitoring om herhaling te voorkomen.",
+  "waf-resilience":
+    "Plaats de site achter een WAF/CDN (bijv. Cloudflare, AWS WAF, Akamai) en publiceer rate-limit-headers (`RateLimit-Limit`/`RateLimit-Remaining`/`Retry-After`, RFC 9239/6585) op API-endpoints, zodat clients rate-limiting kunnen respecteren. Ontbrekende headers betekenen niet per se dat er geen bescherming is (een WAF kan op netwerklaag zitten) — bevestig dat gevoelige endpoints daadwerkelijk rate-limiting afdwingen.",
+  "rate-limit-burst":
+    "Dwing rate-limiting af op (login-, zoek- en API-)endpoints zodat een snelle request-burst een 429 (met `Retry-After`) oplevert. Configureer limieten op de WAF/CDN-edge of in de applicatie (bijv. token-bucket per IP/API-key) en communiceer de status via `RateLimit-*`-headers.",
   "secrets-in-html":
     "Verwijder het geheim uit de inline HTML/JS en roteer het direct (behandel het als gelekt). Plaats secrets server-side in omgevingsvariabelen of een secrets-manager en lever ze via een beveiligde API-endpoint, nooit inline in het HTML-document of in inline <script>-blokken.",
   "mini-crawl":

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { extractSitemapLocs } from "./sitemap-loc";
 
 /**
  * Route-discovery + per-route checks (plan 54). Pure helpers (geen netwerk,
@@ -161,10 +162,8 @@ export function extractInternalLinks(
 /** Parseert een sitemap.xml-body (urlset én sitemapindex): alle `<loc>`-URL's. */
 export function parseSitemap(xml: string): string[] {
   const urls: string[] = [];
-  const re = /<loc>\s*([^<]+?)\s*<\/loc>/gi;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(xml)) !== null) {
-    const url = normalizeRouteUrl(match[1].trim());
+  for (const loc of extractSitemapLocs(xml)) {
+    const url = normalizeRouteUrl(loc);
     if (url) urls.push(url);
   }
   return urls.slice(0, CRAWL_LIMITS.maxSitemapUrls);

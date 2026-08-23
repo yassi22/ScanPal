@@ -140,6 +140,7 @@ export * from "./subresources";
 export * from "./structured-data";
 export * from "./security-txt";
 export * from "./robots-sitemap";
+export * from "./sitemap-loc";
 export * from "./secrets-in-html";
 export * from "./mini-crawl";
 export * from "./repo-health";

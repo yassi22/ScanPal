@@ -638,7 +638,19 @@ export function createActiveTestsCheck(
       );
       const got429 = valid.some((r) => r.status === 429);
       const gotRetryAfter = valid.some((r) => r.retryAfter !== null);
-      const remainingHitZero = valid.some((r) => r.remaining === "0");
+      // `remaining` numeriek parsen en alleen als burst-signaal tellen wanneer
+      // de teller ONDER de burst van >0 naar 0 daalt. Een respons die al met
+      // `remaining: 0` binnenkomt (bijv. door eerdere actieve tests op dezelfde
+      // server-quota) mag geen `pass` opleveren — dat was niet de burst.
+      let remainingHitZero = false;
+      let sawPositiveRemaining = false;
+      for (const r of valid) {
+        if (r.remaining === null) continue;
+        const n = Number.parseInt(r.remaining.trim(), 10);
+        if (!Number.isFinite(n)) continue;
+        if (n > 0) sawPositiveRemaining = true;
+        else if (sawPositiveRemaining) remainingHitZero = true;
+      }
       const rateLimited = got429 || gotRetryAfter || remainingHitZero;
       if (valid.length < RATE_LIMIT_BURST_COUNT / 2) {
         push({

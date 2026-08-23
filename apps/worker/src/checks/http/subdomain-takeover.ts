@@ -1,6 +1,7 @@
 import {
   checkById,
   classifyTakeover,
+  extractSitemapLocs,
   registrableDomain,
   type InlineCheckLike,
   type SubdomainTakeover,
@@ -17,6 +18,35 @@ const RATE_LIMIT_WINDOW_SECONDS = 60;
 const RATE_LIMIT_PER_HOST_PER_MINUTE = 5;
 /** Max kandidaten om te proberen (bescherming tegen een enorme CT-uitkomst). */
 const MAX_CANDIDATES = 50;
+/**
+ * Max gelijktijdige CNAME-probes. Elke probe doet tot 3 sequentiële DNS-
+ * lookups; zonder cap zou `MAX_CANDIDATES` (50) kandidaten ~150 lookups
+ * tegelijk afvuren en de DNS-resolver overbelasten. Een kleine cap houdt de
+ * belasting begrensd zonder de check merkbaar te vertragen.
+ */
+const PROBE_CONCURRENCY = 8;
+
+/**
+ * Mapt `items` met een begrensd aantal gelijktijdige workers, met behoud van
+ * de invoer-volgorde in de output.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index]);
+    }
+  }
+  const workers = Array.from({ length: Math.min(limit, items.length) }, worker);
+  await Promise.all(workers);
+  return results;
+}
 
 /**
  * Subdomain-takeover catalog-check (plan 72). Passief: leest publieke DNS
@@ -93,10 +123,10 @@ export const subdomainTakeoverCheck: CheckImplementation = {
     }
 
     const candidates = enumeration.candidates.slice(0, MAX_CANDIDATES);
-    const probes = await Promise.all(
-      candidates.map((sub) =>
-        probeCnameTakeover(sub).then((p) => ({ sub, probe: p })),
-      ),
+    const probes = await mapWithConcurrency(
+      candidates,
+      PROBE_CONCURRENCY,
+      async (sub) => ({ sub, probe: await probeCnameTakeover(sub) }),
     );
 
     const vulnerable: SubdomainTakeover["vulnerable"] = [];
@@ -227,11 +257,9 @@ async function collectSitemapHosts(ctx: {
   if (!xml) return [];
 
   const hosts = new Set<string>();
-  const locRe = /<loc>\s*([^<]+?)\s*<\/loc>/gi;
-  let match: RegExpExecArray | null;
-  while ((match = locRe.exec(xml)) !== null) {
+  for (const loc of extractSitemapLocs(xml)) {
     try {
-      hosts.add(new URL(match[1].trim()).hostname.toLowerCase());
+      hosts.add(new URL(loc).hostname.toLowerCase());
     } catch {
       // ongeldige URL overslaan
     }

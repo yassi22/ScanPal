@@ -332,7 +332,9 @@ export async function fetchCtSubdomains(
   deps: DomainDeps = {},
 ): Promise<string[] | null> {
   const fetchImpl = deps.fetchImpl ?? fetch;
-  const url = `https://crt.sh/?q=%25.${apexPunycode}&output=json`;
+  // `%25.` is de URL-encoding van het wildcard-prefix `%.`; de apex zelf wordt
+  // ge-encodeerd als defense-in-depth (punycode is normaliter ASCII).
+  const url = `https://crt.sh/?q=%25.${encodeURIComponent(apexPunycode)}&output=json`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CRT_SH_TIMEOUT_MS);
   try {
@@ -362,15 +364,19 @@ export async function fetchCtSubdomains(
  * kandidaten om te proberen plus de bronnen die iets hebben opgeleverd en of
  * crt.sh faalde.
  */
+/** Resultaat van {@link enumerateSubdomains} (plan 72, besluit 2). */
+export type SubdomainEnumeration = {
+  /** Kandidaten om te proberen (zonder apex/www). */
+  candidates: string[];
+  sources: ("sitemap" | "crtsh")[];
+  ct_failed: boolean;
+};
+
 export async function enumerateSubdomains(
   apexPunycode: string,
   sitemapHosts: string[],
   deps: DomainDeps = {},
-): Promise<{
-  candidates: string[];
-  sources: ("sitemap" | "crtsh")[];
-  ct_failed: boolean;
-}> {
+): Promise<SubdomainEnumeration> {
   const apexLower = apexPunycode.toLowerCase().replace(/\.+$/, "");
   const fromSitemap = sitemapHosts
     .map((h) => h.toLowerCase().replace(/\.+$/, ""))
@@ -398,22 +404,48 @@ export async function enumerateSubdomains(
 }
 
 /**
+ * Roept één resolver-methode aan en degradeert elke fout tot een lege lijst.
+ * Vangt zowel een afgewezen promise (NXDOMAIN/ENODATA/time-out) als een
+ * synchrone throw op — die laatste treedt op wanneer de methode ontbreekt op
+ * een (mock-)resolver, waardoor de aanroep anders vóór `.then` zou gooien en
+ * uit `probeCnameTakeover` zou ontsnappen.
+ */
+async function safeResolve(
+  fn: ((host: string) => Promise<string[]>) | undefined,
+  thisArg: unknown,
+  host: string,
+): Promise<string[]> {
+  if (typeof fn !== "function") return [];
+  try {
+    return await fn.call(thisArg, host);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Probe één subdomein op dangling CNAME (plan 72, besluit 3). Hergebruikt de
- * swappable `dnsResolver` — `resolveCname` en `resolve4` (A-records). Een
- * subdomein zonder CNAME levert `cname_target: null` (niet vatbaar). Een
- * CNAME waarvan het target niet resolvend is (NXDOMAIN) is dangling.
- * Failure-resistent: een falende query levert `false`/`null` (geen crash).
+ * swappable `dnsResolver` — `resolveCname`, `resolve4` (A) en `resolve6`
+ * (AAAA). Een subdomein zonder CNAME levert `cname_target: null` (niet
+ * vatbaar). Een CNAME waarvan het target geen A/AAAA-records heeft (NXDOMAIN)
+ * is dangling. Failure-resistent: een falende query levert `false`/`null`
+ * (geen crash).
  *
- * BEKENDE BEPERKING (DNS-only, passief): dangling wordt puur op DNS-niveau
- * bepaald (`resolve4(target)` leeg = NXDOMAIN). Dit vangt services die het
- * target laten verdwijnen wanneer de resource weg is (S3, Heroku, Azure).
- * Het MIST de takeover-klasse waarbij het target op DNS-niveau blíjft
- * resolven maar op applicatie-niveau dangelt (GitHub Pages met bestaande
- * user/onbestaand repo, Fastly, CloudFront): daar geeft `resolve4` A-records
- * → `target_resolves: true` → geclassificeerd als `info` (false negative).
- * Een volledige dekking vereist een actieve HTTP-fingerprint van de
- * platform-"no such app/bucket"-respons; die is bewust weggelaten omdat deze
- * check passief is (geen interactie met de doelsite, plan 72).
+ * `target_resolves` wordt bepaald via zowel A- (`resolve4`) als AAAA-records
+ * (`resolve6`): een target met alleen IPv6 (of alleen een AAAA-record) is
+ * eigenaar-bezet en dus NIET dangling — puur op `resolve4` afgaan zou dat als
+ * `medium` false-positive rapporteren.
+ *
+ * BEKENDE BEPERKING (DNS-only, passief): dangling wordt op DNS-niveau bepaald
+ * (geen A/AAAA voor het target = NXDOMAIN). Dit vangt services die het target
+ * laten verdwijnen wanneer de resource weg is (S3, Heroku, Azure). Het MIST de
+ * takeover-klasse waarbij het target op DNS-niveau blíjft resolven maar op
+ * applicatie-niveau dangelt (GitHub Pages met bestaande user/onbestaand repo,
+ * Fastly, CloudFront): daar geven A/AAAA records → `target_resolves: true` →
+ * geclassificeerd als `info` (false negative). Een volledige dekking vereist
+ * een actieve HTTP-fingerprint van de platform-"no such app/bucket"-respons;
+ * die is bewust weggelaten omdat deze check passief is (geen interactie met de
+ * doelsite, plan 72).
  */
 export async function probeCnameTakeover(
   subdomainPunycode: string,
@@ -421,25 +453,22 @@ export async function probeCnameTakeover(
 ): Promise<TakeoverProbe> {
   const resolver = deps.dnsResolver ?? dns;
 
-  const cnameRecords = await resolver.resolveCname(subdomainPunycode).then(
-    (cnames: string[]) => cnames,
-    () => [] as string[],
-  );
+  // Elke lookup via `safeResolve`: vangt zowel een rejected promise als een
+  // synchrone throw (bv. een resolver-mock zonder `resolve6`) op tot een lege
+  // lijst, zodat één falende query nooit uit `probeCnameTakeover` ontsnapt.
+  const cnameRecords = await safeResolve(resolver.resolveCname, resolver, subdomainPunycode);
   const cname_target = cnameRecords.length > 0 ? cnameRecords[0] : null;
 
-  const aRecords = await resolver.resolve4(subdomainPunycode).then(
-    (a: string[]) => a,
-    () => [] as string[],
-  );
+  const aRecords = await safeResolve(resolver.resolve4, resolver, subdomainPunycode);
   const resolves = aRecords.length > 0;
 
   let target_resolves = false;
   if (cname_target) {
-    const targetA = await resolver.resolve4(cname_target).then(
-      (a: string[]) => a,
-      () => [] as string[],
-    );
-    target_resolves = targetA.length > 0;
+    const [targetA, targetAaaa] = await Promise.all([
+      safeResolve(resolver.resolve4, resolver, cname_target),
+      safeResolve(resolver.resolve6, resolver, cname_target),
+    ]);
+    target_resolves = targetA.length > 0 || targetAaaa.length > 0;
   }
 
   return {

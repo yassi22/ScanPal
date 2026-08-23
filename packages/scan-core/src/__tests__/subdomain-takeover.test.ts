@@ -22,6 +22,7 @@ function mockFetchFail() {
 type ResolverState = {
   cnames?: Record<string, string[]>;
   a?: Record<string, string[]>;
+  aaaa?: Record<string, string[]>;
   throwCname?: Set<string>;
   throwA?: Set<string>;
 };
@@ -37,6 +38,11 @@ function mockResolver(state: ResolverState) {
     resolve4: vi.fn(async (host: string) => {
       if (state.throwA?.has(host)) throw new Error("ENOTFOUND");
       const v = state.a?.[host];
+      if (!v) throw new Error("ENODATA");
+      return v;
+    }),
+    resolve6: vi.fn(async (host: string) => {
+      const v = state.aaaa?.[host];
       if (!v) throw new Error("ENODATA");
       return v;
     }),
@@ -141,6 +147,37 @@ describe("probeCnameTakeover", () => {
     });
     expect(probe.cname_target).toBe("example.herokuapp.com");
     expect(probe.target_resolves).toBe(true);
+  });
+
+  it("info: target met alleen AAAA-records is niet dangling (geen false positive)", async () => {
+    const resolver = mockResolver({
+      cnames: { "staging.example.com": ["ipv6-only.example.net"] },
+      a: { "staging.example.com": [] },
+      throwA: new Set(["ipv6-only.example.net"]),
+      aaaa: { "ipv6-only.example.net": ["2001:db8::1"] },
+    });
+    const probe = await probeCnameTakeover("staging.example.com", {
+      dnsResolver: resolver,
+    });
+    expect(probe.cname_target).toBe("ipv6-only.example.net");
+    expect(probe.target_resolves).toBe(true);
+  });
+
+  it("geen crash wanneer de resolver geen resolve6 heeft", async () => {
+    // Resolver-object zonder resolve6: de aanroep zou synchroon gooien; de
+    // guard in safeResolve moet dat opvangen.
+    const resolver = {
+      resolveCname: vi.fn(async () => ["example.herokuapp.com"]),
+      resolve4: vi.fn(async (host: string) => {
+        if (host === "example.herokuapp.com") throw new Error("ENOTFOUND");
+        return [] as string[];
+      }),
+    } as unknown as typeof import("node:dns/promises");
+    const probe = await probeCnameTakeover("staging.example.com", {
+      dnsResolver: resolver,
+    });
+    expect(probe.cname_target).toBe("example.herokuapp.com");
+    expect(probe.target_resolves).toBe(false);
   });
 
   it("info: geen CNAME-record", async () => {

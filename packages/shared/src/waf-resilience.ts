@@ -66,7 +66,15 @@ type DetectRule = {
   /** Substring in de header-waarde (lowercase); leeg = aanwezigheid volstaat. */
   contains?: string;
   label: string;
-  kind: "waf" | "cdn";
+  /**
+   * `waf`/`cdn` tellen als weerbaarheids-bescherming; `cache` is puur
+   * informatief (het signaal komt in `signals`, maar zet géén waf/cdn en telt
+   * dus niet als bescherming). Nodig omdat headers als `x-cache` en
+   * `x-amzn-trace-id` door bijna elke origin-cache / load-balancer worden
+   * gezet — ze als bescherming rekenen zou de enige `warn`-uitkomst ("geen
+   * WAF/CDN") vrijwel onbereikbaar maken (false negatives).
+   */
+  kind: "waf" | "cdn" | "cache";
 };
 
 const DETECT_RULES: DetectRule[] = [
@@ -75,7 +83,8 @@ const DETECT_RULES: DetectRule[] = [
   { header: "server", contains: "cloudflare", label: "Cloudflare", kind: "cdn" },
   // AWS WAF / CloudFront
   { header: "x-aws-waf-token", label: "AWS WAF", kind: "waf" },
-  { header: "x-amzn-trace-id", label: "AWS", kind: "cdn" },
+  // ALB/API-Gateway-signaal — geen WAF/CDN, alleen informatief.
+  { header: "x-amzn-trace-id", label: "AWS", kind: "cache" },
   { header: "x-amz-cf-id", label: "AWS CloudFront", kind: "cdn" },
   // Akamai
   { header: "x-akamai-transformed", label: "Akamai", kind: "cdn" },
@@ -95,7 +104,9 @@ const DETECT_RULES: DetectRule[] = [
   // Generieke WAF/CDN-signalen
   { header: "x-cdn", label: "CDN", kind: "cdn" },
   { header: "x-firewall", label: "WAF", kind: "waf" },
-  { header: "x-cache", label: "CDN", kind: "cdn" },
+  // `x-cache` wordt door Varnish, nginx proxy_cache en de meeste origin-caches
+  // gezet — informatief, geen WAF/CDN-bescherming.
+  { header: "x-cache", label: "cache", kind: "cache" },
 ];
 
 /**
@@ -111,6 +122,8 @@ export function detectWafCdn(headers: HeaderSource): WafCdnFingerprint {
     const value = hget(headers, rule.header);
     if (!value) continue;
     if (rule.contains && !value.includes(rule.contains)) continue;
+    // `cache`-regels zijn puur informatief: ze verschijnen in `signals` maar
+    // zetten géén waf/cdn (en tellen dus niet als bescherming).
     if (rule.kind === "waf" && waf === null) waf = rule.label;
     else if (rule.kind === "cdn" && cdn === null) cdn = rule.label;
     if (!signals.includes(rule.header)) signals.push(rule.header);

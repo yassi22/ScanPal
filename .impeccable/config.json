@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "packages/shared/src/findings.ts"
+        ],
+        "createdAt": "2026-08-23T09:26:41.062Z",
+        "reason": "Claude: findings.ts is a non-UI data module (remediation prose strings), no <img> tags; broken-image cannot apply here"
+      }
+    ]
+  }
+}

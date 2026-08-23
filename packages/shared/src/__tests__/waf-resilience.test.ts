@@ -59,6 +59,28 @@ describe("detectWafCdn", () => {
     expect(fp.cdn).toBeNull();
     expect(fp.waf).toBeNull();
   });
+
+  it("x-cache telt niet als WAF/CDN-bescherming (informatief signaal)", () => {
+    const fp = detectWafCdn(headers({ "x-cache": "HIT" }));
+    expect(fp.waf).toBeNull();
+    expect(fp.cdn).toBeNull();
+    // signaal blijft wel geregistreerd voor de evidence
+    expect(fp.signals).toContain("x-cache");
+  });
+
+  it("x-amzn-trace-id (ALB/API-Gateway) telt niet als bescherming", () => {
+    const fp = detectWafCdn(headers({ "x-amzn-trace-id": "Root=1-x" }));
+    expect(fp.waf).toBeNull();
+    expect(fp.cdn).toBeNull();
+    expect(fp.signals).toContain("x-amzn-trace-id");
+  });
+
+  it("een site achter alleen een cache blijft warn (geen valse bescherming)", () => {
+    const fp = detectWafCdn(headers({ "x-cache": "MISS" }));
+    const r = evaluateWafResilience(fp, noRateLimit, false);
+    expect(r.status).toBe("warn");
+    expect(r.severity).toBe("low");
+  });
 });
 
 describe("inspectRateLimitHeaders", () => {
