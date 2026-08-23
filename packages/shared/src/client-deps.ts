@@ -19,12 +19,19 @@ const JSDELIVR_RE = new RegExp(`/npm/(?:(@[^/]+/[^/]+)|([^/@][^/]*))@${VER}(?:/|
 /** unpkg/generiek: /<pkg>@<ver>/ — scoped of unscoped. */
 const UNPKG_RE = new RegExp(`/(?:(@[^/]+/[^/]+)|([^/@][^/]*))@${VER}(?:/|$)`);
 
-/** Klassieke CDN-stijl (zonder @-sigil) voor bekende libs: /<lib>-<ver>.min.js. */
+/**
+ * Klassieke CDN-stijl (zonder @-sigil) voor bekende libs: /<lib>-<ver>.min.js.
+ * `react-dom` staat vóór `react` én is een eigen entry: het is een apart
+ * npm-package met eigen advisories, dus mag niet als `react` gequeried worden
+ * (zou react-dom-CVE's missen en evidence verkeerd labelen). De `react`-regex
+ * matcht bewust alleen `/react.<ver>` (niet `/react-dom.<ver>`).
+ */
 const KNOWN_LIB_CLASSIC: { name: string; re: RegExp }[] = [
   { name: "jquery", re: new RegExp(`/jquery[-.]${VER}\\.min\\.js`, "i") },
   { name: "bootstrap", re: new RegExp(`/bootstrap[.-]${VER}\\.min\\.js`, "i") },
   { name: "vue", re: new RegExp(`/vue\\.${VER}\\.min\\.js`, "i") },
-  { name: "react", re: new RegExp(`/react(?:-dom)?\\.${VER}\\.min\\.js`, "i") },
+  { name: "react-dom", re: new RegExp(`/react-dom\\.${VER}\\.min\\.js`, "i") },
+  { name: "react", re: new RegExp(`/react\\.${VER}\\.min\\.js`, "i") },
   { name: "angular", re: new RegExp(`/angular(?:-min)?\\.${VER}\\.min\\.js`, "i") },
   { name: "lodash", re: new RegExp(`/lodash\\.${VER}\\.min\\.js`, "i") },
   { name: "moment", re: new RegExp(`/moment\\.${VER}\\.min\\.js`, "i") },

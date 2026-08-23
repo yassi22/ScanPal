@@ -403,6 +403,17 @@ export async function enumerateSubdomains(
  * subdomein zonder CNAME levert `cname_target: null` (niet vatbaar). Een
  * CNAME waarvan het target niet resolvend is (NXDOMAIN) is dangling.
  * Failure-resistent: een falende query levert `false`/`null` (geen crash).
+ *
+ * BEKENDE BEPERKING (DNS-only, passief): dangling wordt puur op DNS-niveau
+ * bepaald (`resolve4(target)` leeg = NXDOMAIN). Dit vangt services die het
+ * target laten verdwijnen wanneer de resource weg is (S3, Heroku, Azure).
+ * Het MIST de takeover-klasse waarbij het target op DNS-niveau blíjft
+ * resolven maar op applicatie-niveau dangelt (GitHub Pages met bestaande
+ * user/onbestaand repo, Fastly, CloudFront): daar geeft `resolve4` A-records
+ * → `target_resolves: true` → geclassificeerd als `info` (false negative).
+ * Een volledige dekking vereist een actieve HTTP-fingerprint van de
+ * platform-"no such app/bucket"-respons; die is bewust weggelaten omdat deze
+ * check passief is (geen interactie met de doelsite, plan 72).
  */
 export async function probeCnameTakeover(
   subdomainPunycode: string,

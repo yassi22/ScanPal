@@ -53,6 +53,22 @@ describe("detectClientDeps (plan 71)", () => {
     expect(d?.version).toBe("4.0.0");
   });
 
+  it("labelt react-dom als eigen package (niet als react)", () => {
+    const [d] = detectClientDeps([
+      "https://cdnjs.cloudflare.com/react-dom.16.13.0.min.js",
+    ]);
+    expect(d?.package).toBe("react-dom");
+    expect(d?.version).toBe("16.13.0");
+  });
+
+  it("herkent klassieke react.<ver>.min.js als react (niet react-dom)", () => {
+    const [d] = detectClientDeps([
+      "https://cdnjs.cloudflare.com/react.16.13.0.min.js",
+    ]);
+    expect(d?.package).toBe("react");
+    expect(d?.version).toBe("16.13.0");
+  });
+
   it("slaat onbekende / ongeversioneerde URL's over", () => {
     expect(detectClientDeps(["https://example.com/assets/app.js"])).toEqual([]);
     expect(detectClientDeps(["https://example.com/bundle.js"])).toEqual([]);
