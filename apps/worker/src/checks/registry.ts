@@ -13,6 +13,7 @@ import { httpsCheck } from "./http/https";
 import { tlsCertCheck } from "./http/tls-cert";
 import { domainWatchtowerCheck } from "./http/domain-watchtower";
 import { dnsEmailCheck } from "./http/dns-email";
+import { subdomainTakeoverCheck } from "./http/subdomain-takeover";
 import { SECURITY_HEADER_CHECK_IDS, securityHeadersCheck } from "./http/security-headers";
 import { metaTagsCheck } from "./http/meta-tags";
 import { COOKIE_CHECK_IDS, cookiesCheck } from "./http/cookies";
@@ -82,6 +83,9 @@ export function buildRegistry(
       toImplemented(domainWatchtowerCheck),
       // Plan 68: DNS & e-mail (SPF/DKIM/DMARC/MX) — passieve publieke-DNS-meting.
       toImplemented(dnsEmailCheck),
+      // Plan 72: subdomain-takeover (dangling CNAME) — passief: publieke DNS +
+      // Certificate Transparency (crt.sh) + sitemap-hostnames. Geen active-gating.
+      toImplemented(subdomainTakeoverCheck),
       toImplemented(securityHeadersCheck, [...SECURITY_HEADER_CHECK_IDS]),
       toImplemented(metaTagsCheck),
       toImplemented(cookiesCheck, [...COOKIE_CHECK_IDS]),

@@ -9,9 +9,11 @@ import {
   registrableDomain,
   parseSpf,
   parseDmarc,
+  extractCtSubdomains,
   type DomainMeasurement,
   type EmailDns,
   type RdapParsed,
+  type TakeoverProbe,
 } from "@scanpal/shared";
 
 /**
@@ -312,4 +314,127 @@ export async function measureDomain(
   };
 
   return { measurement, rdap_ok };
+}
+
+// --- Subdomain-takeover (plan 72, dangling CNAME) ---------------------------
+
+const CRT_SH_TIMEOUT_MS = 12_000;
+
+/**
+ * Subdomein-bron (plan 72, besluit 2). Laag 1: hostnames uit de sitemap (de
+ * caller levert de reeds opgehaalde sitemap-URL's). Laag 2: Certificate
+ * Transparency via crt.sh — `https://crt.sh/?q=%25.<apex>&output=json`. Eén
+ * publieke GET met korte timeout; bij falen/time-out retourneert de helper
+ * `null` zodat de caller terugvalt op laag 1 (geen crash).
+ */
+export async function fetchCtSubdomains(
+  apexPunycode: string,
+  deps: DomainDeps = {},
+): Promise<string[] | null> {
+  const fetchImpl = deps.fetchImpl ?? fetch;
+  const url = `https://crt.sh/?q=%25.${apexPunycode}&output=json`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CRT_SH_TIMEOUT_MS);
+  try {
+    const response = await fetchImpl(url, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+      redirect: "follow",
+    });
+    if (!response.ok) return null;
+    const json = (await response.json()) as Parameters<
+      typeof extractCtSubdomains
+    >[0];
+    return extractCtSubdomains(json, apexPunycode);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Enumereert subdomeinen van de apex (plan 72, besluit 2). Combineert laag 1
+ * (sitemap-hostnames, door de caller geleverd) en laag 2 (crt.sh). Dedup,
+ * apex-only filter (subdomeinen van andere apexen worden genegeerd), en
+ * `www`/apex worden niet als kandidaat meegegeven maar wel in de gevonden
+ * set opgenomen voor transparantie (vastgelegde keuze). Retourneert de
+ * kandidaten om te proberen plus de bronnen die iets hebben opgeleverd en of
+ * crt.sh faalde.
+ */
+export async function enumerateSubdomains(
+  apexPunycode: string,
+  sitemapHosts: string[],
+  deps: DomainDeps = {},
+): Promise<{
+  candidates: string[];
+  sources: ("sitemap" | "crtsh")[];
+  ct_failed: boolean;
+}> {
+  const apexLower = apexPunycode.toLowerCase().replace(/\.+$/, "");
+  const fromSitemap = sitemapHosts
+    .map((h) => h.toLowerCase().replace(/\.+$/, ""))
+    .filter((h) => h.endsWith(`.${apexLower}`));
+
+  const ctResult = await fetchCtSubdomains(apexPunycode, deps);
+  const sources: ("sitemap" | "crtsh")[] = [];
+  if (fromSitemap.length > 0) sources.push("sitemap");
+  let ct_failed = false;
+  let fromCt: string[] = [];
+  if (ctResult === null) {
+    ct_failed = true;
+  } else {
+    fromCt = ctResult;
+    if (fromCt.length > 0) sources.push("crtsh");
+  }
+
+  const all = new Set<string>([...fromSitemap, ...fromCt]);
+  // Kandidaten om te proberen: alles behalve de apex zelf en www.<apex>
+  // (vastgelegde keuze — www/apex zijn vrijwel nooit takeover-kandidaten).
+  const candidates = [...all]
+    .filter((h) => h !== apexLower && h !== `www.${apexLower}`)
+    .sort();
+  return { candidates, sources, ct_failed };
+}
+
+/**
+ * Probe één subdomein op dangling CNAME (plan 72, besluit 3). Hergebruikt de
+ * swappable `dnsResolver` — `resolveCname` en `resolve4` (A-records). Een
+ * subdomein zonder CNAME levert `cname_target: null` (niet vatbaar). Een
+ * CNAME waarvan het target niet resolvend is (NXDOMAIN) is dangling.
+ * Failure-resistent: een falende query levert `false`/`null` (geen crash).
+ */
+export async function probeCnameTakeover(
+  subdomainPunycode: string,
+  deps: DomainDeps = {},
+): Promise<TakeoverProbe> {
+  const resolver = deps.dnsResolver ?? dns;
+
+  const cnameRecords = await resolver.resolveCname(subdomainPunycode).then(
+    (cnames: string[]) => cnames,
+    () => [] as string[],
+  );
+  const cname_target = cnameRecords.length > 0 ? cnameRecords[0] : null;
+
+  const aRecords = await resolver.resolve4(subdomainPunycode).then(
+    (a: string[]) => a,
+    () => [] as string[],
+  );
+  const resolves = aRecords.length > 0;
+
+  let target_resolves = false;
+  if (cname_target) {
+    const targetA = await resolver.resolve4(cname_target).then(
+      (a: string[]) => a,
+      () => [] as string[],
+    );
+    target_resolves = targetA.length > 0;
+  }
+
+  return {
+    subdomain: subdomainPunycode,
+    cname_target,
+    resolves,
+    target_resolves,
+  };
 }

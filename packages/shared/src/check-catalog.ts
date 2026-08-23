@@ -45,6 +45,10 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // Plan 68: DNS & e-mail (SPF/DKIM/DMARC/MX) — passieve publieke-DNS-meting,
   // draait in de http-worker naast domain-watchtower. Geen active-gating.
   { id: "dns-email", category: "http", name: "DNS & e-mail (SPF/DKIM/DMARC)", active: false },
+  // Plan 72: subdomain-takeover (dangling CNAME) — passief: leest publieke DNS
+  // + Certificate Transparency (crt.sh). Hergebruikt de swappable resolver uit
+  // domain-net. Geen active-gating (geen interactie met de doelsite).
+  { id: "subdomain-takeover", category: "http", name: "Subdomain-takeover (dangling CNAME)", active: false },
   { id: "redirects-mixed", category: "http", name: "Redirects & mixed content", active: false },
   { id: "secrets-in-html", category: "http", name: "Secrets in HTML", active: false },
   { id: "secrets-in-bundles", category: "http", name: "Secrets in JS-bundles", active: false },

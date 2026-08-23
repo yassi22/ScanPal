@@ -12,7 +12,11 @@ import {
   spfLookupCount,
   DOMAIN_EXPIRY_ALERT_DAYS,
   DOMAIN_TLS_ALERT_DAYS,
+  matchVulnerableService,
+  classifyTakeover,
+  extractCtSubdomains,
   type DomainMeasurement,
+  type TakeoverProbe,
 } from "../domain";
 
 const NOW = new Date("2026-08-17T00:00:00Z");
@@ -278,5 +282,92 @@ describe("spfLookupCount", () => {
 
   it("enkelvoudig record zonder lookups → 0", () => {
     expect(spfLookupCount("v=spf1 ip4:1.2.3.4 -all")).toBe(0);
+  });
+});
+
+describe("matchVulnerableService", () => {
+  it("matcht een exacte suffix (github.io)", () => {
+    expect(matchVulnerableService("example.github.io")).toBe("github.io");
+  });
+
+  it("matcht de service-root zelf (herokuapp.com)", () => {
+    expect(matchVulnerableService("herokuapp.com")).toBe("herokuapp.com");
+  });
+
+  it("geeft null voor een onbekend target", () => {
+    expect(matchVulnerableService("internal.corp.example.com")).toBeNull();
+  });
+
+  it("is hoofdletterongevoelig en stript trailing dots", () => {
+    expect(matchVulnerableService("App.AzureWebsites.NET.")).toBe("azurewebsites.net");
+  });
+});
+
+describe("classifyTakeover", () => {
+  function probe(over: Partial<TakeoverProbe> = {}): TakeoverProbe {
+    return {
+      subdomain: "staging.example.com",
+      cname_target: "example.herokuapp.com",
+      resolves: false,
+      target_resolves: false,
+      ...over,
+    };
+  }
+
+  it("high bij dangling CNAME naar bekende service", () => {
+    const r = classifyTakeover(probe());
+    expect(r.severity).toBe("high");
+    expect(r.service).toBe("herokuapp.com");
+    expect(r.reason).toContain("dangling");
+  });
+
+  it("medium bij dangling CNAME naar onbekend target", () => {
+    const r = classifyTakeover(
+      probe({ cname_target: "ghost.someinternal.corp" }),
+    );
+    expect(r.severity).toBe("medium");
+    expect(r.service).toBeNull();
+  });
+
+  it("info bij resolvend target (niet dangling)", () => {
+    const r = classifyTakeover(probe({ target_resolves: true }));
+    expect(r.severity).toBe("info");
+  });
+
+  it("info bij geen CNAME", () => {
+    const r = classifyTakeover(
+      probe({ cname_target: null, resolves: true }),
+    );
+    expect(r.severity).toBe("info");
+    expect(r.reason).toContain("geen CNAME");
+  });
+});
+
+describe("extractCtSubdomains", () => {
+  it("haalt unieke subdomeinen van de apex uit name_value", () => {
+    const json = [
+      { name_value: "staging.example.com\nwww.example.com" },
+      { name_value: "staging.example.com" },
+      { common_name: "api.example.com" },
+    ];
+    expect(extractCtSubdomains(json, "example.com")).toEqual([
+      "api.example.com",
+      "staging.example.com",
+      "www.example.com",
+    ]);
+  });
+
+  it("filtert wildcards en de apex zelf eruit", () => {
+    const json = [{ name_value: "*.example.com\nexample.com\nblog.example.com" }];
+    expect(extractCtSubdomains(json, "example.com")).toEqual(["blog.example.com"]);
+  });
+
+  it("negeert hostnames van andere apexen", () => {
+    const json = [{ name_value: "blog.other.com\nstaging.example.com" }];
+    expect(extractCtSubdomains(json, "example.com")).toEqual(["staging.example.com"]);
+  });
+
+  it("leeg bij geen matches", () => {
+    expect(extractCtSubdomains([], "example.com")).toEqual([]);
   });
 });

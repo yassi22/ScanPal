@@ -147,6 +147,8 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a security engineer. Fix the cross-tenant data access issue found (enforce tenant scoping on every query).",
   "hosting-security":
     "You are a platform/security engineer. Hide the origin server behind the CDN (override the server header) and set cache-control: private on authenticated documents so session content does not leak via shared caches.",
+  "subdomain-takeover":
+    "You are a security engineer. Remove the dangling CNAME record for the affected subdomain, or re-claim the cloud resource endpoint it points to, so an attacker cannot take over the subdomain.",
 };
 
 export function fixPromptTemplateFor(checkId: string): string {

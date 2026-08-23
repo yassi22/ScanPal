@@ -415,3 +415,151 @@ export function spfLookupCount(txt: string): number {
   count += (record.match(/\bredirect=/gi) ?? []).length;
   return count;
 }
+
+// --- Subdomain-takeover (plan 72, dangling CNAME) ---------------------------
+
+/**
+ * Cloud-service-suffixen waarvan een dangling CNAME een takeover mogelijk
+ * maakt (plan 72, besluit 3). Een CNAME naar `<sub>.<suffix>` die niet meer
+ * resolvend is, kan door een aanvaller her-geclaimd worden op dat platform.
+ * Bron: de gangbare "can-i-take-over" lijsten; bewust klein gehouden.
+ */
+export const VULNERABLE_SERVICE_SUFFIXES = [
+  "github.io",
+  "herokuapp.com",
+  "azurewebsites.net",
+  "s3.amazonaws.com",
+  "cloudfront.net",
+  "blob.core.windows.net",
+  "elasticbeanstalk.com",
+  "fastly.net",
+  "ngrok.io",
+  "surge.sh",
+  "wordpress.com",
+  "tumblr.com",
+] as const;
+
+/**
+ * Resultaat van één subdomein-takeover-probe (plan 72). Puur-gegevens — de
+ * netwerklaag (`probeCnameTakeover` in scan-core) vult dit; de classificatie
+ * (`classifyTakeover`) is puur en unit-testbaar op mock-data.
+ */
+export const takeoverProbeSchema = z.object({
+  subdomain: z.string(),
+  /** CNAME-target indien een CNAME-record bestaat; anders null. */
+  cname_target: z.string().nullable(),
+  /** Resolvend A-records van het subdomein zelf (leeg bij dangling). */
+  resolves: z.boolean(),
+  /** Resolvend A-records van de CNAME-target (leeg bij dangling target). */
+  target_resolves: z.boolean(),
+});
+export type TakeoverProbe = z.infer<typeof takeoverProbeSchema>;
+
+/**
+ * Classificatie van één probe (plan 72, besluit 3). `severity` is `high` voor
+ * een dangling CNAME naar een bekende vulnerable-service-suffix, `medium` voor
+ * een dangling CNAME naar een onbekend target, `info` voor resolvende
+ * subdomeinen. `service` is de gematchte suffix (high) of null.
+ */
+export type TakeoverClassification = {
+  severity: "high" | "medium" | "info";
+  service: string | null;
+  /** Mens-leesbare reden voor de finding-detail. */
+  reason: string;
+};
+
+/**
+ * Bepaalt of een CNAME-target binnen een bekende vulnerable-service-suffix
+ * valt (plan 72, besluit 3). Hoofdletterongevoelig, suffix-match.
+ */
+export function matchVulnerableService(cnameTarget: string): string | null {
+  const target = cnameTarget.toLowerCase().replace(/\.+$/, "");
+  for (const suffix of VULNERABLE_SERVICE_SUFFIXES) {
+    if (target === suffix || target.endsWith(`.${suffix}`)) return suffix;
+  }
+  return null;
+}
+
+/**
+ * Classificeert één takeover-probe (plan 72, besluit 3). Puur — geen
+ * netwerkafhankelijkheid. Een subdomein zonder CNAME is nooit vatbaar
+ * (info). Een CNAME waarvan het target niet resolvend is (NXDOMAIN) is
+ * dangling; severity hangt af van of het target in de suffixlijst staat.
+ */
+export function classifyTakeover(probe: TakeoverProbe): TakeoverClassification {
+  if (probe.cname_target === null) {
+    return {
+      severity: "info",
+      service: null,
+      reason: "geen CNAME-record (niet vatbaar op takeover)",
+    };
+  }
+  if (probe.target_resolves) {
+    return {
+      severity: "info",
+      service: null,
+      reason: `CNAME naar ${probe.cname_target} resolvend (niet dangling)`,
+    };
+  }
+  const service = matchVulnerableService(probe.cname_target);
+  if (service) {
+    return {
+      severity: "high",
+      service,
+      reason: `dangling CNAME naar ${probe.cname_target} (${service}) — mogelijk vatbaar op takeover`,
+    };
+  }
+  return {
+    severity: "medium",
+    service: null,
+    reason: `dangling CNAME naar ${probe.cname_target} (target resolvend niet, service onbekend)`,
+  };
+}
+
+/**
+ * Resultaat van de subdomein-takeover-meting (plan 72). Puur-gegevens — de
+ * netwerklaag (`enumerateSubdomains` + `probeCnameTakeover` in scan-core) vult
+ * dit; de evaluatie in de worker is puur en unit-testbaar op mock-data.
+ */
+export const subdomainTakeoverSchema = z.object({
+  /** Alle gevonden subdomeinen (inclusief niet-vatbare, voor transparantie). */
+  subdomains_found: z.array(z.string()),
+  /** Vatbare subdomeinen met classificatie. */
+  vulnerable: z.array(
+    z.object({
+      subdomain: z.string(),
+      cname_target: z.string(),
+      service: z.string().nullable(),
+      severity: z.enum(["high", "medium"]),
+    }),
+  ),
+  /** Bronnen die subdomeinen hebben opgeleverd. */
+  sources: z.array(z.enum(["sitemap", "crtsh"])),
+  /** True als de crt.sh-lookup faalde (enumeratie onvolledig). */
+  ct_failed: z.boolean(),
+});
+export type SubdomainTakeover = z.infer<typeof subdomainTakeoverSchema>;
+
+type CtJsonEntry = { name_value?: string; common_name?: string };
+
+/**
+ * Pure parser voor een crt.sh JSON-respons (plan 72, laag 2). Haalt unieke
+ * hostnames uit `name_value`/`common_name` (kan meerdere SAN's per certificaat
+ * bevatten, newline-gescheiden). Filtert wildcards (`*.example.com`) eruit
+ * — die zijn niet direct te proberen. Hoofdletterongevoelig, trailing dots
+ * gestript.
+ */
+export function extractCtSubdomains(json: CtJsonEntry[], apex: string): string[] {
+  const apexLower = apex.toLowerCase().replace(/\.+$/, "");
+  const hosts = new Set<string>();
+  for (const entry of json) {
+    const raw = entry.name_value ?? entry.common_name ?? "";
+    for (const line of raw.split(/[\n,]+/)) {
+      const host = line.trim().toLowerCase().replace(/\.+$/, "");
+      if (!host || host.startsWith("*.")) continue;
+      if (host === apexLower) continue;
+      if (host.endsWith(`.${apexLower}`)) hosts.add(host);
+    }
+  }
+  return [...hosts].sort();
+}

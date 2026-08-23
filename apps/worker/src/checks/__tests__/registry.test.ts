@@ -37,7 +37,8 @@ describe("skeletonTotals (progress-skelet)", () => {
     // Plan 70: browser-storage is een nieuwe aeo-check → aeo 7->8.
     // Plan 71: client-deps-cve is een nieuwe http-check → http 24->25.
     // Plan 71 v2: client-deps-runtime is een nieuwe aeo-check → aeo 8->9.
-    expect(totals.http).toBe(25);
+    // Plan 72: subdomain-takeover is een nieuwe http-check → http 25->26.
+    expect(totals.http).toBe(26);
     expect(totals.seo).toBe(6);
     expect(totals.aeo).toBe(9);
     expect(totals.compliance).toBe(5);
@@ -49,8 +50,8 @@ describe("skeletonTotals (progress-skelet)", () => {
   it("telt de actieve-test-checks mee met de flag aan", () => {
     const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
-    // 11 actieve-test-catalog-checks + 25 passieve http-checks.
-    expect(totals.http).toBe(36);
+    // 11 actieve-test-catalog-checks + 26 passieve http-checks.
+    expect(totals.http).toBe(37);
     expect(totals.compliance).toBe(5);
   });
 
