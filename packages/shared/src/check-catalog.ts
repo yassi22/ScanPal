@@ -57,6 +57,11 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // Plan 40: stackdetectie herkent CMS/framework/server/CDN uit headers +
   // HTML (Server, X-Powered-By, generator-meta, framework-markers).
   { id: "stack-detection", category: "seo", name: "Stackdetectie (CMS/framework)", active: false },
+  // Plan 69: hosting-fingerprint & platform-security — herkent Vercel/Netlify/
+  // Cloudflare/… uit response-headers en beoordeelt platform-specifieke
+  // signalen (cache-hygiëne, origin-lek, preview-URL). Passief; hergebruikt de
+  // bestaande fetch; geen dubbele header-findings met check 28.
+  { id: "hosting-security", category: "http", name: "Hosting-fingerprint & platform-security", active: false },
   // Plan 55: AEO per-engine matrix draait in de http-worker (geen browser nodig)
   // — als eerste aeo-entry geplaatst zodat de progress-kaart de juiste check
   // markeert (enige aeo-check die vandaag draait).

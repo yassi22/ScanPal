@@ -141,6 +141,8 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a security engineer. Add signature verification to the webhook handlers.",
   "tenant-isolation":
     "You are a security engineer. Fix the cross-tenant data access issue found (enforce tenant scoping on every query).",
+  "hosting-security":
+    "You are a platform/security engineer. Hide the origin server behind the CDN (override the server header) and set cache-control: private on authenticated documents so session content does not leak via shared caches.",
 };
 
 export function fixPromptTemplateFor(checkId: string): string {

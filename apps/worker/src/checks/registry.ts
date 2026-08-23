@@ -24,6 +24,7 @@ import { aeoEngineMatrixCheck } from "./http/aeo-engine-matrix";
 import { createCruxFieldDataCheck } from "./http/crux-field-data";
 import { COMPLIANCE_CHECK_IDS, complianceCheck } from "./http/compliance";
 import { stackDetectionCheck } from "./http/stack-detection";
+import { hostingSecurityCheck } from "./http/hosting-fingerprint";
 import { redirectsMixedCheck } from "./http/redirects-mixed";
 import { subresourcesCheck } from "./http/subresources";
 import { structuredDataCheck } from "./http/structured-data";
@@ -98,6 +99,9 @@ export function buildRegistry(
       toImplemented(complianceCheck, [...COMPLIANCE_CHECK_IDS]),
       // Plan 40: stackdetectie op de homepage (CMS/framework/server/CDN).
       toImplemented(stackDetectionCheck),
+      // Plan 69: hosting-fingerprint & platform-security (passief; hergebruikt
+      // de homepage-fetch). Eén site-level finding met platform-context.
+      toImplemented(hostingSecurityCheck),
       // Plan 32: redirects + mixed content (http:// op https-pagina).
       toImplemented(redirectsMixedCheck),
       // Plan 34: subresource-integriteit (SRI integrity-attrs).

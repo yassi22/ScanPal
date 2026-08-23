@@ -16,6 +16,10 @@ import {
   type StackDetectionEvidence,
 } from "./stack-detection";
 import {
+  hostingFingerprintEvidenceSchema,
+  type HostingFingerprintEvidence,
+} from "./hosting-fingerprint";
+import {
   redirectsMixedEvidenceSchema,
   type RedirectsMixedEvidence,
 } from "./redirects-mixed";
@@ -127,6 +131,7 @@ export const findingSchema = z.object({
       complianceEvidenceSchema,
       metaTagsEvidenceSchema,
       stackDetectionEvidenceSchema,
+      hostingFingerprintEvidenceSchema,
       redirectsMixedEvidenceSchema,
       subresourcesEvidenceSchema,
       structuredDataEvidenceSchema,
@@ -287,6 +292,7 @@ export type InlineCheckLike = {
     | ComplianceEvidence
     | MetaTagsEvidence
     | StackDetectionEvidence
+    | HostingFingerprintEvidence
     | RedirectsMixedEvidence
     | SubresourcesEvidence
     | StructuredDataEvidence
@@ -320,6 +326,7 @@ export function evidenceText(
     | ComplianceEvidence
     | MetaTagsEvidence
     | StackDetectionEvidence
+    | HostingFingerprintEvidence
     | RedirectsMixedEvidence
     | SubresourcesEvidence
     | StructuredDataEvidence
@@ -388,6 +395,12 @@ export function evidenceText(
       return evidence.detected
         .map((s) => `${s.name} (${s.category}) ${s.signals.join("; ")}`)
         .join(" | ");
+    }
+    if (evidence.kind === "hosting-fingerprint") {
+      const signals = evidence.signals
+        .map((s) => `${s.signal}:${s.severity} ${s.detail}`)
+        .join(" | ");
+      return `platform=${evidence.platform}${signals ? ` | ${signals}` : ""}`;
     }
     if (evidence.kind === "redirects-mixed") {
       return `redirected=${evidence.redirected} https_upgraded=${evidence.https_upgraded} final=${evidence.final_url} mixed=${evidence.mixed_content.length}`;
@@ -619,6 +632,10 @@ const ISSUE_TITLES: Record<
     warn: "Geen CMS/framework herkend",
     fail: "Geen CMS/framework herkend",
   },
+  "hosting-security": {
+    warn: "Platform-specifieke hosting-misconfiguratie",
+    fail: "Platform-specifieke hosting-misconfiguratie",
+  },
   "redirects-mixed": {
     warn: "Redirect of mixed content issue",
     fail: "Mixed content op https-pagina of final URL is niet HTTPS",
@@ -694,6 +711,8 @@ const REMEDIATION: Record<string, string> = {
     "Voeg GDPR-signalen toe: een DSAR/data-verwijderingsverwijzing en een CMP/IAB-TCF-signaal zodat bezoekers hun rechten kunnen uitoefenen.",
   "stack-detection":
     "Informatief — geen actie vereist. Stacksignalen helpen bij het diagnosticeren van beveiligings- en SEO-problemen.",
+  "hosting-security":
+    "Verberg de origin-server achter het CDN (overschrijf de `server`-header via Cloudflare Transform/Response-Header Rules of Vercel/Netlify headers-config). Zet `cache-control: private` op geauthenticeerde documenten (vercel.json `headers` / netlify.toml `[[headers]]` / Cloudflare Rules) zodat sessie-content niet via gedeelde caches lekt. Scan de productie-URL, niet een publieke preview/branch-deploy.",
   "redirects-mixed":
     "Forceer HTTPS met een 301-redirect van http:// naar https://, en vervang alle http://-resources (scripts, stylesheets, images, iframes) door https://-equivalenten om mixed content te voorkomen.",
   "subresources":
