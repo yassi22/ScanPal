@@ -26,6 +26,7 @@ import { createCruxFieldDataCheck } from "./http/crux-field-data";
 import { COMPLIANCE_CHECK_IDS, complianceCheck } from "./http/compliance";
 import { stackDetectionCheck } from "./http/stack-detection";
 import { hostingSecurityCheck } from "./http/hosting-fingerprint";
+import { wafResilienceCheck } from "./http/waf-resilience";
 import { createClientDepsCveCheck } from "./http/client-deps-cve";
 import { redirectsMixedCheck } from "./http/redirects-mixed";
 import { subresourcesCheck } from "./http/subresources";
@@ -108,6 +109,11 @@ export function buildRegistry(
       // Plan 69: hosting-fingerprint & platform-security (passief; hergebruikt
       // de homepage-fetch). Eén site-level finding met platform-context.
       toImplemented(hostingSecurityCheck),
+      // Plan 73: WAF/CDN-weerbaarheid & API-rate-limit-inspectie (G7) — passief:
+      // fingerprint WAF/CDN + inspecteert rate-limit-headers op de bestaande
+      // fetch. De actieve burst-helft (rate-limit-burst) wordt geproduceerd door
+      // active-tests (hieronder) en auto-geclaimd via activeTestCatalogIds.
+      toImplemented(wafResilienceCheck),
       // Plan 71: client-side dependencies & CVE — herkent JS-libs + versies uit
       // script-URL's en matcht ze batched tegen OSV. Passief; URL-only sites
       // (geen repo) krijgen zo dependency-dekking.

@@ -38,7 +38,9 @@ describe("skeletonTotals (progress-skelet)", () => {
     // Plan 71: client-deps-cve is een nieuwe http-check → http 24->25.
     // Plan 71 v2: client-deps-runtime is een nieuwe aeo-check → aeo 8->9.
     // Plan 72: subdomain-takeover is een nieuwe http-check → http 25->26.
-    expect(totals.http).toBe(26);
+    // Plan 73: waf-resilience is een nieuwe passieve http-check → http 26->27
+    // (rate-limit-burst is active: true, telt niet mee zonder flag).
+    expect(totals.http).toBe(27);
     expect(totals.seo).toBe(6);
     expect(totals.aeo).toBe(9);
     expect(totals.compliance).toBe(5);
@@ -50,8 +52,9 @@ describe("skeletonTotals (progress-skelet)", () => {
   it("telt de actieve-test-checks mee met de flag aan", () => {
     const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
-    // 11 actieve-test-catalog-checks + 26 passieve http-checks.
-    expect(totals.http).toBe(37);
+    // 12 actieve-test-catalog-checks (plan 73 voegt rate-limit-burst toe) +
+    // 27 passieve http-checks.
+    expect(totals.http).toBe(39);
     expect(totals.compliance).toBe(5);
   });
 

@@ -149,6 +149,10 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a platform/security engineer. Hide the origin server behind the CDN (override the server header) and set cache-control: private on authenticated documents so session content does not leak via shared caches.",
   "subdomain-takeover":
     "You are a security engineer. Remove the dangling CNAME record for the affected subdomain, or re-claim the cloud resource endpoint it points to, so an attacker cannot take over the subdomain.",
+  "waf-resilience":
+    "You are a security engineer. Deploy a WAF/CDN in front of the origin and add explicit API rate-limiting (return 429 with Retry-After and rate-limit headers) on public endpoints so they resist abuse.",
+  "rate-limit-burst":
+    "You are a security engineer. Add server-side rate-limiting to the affected route (return 429 with Retry-After and rate-limit headers once the burst threshold is reached).",
 };
 
 export function fixPromptTemplateFor(checkId: string): string {

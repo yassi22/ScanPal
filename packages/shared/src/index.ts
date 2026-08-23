@@ -134,6 +134,7 @@ export * from "./compliance";
 export * from "./meta-tags";
 export * from "./stack-detection";
 export * from "./hosting-fingerprint";
+export * from "./waf-resilience";
 export * from "./redirects-mixed";
 export * from "./subresources";
 export * from "./structured-data";

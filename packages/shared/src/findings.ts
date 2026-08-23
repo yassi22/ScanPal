@@ -93,6 +93,10 @@ import {
   type ClientDepsEvidence,
 } from "./client-deps";
 import {
+  wafResilienceEvidenceSchema,
+  type WafResilienceEvidence,
+} from "./waf-resilience";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -156,6 +160,7 @@ export const findingSchema = z.object({
       renderCompareEvidenceSchema,
       browserStorageEvidenceSchema,
       clientDepsEvidenceSchema,
+      wafResilienceEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -318,6 +323,7 @@ export type InlineCheckLike = {
     | RenderCompareEvidence
     | BrowserStorageEvidence
     | ClientDepsEvidence
+    | WafResilienceEvidence
     | string
     | null;
 };
@@ -353,6 +359,7 @@ export function evidenceText(
     | RenderCompareEvidence
     | BrowserStorageEvidence
     | ClientDepsEvidence
+    | WafResilienceEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -485,6 +492,10 @@ export function evidenceText(
     }
     if (evidence.kind === "client-deps") {
       return `total=${evidence.total} vulnerable=${evidence.vulnerable} critical=${evidence.by_severity.critical} high=${evidence.by_severity.high} medium=${evidence.by_severity.medium} low=${evidence.by_severity.low}`;
+    }
+    if (evidence.kind === "waf-resilience") {
+      const prot = [evidence.waf, evidence.cdn].filter(Boolean).join("/");
+      return `waf/cdn=${prot || "geen"} signals=${evidence.signals.join(",")} rate_limit_headers=${evidence.rate_limit_headers.join(",")} 429=${evidence.status_429}`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;

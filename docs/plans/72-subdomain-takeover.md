@@ -2,7 +2,7 @@
 
 **Doel**: Dangling-CNAME-subdomeinen ontdekken die vatbaar zijn op takeover — zoals CheckVibe's "Subdomain Takeover Scanner". Passief: leest alleen publieke DNS-records en publieke certificaat-transparantie-logs; geen interactie met de doelsite. Hergebruikt de swappable `dnsResolver` uit `packages/scan-core/src/domain-net.ts` (plan 56/68) voor CNAME/A-resolutie en de sitemap-parse uit `robots-sitemap` (feature 36) als subdomein-bron.
 
-**Status**: 📝 Plan klaar (niet gestart). Feature 72. Dekt gap G6 uit `docs/gap-analysis-checkvibe-security-checks.md`.
+**Status**: ✅ Geïmplementeerd. Feature 72. Dekt gap G6 uit `docs/gap-analysis-checkvibe-security-checks.md`.
 
 ## Besluiten
 

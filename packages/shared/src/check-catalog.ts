@@ -66,6 +66,11 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // signalen (cache-hygiëne, origin-lek, preview-URL). Passief; hergebruikt de
   // bestaande fetch; geen dubbele header-findings met check 28.
   { id: "hosting-security", category: "http", name: "Hosting-fingerprint & platform-security", active: false },
+  // Plan 73: WAF/CDN-weerbaarheid & API-rate-limit-inspectie (G7) — passief:
+  // fingerprint WAF/CDN uit response-headers + inspecteert rate-limit-headers op
+  // de bestaande fetch. Beoordeelt andere signalen dan plan 69 (geen dubbele
+  // findings). Geen active-gating.
+  { id: "waf-resilience", category: "http", name: "WAF/CDN-weerbaarheid & rate-limit", active: false },
   // Plan 55: AEO per-engine matrix draait in de http-worker (geen browser nodig)
   // — als eerste aeo-entry geplaatst zodat de progress-kaart de juiste check
   // markeert (enige aeo-check die vandaag draait).
@@ -115,6 +120,10 @@ export const checkCatalog: CheckCatalogEntry[] = [
   { id: "jwt-audit", category: "http", name: "JWT-zwakke-algoritme/key-audit", active: true },
   { id: "webhook-signature", category: "http", name: "Webhook-handlers zonder signature-verificatie", active: true },
   { id: "tenant-isolation", category: "http", name: "Cross-tenant leestoegang", active: true },
+  // Plan 73: rate-limit burst-probe (G7, actief) — 6 snelle sequentiële GET's op
+  // de scan-URL om 429/rate-limit-gedrag te observeren. Opt-in + Pro; erft de
+  // gating van plan 52. Wordt geproduceerd door de active-tests-impl.
+  { id: "rate-limit-burst", category: "http", name: "Rate-limit burst-probe", active: true },
 ];
 
 export function checksForCategory(category: ScanCategory): CheckCatalogEntry[] {
