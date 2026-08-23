@@ -1,4 +1,4 @@
-import type { CwvMetrics, ConsoleCapture, ResponsiveCapture, RenderCompareCapture, StorageSnapshot } from "@scanpal/shared";
+import type { CwvMetrics, ConsoleCapture, ResponsiveCapture, RenderCompareCapture, StorageSnapshot, RuntimeDepsCapture } from "@scanpal/shared";
 
 /**
  * Features 41–45 — BrowserRunner interface (injectable, Playwright-default).
@@ -38,6 +38,11 @@ export type StorageRunResult =
   | { ok: true; snapshot: StorageSnapshot }
   | { ok: false; error: string };
 
+/** Resultaat van een runtime-deps-capture (plan 71 v2): window-globals per lib. */
+export type ClientDepsRunResult =
+  | { ok: true; capture: RuntimeDepsCapture }
+  | { ok: false; error: string };
+
 export type BrowserRunner = {
   /** Draait één page-load en vangt CWV-metrics. */
   captureVitals(url: string): Promise<BrowserRunResult>;
@@ -51,4 +56,6 @@ export type BrowserRunner = {
   captureRenderCompare(url: string): Promise<RenderRunResult>;
   /** Leest localStorage/sessionStorage na page-load (plan 70, passief). */
   captureStorage(url: string): Promise<StorageRunResult>;
+  /** Leest window-globals van bekende JS-libs na page-load (plan 71 v2, passief). */
+  captureClientDeps(url: string): Promise<ClientDepsRunResult>;
 };

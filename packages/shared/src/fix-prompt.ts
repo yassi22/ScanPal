@@ -117,6 +117,10 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a security engineer. Remove the leaked secrets found by Gitleaks, rotate them, and move secrets out of source control.",
   "osv-scanner":
     "You are a security engineer. Upgrade or replace the vulnerable dependencies reported by OSV-Scanner.",
+  "client-deps-cve":
+    "You are a security engineer. Upgrade the vulnerable client-side JS libraries loaded via CDN to a non-vulnerable version, or bundle pinned versions locally; verify the advisory IDs in the evidence.",
+  "client-deps-runtime":
+    "You are a security engineer. Upgrade the vulnerable client-side JS libraries (version confirmed at runtime via window globals) to a non-vulnerable version, or bundle pinned versions locally; verify the advisory IDs in the evidence.",
   "repo-health":
     "You are a software engineer. Improve repository health by fixing the reported repo-level issues.",
   "sqli-probe":

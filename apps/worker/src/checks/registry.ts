@@ -25,6 +25,7 @@ import { createCruxFieldDataCheck } from "./http/crux-field-data";
 import { COMPLIANCE_CHECK_IDS, complianceCheck } from "./http/compliance";
 import { stackDetectionCheck } from "./http/stack-detection";
 import { hostingSecurityCheck } from "./http/hosting-fingerprint";
+import { createClientDepsCveCheck } from "./http/client-deps-cve";
 import { redirectsMixedCheck } from "./http/redirects-mixed";
 import { subresourcesCheck } from "./http/subresources";
 import { structuredDataCheck } from "./http/structured-data";
@@ -40,6 +41,7 @@ import { createAccessibilityCheck } from "./browser/accessibility";
 import { createConsoleErrorsCheck } from "./browser/console-errors";
 import { createMobileResponsiveCheck } from "./browser/mobile-responsive";
 import { createBrowserStorageCheck } from "./browser/browser-storage";
+import { createClientDepsRuntimeCheck } from "./browser/client-deps-runtime";
 import { createAeoRenderCheck } from "./browser/aeo-render";
 import type { BrowserRunner } from "./browser/runner";
 
@@ -102,6 +104,10 @@ export function buildRegistry(
       // Plan 69: hosting-fingerprint & platform-security (passief; hergebruikt
       // de homepage-fetch). Eén site-level finding met platform-context.
       toImplemented(hostingSecurityCheck),
+      // Plan 71: client-side dependencies & CVE — herkent JS-libs + versies uit
+      // script-URL's en matcht ze batched tegen OSV. Passief; URL-only sites
+      // (geen repo) krijgen zo dependency-dekking.
+      toImplemented(createClientDepsCveCheck()),
       // Plan 32: redirects + mixed content (http:// op https-pagina).
       toImplemented(redirectsMixedCheck),
       // Plan 34: subresource-integriteit (SRI integrity-attrs).
@@ -127,6 +133,9 @@ export function buildRegistry(
       toImplemented(createMobileResponsiveCheck(browserRunner)),
       // Plan 70: browser storage & session-tokens (passief, leest storage).
       toImplemented(createBrowserStorageCheck(browserRunner)),
+      // Plan 71 v2: client-side deps via runtime-globals (passief, leest
+      // window-globals); hardere versiebewijzen dan de statische http-check.
+      toImplemented(createClientDepsRuntimeCheck(browserRunner)),
       // Feature 43: AEO JS-rendered content (server-HTML vs gerenderde DOM).
       toImplemented(createAeoRenderCheck(browserRunner)),
     ],

@@ -83,6 +83,14 @@ export const checkCatalog: CheckCatalogEntry[] = [
   { id: "semgrep", category: "github", name: "Semgrep (SAST)", active: false },
   { id: "gitleaks", category: "github", name: "Gitleaks (secrets)", active: false },
   { id: "osv-scanner", category: "github", name: "OSV-Scanner (deps)", active: false },
+  // Plan 71: client-side dependencies & CVE — herkent JS-libs + versies uit
+  // script-URL's (CDN-patronen) en matcht ze tegen OSV. Werkt op URL-only sites
+  // (geen repo nodig) en vult zo het gat dat osv-scanner laat vallen. Passief.
+  { id: "client-deps-cve", category: "http", name: "Client-side dependencies & CVE", active: false },
+  // Plan 71 v2: runtime-deps via window-globals (browser-queue). Hardere
+  // versiebewijzen dan de statische URL-parsing van client-deps-cve; vangt ook
+  // libs zonder versie in de CDN-URL. Passief; eigen check-id (geen collision).
+  { id: "client-deps-runtime", category: "aeo", name: "Client-side dependencies (runtime)", active: false },
   { id: "repo-health", category: "github", name: "Repo-health", active: false },
   // Plan 61: compliance-pijler — passieve checks (cookie-banner/CMP-detectie,
   // consent-API, privacy-policy, legal-pagina's, GDPR-signalen). Geen cookies

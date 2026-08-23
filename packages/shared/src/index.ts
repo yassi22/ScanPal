@@ -143,6 +143,8 @@ export * from "./secrets-in-html";
 export * from "./mini-crawl";
 export * from "./repo-health";
 export * from "./sast-findings";
+export * from "./osv";
+export * from "./client-deps";
 export * from "./browser-vitals";
 export * from "./crux";
 export * from "./accessibility";

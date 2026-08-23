@@ -8,6 +8,7 @@ import type {
   ResponsiveRunResult,
   RenderRunResult,
   StorageRunResult,
+  ClientDepsRunResult,
 } from "./runner";
 import { parseConsoleMessages, parseRequestFailures, extractServerProbe, parseRenderProbe } from "@scanpal/shared";
 import type {
@@ -16,6 +17,7 @@ import type {
   ResponsiveCapture,
   RenderCompareCapture,
   StorageSnapshot,
+  RuntimeDepsCapture,
 } from "@scanpal/shared";
 
 /**
@@ -343,6 +345,41 @@ export function createPlaywrightRunner(): BrowserRunner {
           }`,
         )) as StorageSnapshot;
         return { ok: true, snapshot };
+      } catch (err) {
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      } finally {
+        await browser?.close().catch(() => {});
+      }
+    },
+    async captureClientDeps(url): Promise<ClientDepsRunResult> {
+      let browser;
+      try {
+        browser = await chromium.launch({ headless: true });
+        const ctx = await browser.newContext();
+        const page = await ctx.newPage();
+        await page.goto(url, { waitUntil: "networkidle", timeout: 30_000 });
+        // Korte wacht zodat SPA's die libs pas na hydratatie injecteren
+        // meetbaar zijn.
+        await page.waitForTimeout(1500).catch(() => {});
+
+        const capture = (await page.evaluate(
+          `() => {
+            const g = (v) => (typeof v === "string" && v.length > 0 ? v : null);
+            const r = {};
+            try { r.jquery = g(window.jQuery && window.jQuery.fn && window.jQuery.fn.jquery); } catch (e) {}
+            try { r.react = g(window.React && window.React.version); } catch (e) {}
+            try { r.vue = g(window.Vue && window.Vue.version); } catch (e) {}
+            try { r.angular = g(window.angular && window.angular.version && window.angular.version.full); } catch (e) {}
+            try { r.lodash = g(window._ && window._.VERSION); } catch (e) {}
+            try { r.moment = g(window.moment && window.moment.version); } catch (e) {}
+            try { r.bootstrap = g(window.bootstrap && window.bootstrap.Tooltip && window.bootstrap.Tooltip.VERSION); } catch (e) {}
+            return r;
+          }`,
+        )) as RuntimeDepsCapture;
+        return { ok: true, capture };
       } catch (err) {
         return {
           ok: false,

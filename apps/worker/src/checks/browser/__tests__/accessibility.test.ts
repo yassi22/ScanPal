@@ -19,6 +19,7 @@ function makeRunner(result: AxeRunResult): BrowserRunner {
     captureResponsive: vi.fn().mockResolvedValue({ ok: false, error: "unused" }),
     captureRenderCompare: vi.fn().mockResolvedValue({ ok: false, error: "unused" }),
     captureStorage: vi.fn().mockResolvedValue({ ok: false, error: "unused" }),
+    captureClientDeps: vi.fn().mockResolvedValue({ ok: false, error: "unused" }),
   };
 }
 

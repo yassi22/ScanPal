@@ -89,6 +89,10 @@ import {
   type BrowserStorageEvidence,
 } from "./browser-storage";
 import {
+  clientDepsEvidenceSchema,
+  type ClientDepsEvidence,
+} from "./client-deps";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -151,6 +155,7 @@ export const findingSchema = z.object({
       responsiveEvidenceSchema,
       renderCompareEvidenceSchema,
       browserStorageEvidenceSchema,
+      clientDepsEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -312,6 +317,7 @@ export type InlineCheckLike = {
     | ResponsiveEvidence
     | RenderCompareEvidence
     | BrowserStorageEvidence
+    | ClientDepsEvidence
     | string
     | null;
 };
@@ -346,6 +352,7 @@ export function evidenceText(
     | ResponsiveEvidence
     | RenderCompareEvidence
     | BrowserStorageEvidence
+    | ClientDepsEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -476,6 +483,9 @@ export function evidenceText(
         .map((e) => `${e.store}:${e.key} ${e.kind}${e.secret_type ? `(${e.secret_type})` : ""} ${e.masked}`)
         .join(" | ");
     }
+    if (evidence.kind === "client-deps") {
+      return `total=${evidence.total} vulnerable=${evidence.vulnerable} critical=${evidence.by_severity.critical} high=${evidence.by_severity.high} medium=${evidence.by_severity.medium} low=${evidence.by_severity.low}`;
+    }
   }
   return `${evidence.request}\n${evidence.response}`;
 }
@@ -571,6 +581,14 @@ const ISSUE_TITLES: Record<
   "osv-scanner": {
     warn: "OSV-Scanner vond kwetsbare dependencies",
     fail: "OSV-Scanner vond kritieke dependency-kwetsbaarheden",
+  },
+  "client-deps-cve": {
+    warn: "Kwetsbare client-side JS-library geladen",
+    fail: "Kritieke kwetsbaarheid in client-side JS-library",
+  },
+  "client-deps-runtime": {
+    warn: "Kwetsbare client-side JS-library bevestigd via runtime",
+    fail: "Kritieke kwetsbaarheid in client-side JS-library (runtime-bevestigd)",
   },
   "core-web-vitals": {
     warn: "Core Web Vitals komen niet volledig in orde (needs improvement)",
@@ -735,6 +753,10 @@ const REMEDIATION: Record<string, string> = {
     "Verwijder het gelekte geheim uit de repo-geschiedenis (git filter-repo / BFG) en roteer het direct (behandel het als gelekt). Plaats secrets in een secrets-manager of omgevingsvariabelen, nooit in broncode of commits. Voeg gitleaks toe aan de CI als pre-commit/pre-push hook.",
   "osv-scanner":
     "Update de kwetsbare dependencies naar een niet-kwetsbare versie (zie het advisory-id in de evidence). Bij een onbeperkt advisary zonder patch: pin de versie, pas mitigaties toe of vervang de dependency. Voeg OSV-Scanner toe aan de CI voor continue controle.",
+  "client-deps-cve":
+    "Upgrade de kwetsbare client-side JS-library naar een niet-kwetsbare versie (zie het advisory-id in de evidence). Laad libraries bij voorkeur via een beheerde bundel met pinned versies i.p.v. een openbare CDN-URL, en voeg een dependency-scan (OSV-Scanner/npm audit) toe aan de CI. Een client-side gevonden versie is een observatie — verifieer exploitabiliteit in jouw context.",
+  "client-deps-runtime":
+    "Upgrade de kwetsbare client-side JS-library naar een niet-kwetsbare versie (zie het advisory-id in de evidence). De versie is runtime-bevestigd via een window-global, dus de kwetsbare versie is daadwerkelijk geladen. Voeg een dependency-scan (OSV-Scanner/npm audit) toe aan de CI en pin library-versies in een beheerde bundel.",
   "core-web-vitals":
     "Optimaliseer LCP (verlaag de largest render-time: pre-load van kritische resources, CDN, lazy-load niet-kritieke media), CLS (reserveer ruimte voor media/ad-banners, vermijd layout-shift door late inserts) en INP (verdeel lange taken, gebruik requestIdleCallback, optimaliseer interactie-handlers). Meet met Lighthouse / PageSpeed Insights / CrUX-field data.",
   accessibility:

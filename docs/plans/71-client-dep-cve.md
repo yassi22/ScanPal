@@ -2,7 +2,7 @@
 
 **Doel**: Detecteer client-side JS-libraries + versies uit de geladen pagina en match ze tegen bekende CVE's via OSV — CheckVibe's "Tech Stack & CVE Scanner". Lost meteen een blinde vlek op: `osv-scanner` draait vandaag **alleen** met een gekoppelde GitHub-repo, dus **URL-only sites hebben nu nul dependency-dekking**.
 
-**Status**: 📝 Plan klaar (niet gestart). Feature 71.
+**Status**: ✅ Geïmplementeerd (v1 statisch + v2 runtime). Feature 71.
 
 ## Besluiten
 
