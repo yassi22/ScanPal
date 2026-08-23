@@ -97,6 +97,10 @@ import {
   type WafResilienceEvidence,
 } from "./waf-resilience";
 import {
+  baasSecurityEvidenceSchema,
+  type BaasSecurityEvidence,
+} from "./baas-security";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -161,6 +165,7 @@ export const findingSchema = z.object({
       browserStorageEvidenceSchema,
       clientDepsEvidenceSchema,
       wafResilienceEvidenceSchema,
+      baasSecurityEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -324,6 +329,7 @@ export type InlineCheckLike = {
     | BrowserStorageEvidence
     | ClientDepsEvidence
     | WafResilienceEvidence
+    | BaasSecurityEvidence
     | string
     | null;
 };
@@ -360,6 +366,7 @@ export function evidenceText(
     | BrowserStorageEvidence
     | ClientDepsEvidence
     | WafResilienceEvidence
+    | BaasSecurityEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -496,6 +503,12 @@ export function evidenceText(
     if (evidence.kind === "waf-resilience") {
       const prot = [evidence.waf, evidence.cdn].filter(Boolean).join("/");
       return `waf/cdn=${prot || "geen"} signals=${evidence.signals.join(",")} rate_limit_headers=${evidence.rate_limit_headers.join(",")} 429=${evidence.status_429}`;
+    }
+    if (evidence.kind === "baas-security") {
+      const fps = evidence.fingerprints
+        .map((f) => `${f.project_url}[${f.config_keys.map((k) => `${k.type}:${k.masked}`).join(",")}]`)
+        .join(" | ");
+      return `platform=${evidence.platform} fingerprints=${fps} probe=${evidence.probe.performed ? `status=${evidence.probe.status} ${evidence.probe.summary ?? ""}` : "none"} budget_exhausted=${evidence.budget_exhausted}`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -695,6 +708,16 @@ const ISSUE_TITLES: Record<
   "rate-limit-burst": {
     warn: "Geen rate-limiting waargenomen onder een request-burst",
   },
+  "supabase-security": {
+    warn: "Supabase PostgREST-schema opvraagbaar met anon-key (RLS mogelijk ontbrekend)",
+    fail: "Supabase PostgREST-schema publiek leesbaar (tabelnamen lekken)",
+  },
+  "firebase-security": {
+    fail: "Firebase Realtime Database of Storage publiek leesbaar",
+  },
+  "convex-security": {
+    warn: "Convex-functies publiek opvraagbaar",
+  },
 };
 
 const REMEDIATION: Record<string, string> = {
@@ -768,6 +791,12 @@ const REMEDIATION: Record<string, string> = {
     "Plaats de site achter een WAF/CDN (bijv. Cloudflare, AWS WAF, Akamai) en publiceer rate-limit-headers (`RateLimit-Limit`/`RateLimit-Remaining`/`Retry-After`, RFC 9239/6585) op API-endpoints, zodat clients rate-limiting kunnen respecteren. Ontbrekende headers betekenen niet per se dat er geen bescherming is (een WAF kan op netwerklaag zitten) — bevestig dat gevoelige endpoints daadwerkelijk rate-limiting afdwingen.",
   "rate-limit-burst":
     "Dwing rate-limiting af op (login-, zoek- en API-)endpoints zodat een snelle request-burst een 429 (met `Retry-After`) oplevert. Configureer limieten op de WAF/CDN-edge of in de applicatie (bijv. token-bucket per IP/API-key) en communiceer de status via `RateLimit-*`-headers.",
+  "supabase-security":
+    "Schakel Row Level Security in op alle Supabase-tabellen (`ALTER TABLE <table> ENABLE ROW LEVEL SECURITY;`) en voeg policies toe die rijen per geauthenticeerde gebruiker scopen. Blootstel nooit de `service_role`-key in frontend-code — houd die server-side. Een open PostgREST-schema-listing lekt tabelnamen; verifieer per tabel of RLS daadwerkelijk ongeautoriseerde rij-toegang blokkeert.",
+  "firebase-security":
+    "Beveilig je Firebase Realtime Database- en Storage-rules: standaard `{ \"rules\": { \".read\": false, \".write\": false } }`, daarna per geauthenticeerde gebruiker toestaan. Gebruik `shallow`-reads niet als beveiliging. De Firebase `apiKey` (AIza…) is ontworpen als publiek en is op zichzelf geen bevinding — pas de rules aan zodat de database en buckets niet zonder auth leesbaar zijn.",
+  "convex-security":
+    "Voeg authenticatie toe aan je Convex-functies zodat publieke metadata-endpoints geen callable functies zonder auth blootstellen. Controleer per functie of de access-control expliciet is ingesteld.",
   "secrets-in-html":
     "Verwijder het geheim uit de inline HTML/JS en roteer het direct (behandel het als gelekt). Plaats secrets server-side in omgevingsvariabelen of een secrets-manager en lever ze via een beveiligde API-endpoint, nooit inline in het HTML-document of in inline <script>-blokken.",
   "mini-crawl":

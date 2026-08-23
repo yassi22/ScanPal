@@ -28,6 +28,7 @@ import { stackDetectionCheck } from "./http/stack-detection";
 import { hostingSecurityCheck } from "./http/hosting-fingerprint";
 import { wafResilienceCheck } from "./http/waf-resilience";
 import { createClientDepsCveCheck } from "./http/client-deps-cve";
+import { baasSecurityCheck } from "./http/baas-security";
 import { redirectsMixedCheck } from "./http/redirects-mixed";
 import { subresourcesCheck } from "./http/subresources";
 import { structuredDataCheck } from "./http/structured-data";
@@ -118,6 +119,13 @@ export function buildRegistry(
       // script-URL's en matcht ze batched tegen OSV. Passief; URL-only sites
       // (geen repo) krijgen zo dependency-dekking.
       toImplemented(createClientDepsCveCheck()),
+      // Plan 74: BaaS-security (Supabase/Firebase/Convex) — passieve black-box
+      // detectie van BaaS-misconfiguraties. Eén implementatie, drie catalog-ids.
+      toImplemented(baasSecurityCheck, [
+        "supabase-security",
+        "firebase-security",
+        "convex-security",
+      ]),
       // Plan 32: redirects + mixed content (http:// op https-pagina).
       toImplemented(redirectsMixedCheck),
       // Plan 34: subresource-integriteit (SRI integrity-attrs).

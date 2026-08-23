@@ -153,6 +153,12 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a security engineer. Deploy a WAF/CDN in front of the origin and add explicit API rate-limiting (return 429 with Retry-After and rate-limit headers) on public endpoints so they resist abuse.",
   "rate-limit-burst":
     "You are a security engineer. Add server-side rate-limiting to the affected route (return 429 with Retry-After and rate-limit headers once the burst threshold is reached).",
+  "supabase-security":
+    "You are a security engineer. Enable Row Level Security on all Supabase tables (`ALTER TABLE <table> ENABLE ROW LEVEL SECURITY;`) and add policies that scope rows per authenticated user; never expose the service_role key in frontend code — keep it server-side only.",
+  "firebase-security":
+    "You are a security engineer. Secure your Firebase Realtime Database and Storage rules (`{ \"rules\": { \".read\": false, \".write\": false } }` as the default, then allow per authenticated user) so the database and buckets are not publicly readable.",
+  "convex-security":
+    "You are a security engineer. Add authentication to your Convex functions so public metadata endpoints do not expose callable functions without auth.",
 };
 
 export function fixPromptTemplateFor(checkId: string): string {

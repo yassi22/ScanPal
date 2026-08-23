@@ -40,7 +40,9 @@ describe("skeletonTotals (progress-skelet)", () => {
     // Plan 72: subdomain-takeover is een nieuwe http-check → http 25->26.
     // Plan 73: waf-resilience is een nieuwe passieve http-check → http 26->27
     // (rate-limit-burst is active: true, telt niet mee zonder flag).
-    expect(totals.http).toBe(27);
+    // Plan 74: baas-security produceert 3 passieve http-checks
+    // (supabase/firebase/convex-security) → http 27->30.
+    expect(totals.http).toBe(30);
     expect(totals.seo).toBe(6);
     expect(totals.aeo).toBe(9);
     expect(totals.compliance).toBe(5);
@@ -53,8 +55,8 @@ describe("skeletonTotals (progress-skelet)", () => {
     const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
     // 12 actieve-test-catalog-checks (plan 73 voegt rate-limit-burst toe) +
-    // 27 passieve http-checks.
-    expect(totals.http).toBe(39);
+    // 30 passieve http-checks (plan 74 voegt 3 baas-security-checks toe).
+    expect(totals.http).toBe(42);
     expect(totals.compliance).toBe(5);
   });
 

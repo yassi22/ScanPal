@@ -124,6 +124,12 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // de scan-URL om 429/rate-limit-gedrag te observeren. Opt-in + Pro; erft de
   // gating van plan 52. Wordt geproduceerd door de active-tests-impl.
   { id: "rate-limit-burst", category: "http", name: "Rate-limit burst-probe", active: true },
+  // Plan 74: BaaS-security (Supabase/Firebase/Convex) — passieve black-box
+  // detectie van BaaS-misconfiguraties (open Realtime DB/Storage, PostgREST-
+  // schema-lek, open Convex-functies). Eén implementatie, drie catalog-entries.
+  { id: "supabase-security", category: "http", name: "Supabase-security (RLS / key-exposure)", active: false },
+  { id: "firebase-security", category: "http", name: "Firebase-security (rules / bucket-access)", active: false },
+  { id: "convex-security", category: "http", name: "Convex-security (open endpoints)", active: false },
 ];
 
 export function checksForCategory(category: ScanCategory): CheckCatalogEntry[] {
