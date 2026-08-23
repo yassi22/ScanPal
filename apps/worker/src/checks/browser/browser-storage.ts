@@ -117,6 +117,10 @@ export function createBrowserStorageCheck(
           id: "browser-storage",
           name,
           status,
+          // Severity-override (zoals secrets-in-bundles): behoud de critical-tier
+          // uit storageEntrySeverity i.p.v. de default fail->high-mapping, zodat
+          // service-role/private-key-materiaal als critical wordt weggeschreven.
+          severity: topSeverity,
           detail,
           evidence,
         },

@@ -69,7 +69,9 @@ const PLATFORM_HEADERS = [
   "x-amz-cf-id",
   "x-github-request-id",
   "cache-control",
-  "set-cookie",
+  // NB: `set-cookie` bewust NIET opgenomen — de cache-hygiëne-check leest de
+  // header rechtstreeks (alleen cookie-namen), dus de rauwe cookie-waarde (incl.
+  // sessie-token) hoeft nooit in de opgeslagen evidence te belanden.
   "content-type",
 ];
 

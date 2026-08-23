@@ -49,6 +49,9 @@ describe("createBrowserStorageCheck (plan 70)", () => {
     expect(result.status).toBe("fail");
     expect(result.detail).toContain("secret=1");
     expect(result.detail).toContain("critical");
+    // De critical-tier moet ook op de finding zelf staan (niet de default
+    // fail->high-mapping), anders wordt service-role-materiaal ondergewaardeerd.
+    expect(result.severity).toBe("critical");
   });
 
   it("warn bij JWT zonder exp", async () => {
