@@ -191,6 +191,30 @@ describe("createFileUploadCheck — interpretatie", () => {
     expect(runner.captureUploadFlow).toHaveBeenCalledTimes(1);
   });
 
+  it("meldt een achtergebleven gesaniteerde traversal-canary zonder kwetsbaarheid te claimen", async () => {
+    const storedUrl = "https://example.com/uploads/canary.txt";
+    const runner = makeRunner({
+      ok: true,
+      capture: capture({
+        probes: [probe({
+          probe_id: "upload-path-traversal",
+          filename: "../canary.txt",
+          content_type: "text/plain",
+          active_type: false,
+          accepted: false,
+          stored_url: storedUrl,
+        })],
+        leftover_files: [storedUrl],
+        cleaned_up: false,
+      }),
+    });
+
+    const finding = (await createFileUploadCheck(runner).run(ctx()))
+      .find((item) => item.id === "upload-path-traversal")!;
+    expect(finding.severity).toBe("info");
+    expect(finding.detail).toContain(storedUrl);
+  });
+
   it("begrensd evidence rond 4 KB", async () => {
     const runner = makeRunner({
       ok: true,

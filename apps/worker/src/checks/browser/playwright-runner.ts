@@ -195,6 +195,7 @@ async function uploadProbe(
   let retrieved = false;
   let cleaned = false;
   let uploadEvidence = false;
+  let traversalEvidence = false;
   let error: string | null = null;
   try {
     await page.goto(form.url, { waitUntil: "domcontentloaded", timeout: 20_000 });
@@ -217,11 +218,15 @@ async function uploadProbe(
       const location = response.headers()["location"];
       if (location) {
         storedUrl = findStoredUrl(location, form.url, probe.filename, token);
-        if (probe.id === "upload-path-traversal") uploadEvidence = hasUnsanitizedTraversalEvidence(location);
+        if (probe.id === "upload-path-traversal") {
+          traversalEvidence ||= hasUnsanitizedTraversalEvidence(location);
+        }
       }
       const responseBody = truncateBody(await response.text().catch(() => ""));
       uploadEvidence ||= responseBody.includes(token) || responseBody.includes(probe.filename.replace("../", ""));
-      if (probe.id === "upload-path-traversal") uploadEvidence ||= hasUnsanitizedTraversalEvidence(responseBody);
+      if (probe.id === "upload-path-traversal") {
+        traversalEvidence ||= hasUnsanitizedTraversalEvidence(responseBody);
+      }
       if (!storedUrl) {
         try {
           storedUrl = findStoredUrl(JSON.parse(responseBody), form.url, probe.filename, token);
@@ -237,13 +242,17 @@ async function uploadProbe(
       ).catch(() => [])) as string[];
       storedUrl = findStoredUrl(domCandidates, page.url(), probe.filename, token);
       if (probe.id === "upload-path-traversal") {
-        const traversalInDom = domCandidates.some(hasUnsanitizedTraversalEvidence);
-        uploadEvidence ||= traversalInDom;
-        if (!traversalInDom) storedUrl = null;
+        traversalEvidence ||= domCandidates.some(hasUnsanitizedTraversalEvidence);
       }
     }
-    if (probe.id === "upload-path-traversal" && storedUrl && !hasUnsanitizedTraversalEvidence(storedUrl)) storedUrl = null;
-    accepted = status >= 200 && status < 400 && (uploadEvidence || storedUrl !== null);
+    if (probe.id === "upload-path-traversal" && storedUrl) {
+      traversalEvidence ||= hasUnsanitizedTraversalEvidence(storedUrl);
+    }
+    accepted =
+      status >= 200 &&
+      status < 400 &&
+      (uploadEvidence || storedUrl !== null) &&
+      (probe.id !== "upload-path-traversal" || traversalEvidence);
     if (storedUrl) {
       const retrievedResponse = await page.context().request.get(storedUrl, { timeout: UPLOAD_WAIT_MS, maxRedirects: 0 }).catch(() => null);
       if (retrievedResponse && retrievedResponse.ok()) {
