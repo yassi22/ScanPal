@@ -175,6 +175,16 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a security engineer. Set Secure; HttpOnly; SameSite=Lax on the session cookie and regenerate the session id immediately after a successful login to prevent session fixation.",
   "auth-mfa":
     "You are a security engineer. Offer and enforce multi-factor authentication (TOTP or passkeys) for sensitive accounts and prompt for MFA setup after login.",
+  "upload-unrestricted-type":
+    "You are a security engineer. Validate uploaded files server-side against a strict extension AND MIME-type allowlist (e.g. jpg/png/pdf), rejecting anything else regardless of the client-supplied Content-Type header.",
+  "upload-executable":
+    "You are a security engineer. Never allow an uploaded file to be executed by the server: store uploads outside the webroot (or in object storage), serve them with a non-executable, sandboxed configuration (no PHP/CGI handler on the upload path), and set Content-Disposition: attachment plus a hardened Content-Security-Policy on any endpoint that serves them.",
+  "upload-content-sniff":
+    "You are a security engineer. Validate uploaded files by magic-byte/content sniffing in addition to the declared MIME type, strip active content from SVG/HTML uploads (or reject them outright), and always serve user uploads with X-Content-Type-Options: nosniff and a restrictive Content-Security-Policy so the browser cannot execute embedded scripts.",
+  "upload-size-limit":
+    "You are a security engineer. Enforce a server-side maximum upload size (reject before the full body is buffered, e.g. via a request body-size limit or streaming check) so a single upload cannot exhaust disk or memory.",
+  "upload-path-traversal":
+    "You are a security engineer. Never use the client-supplied filename to build a storage path: sanitize or discard it and generate a new random filename server-side, and normalize/validate the resolved path stays within the intended upload directory before writing.",
 };
 
 export function fixPromptTemplateFor(checkId: string): string {

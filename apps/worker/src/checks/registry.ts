@@ -4,7 +4,7 @@ import {
   type QueueName,
   type ScanCategory,
 } from "@scanpal/shared";
-import { AUTH_FLOW_CHECK_IDS } from "@scanpal/shared";
+import { AUTH_FLOW_CHECK_IDS, UPLOAD_CHECK_IDS } from "@scanpal/shared";
 import type { RateLimiter } from "../rate-limit";
 import type { CheckContext } from "./types";
 import type { Redis } from "ioredis";
@@ -67,7 +67,12 @@ export type ImplementedCheck = {
 };
 
 const activeTestCatalogIds = checkCatalog
-  .filter((entry) => entry.active && !AUTH_FLOW_CHECK_IDS.includes(entry.id as never))
+  .filter(
+    (entry) =>
+      entry.active &&
+      !AUTH_FLOW_CHECK_IDS.includes(entry.id as never) &&
+      !UPLOAD_CHECK_IDS.includes(entry.id as never),
+  )
   .map((entry) => entry.id);
 
 function toImplemented(
