@@ -15,7 +15,7 @@ Twee ✅'s met een slag om de arm (diepte niet geverifieerd, niet als gap geteld
 
 **Al gedekt (26):** SQL Injection · XSS · API Key Exposure (`secrets-in-html`+`secrets-in-bundles`) · CORS · CSRF · Open Redirect · GraphQL (introspection; injection-diepte onbevestigd) · JWT · Debug Endpoints · Input Validation · Source Code SAST (`semgrep`) · Webhook Signature · IDOR · Tenant Isolation · Security Headers (8) · SSL/TLS · Cookie & Session (5) · GitHub Repo Security (`gitleaks`+`repo-health`) · Legal Compliance (5) · Uptime & Status Pages · Domain Watchtower · Performance & CWV (`core-web-vitals`+`crux-field-data`) · Accessibility WCAG · SEO¹ · AEO¹ · Dependency Vulnerability (`osv-scanner` — **zie G4-kanttekening**).
 
-**Gaten (10 + 1 te-definiëren):** hieronder, gegroepeerd naar bouwkost, niet naar CheckVibe-categorie.
+**Gaten (10 + 1 herdefinieerd):** hieronder, gegroepeerd naar bouwkost, niet naar CheckVibe-categorie. **Status (2026-08-25):** G1–G8 opgeleverd ✅ (plannen 68–75); G9/G10/G11 hebben een plan 📝 (77/78/79), met de eigendom-verificatie-voorwaarde al opgeleverd (plan 76). Elk gat is nu gedekt door code of een plan.
 
 ---
 
@@ -36,35 +36,36 @@ Dit is de belangrijkste bevinding: **4 van de "gaten" zijn geen nieuwe scanners 
 
 ## Tier 2 — Echt nieuw, gemiddelde kost (voorstel: schrijven op jouw keuze)
 
-| # | Gap | Scope-keuze (dit bepaalt de kost) | Klasse |
-|---|---|---|---|
-| **G5** | Supabase / Firebase security | **Passief black-box**: publieke Firebase-rules `.json`, niet-geauthenticeerde Supabase `/rest/v1/`-endpoints, platform-headers. *Niet* een geauthenticeerde OAuth-integratie per vendor. | passief |
-| **G6** | Subdomain-takeover detectie | Dangling-CNAME-fingerprint is goedkoop (CNAME-resolutie zit al in G1's resolver); de kost zit in de **subdomein-bron** (sitemap/cert-transparency/brute-lijst). | passief |
-| **G7** | WAF/CDN- & DDoS-weerbaarheid + API-rate-limit-inspectie | **Geen load-generatie tegen sites van derden.** Fingerprint WAF/CDN + inspecteer rate-limit-headers/`429`-gedrag. Een begrensde burst alleen achter opt-in **én** eigendomsbewijs. | passief (+ optioneel actief) |
-| **G8** | Threat Intelligence / reputatie | Domein/IP tegen blocklist- & malware-DB's (externe API-lookup). | passief |
+| # | Gap | Scope-keuze (dit bepaalt de kost) | Klasse | Plan |
+|---|---|---|---|---|
+| **G5** | Supabase / Firebase security | **Passief black-box**: publieke Firebase-rules `.json`, niet-geauthenticeerde Supabase `/rest/v1/`-endpoints, platform-headers. *Niet* een geauthenticeerde OAuth-integratie per vendor. | passief | [74](plans/74-baas-security.md) ✅ |
+| **G6** | Subdomain-takeover detectie | Dangling-CNAME-fingerprint is goedkoop (CNAME-resolutie zit al in G1's resolver); de kost zit in de **subdomein-bron** (sitemap/cert-transparency/brute-lijst). | passief | [72](plans/72-subdomain-takeover.md) ✅ |
+| **G7** | WAF/CDN- & DDoS-weerbaarheid + API-rate-limit-inspectie | **Geen load-generatie tegen sites van derden.** Fingerprint WAF/CDN + inspecteer rate-limit-headers/`429`-gedrag. Een begrensde burst alleen achter opt-in **én** eigendomsbewijs. | passief (+ optioneel actief) | [73](plans/73-waf-resilience.md) ✅ |
+| **G8** | Threat Intelligence / reputatie | Domein/IP tegen blocklist- & malware-DB's (externe API-lookup). | passief | [75](plans/75-threat-intelligence.md) ✅ |
 
 ## Tier 3 — Nieuwe actieve tests (opt-in + Pro; sommige eigendom-geverifieerd)
 
 Deze erven de gating van plan 52 (`active: true` + opt-in + Pro).
 
-| # | Gap | Extra gating | Klasse |
-|---|---|---|---|
-| **G9** | Authentication Flow Scanner (login/signup/password-reset) | **Eigendom-geverifieerd, niet alleen opt-in** — maakt accounts aan, verstuurt mail, kan lockouts op andermans systeem triggeren. | actief + eigendomsbewijs |
-| **G10** | File Upload Security Scanner (unrestricted upload / RCE) | opt-in + Pro | actief |
+| # | Gap | Extra gating | Klasse | Plan |
+|---|---|---|---|---|
+| **G9** | Authentication Flow Scanner (login/signup/password-reset) | **Eigendom-geverifieerd, niet alleen opt-in** — maakt accounts aan, verstuurt mail, kan lockouts op andermans systeem triggeren. Eigendom-verificatie-flow = [plan 76](plans/76-domain-ownership-verification.md) ✅. | actief + eigendomsbewijs | [77](plans/77-auth-flow-scanner.md) 📝 |
+| **G10** | File Upload Security Scanner (unrestricted upload / RCE) | opt-in + Pro **+ eigendomsbewijs** (besloten: uploaden naar derden is even riskant als G9; herbruikt plan 76). Actief met onschadelijke canary. | actief | [78](plans/78-file-upload-scanner.md) 📝 |
 
-## Parkeren — te definiëren
+## G11 — herdefinieerd (was: parkeren — te definiëren)
 
-- **G11 — Audit Logging & Monitoring Scanner.** CheckVibe claimt "verifies security events are properly logged". Black-box heeft dit geen betrouwbare betekenis (je kunt andermans logging niet observeren). Markeer als *needs-definition*, lage prioriteit; niet blind een spec verzinnen.
+- **G11 — Audit Logging & Monitoring.** CheckVibe claimt "verifies security events are properly logged". Black-box heeft dit geen betrouwbare betekenis (je kunt andermans logging niet observeren). **Besloten**: niet blind een audit-logging-scanner verzinnen, maar herdefiniëren tot wat black-box wél eerlijk meetbaar is — *extern-zichtbare observability-signalen* (CSP-reporting/`Report-To`/`NEL`-headers + error-tracking/RUM-beacons + security.txt) als indirecte aanwijzing. Afwezigheid → hooguit `low`/info met expliciete disclaimer, nooit een straf. Zie [plan 79](plans/79-observability-signals.md) 📝.
 
 ---
 
-## Aanbevolen volgorde
+## Aanbevolen volgorde (grotendeels voltooid)
 
-1. **Tier 1 (G1–G4)** — goedkoop, passief, groot dekkingswinst-per-euro. Plannen 68–71 zijn geschreven en klaar om op te pakken. G4 heeft bovendien een echte blinde vlek (URL-only sites zonder dep-dekking).
-2. **G8 (Threat Intelligence)** — passieve externe lookup, laag risico, headline-waardig ("staat je domein op een blocklist?").
-3. **G5 (Supabase/Firebase)** — sterk onderscheidend voor de vibe-coder-doelgroep; scope strak op passieve exposed-config.
-4. **G7 / G6** — nuttig maar scope-gevoelig; eerst scope bevriezen.
-5. **Tier 3 (G9/G10)** — hoogste risico/gating; pas na de eigendom-verificatie-flow.
+1. ✅ **Tier 1 (G1–G4)** — opgeleverd (plannen 68–71). G4 dekt bovendien de blinde vlek van URL-only sites zonder dep-dekking.
+2. ✅ **G8 (Threat Intelligence)** — opgeleverd (plan 75, vijf reputatiebronnen achter env-keys).
+3. ✅ **G5 (Supabase/Firebase)** — opgeleverd (plan 74).
+4. ✅ **G7 / G6** — opgeleverd (plannen 73/72).
+5. 📝 **Tier 3 (G9/G10)** — plannen klaar (77/78); hoogste risico/gating. De eigendom-verificatie-flow (voorwaarde) is opgeleverd (plan 76), dus deze kunnen opgepakt worden.
+6. 📝 **G11** — herdefinieerd tot passieve observability-signalen (plan 79); lage prioriteit, geen straf-severity.
 
 ## Classificatie-legenda
 
