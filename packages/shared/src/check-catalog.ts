@@ -49,6 +49,9 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // + Certificate Transparency (crt.sh). Hergebruikt de swappable resolver uit
   // domain-net. Geen active-gating (geen interactie met de doelsite).
   { id: "subdomain-takeover", category: "http", name: "Subdomain-takeover (dangling CNAME)", active: false },
+  // Plan 75: vijf passieve externe reputatiebronnen (Spamhaus DQS, URLhaus,
+  // Safe Browsing, VirusTotal en AbuseIPDB). Geen active-gating.
+  { id: "threat-intel", category: "http", name: "Threat Intelligence & reputatie", active: false },
   { id: "redirects-mixed", category: "http", name: "Redirects & mixed content", active: false },
   { id: "secrets-in-html", category: "http", name: "Secrets in HTML", active: false },
   { id: "secrets-in-bundles", category: "http", name: "Secrets in JS-bundles", active: false },

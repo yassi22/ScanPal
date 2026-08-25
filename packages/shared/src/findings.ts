@@ -101,6 +101,10 @@ import {
   type BaasSecurityEvidence,
 } from "./baas-security";
 import {
+  reputationEvidenceSchema,
+  type ReputationEvidence,
+} from "./reputation";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -166,6 +170,7 @@ export const findingSchema = z.object({
       clientDepsEvidenceSchema,
       wafResilienceEvidenceSchema,
       baasSecurityEvidenceSchema,
+      reputationEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -330,6 +335,7 @@ export type InlineCheckLike = {
     | ClientDepsEvidence
     | WafResilienceEvidence
     | BaasSecurityEvidence
+    | ReputationEvidence
     | string
     | null;
 };
@@ -367,6 +373,7 @@ export function evidenceText(
     | ClientDepsEvidence
     | WafResilienceEvidence
     | BaasSecurityEvidence
+    | ReputationEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -509,6 +516,17 @@ export function evidenceText(
         .map((f) => `${f.project_url}[${f.config_keys.map((k) => `${k.type}:${k.masked}`).join(",")}]`)
         .join(" | ");
       return `platform=${evidence.platform} fingerprints=${fps} probe=${evidence.probe.performed ? `status=${evidence.probe.status} ${evidence.probe.summary ?? ""}` : "none"} budget_exhausted=${evidence.budget_exhausted}`;
+    }
+    if (evidence.kind === "threat-intel") {
+      const sources = evidence.sources
+        .map(
+          (source) =>
+            `${source.source}:queried=${source.queried},listed=${source.listed}` +
+            (source.categories?.length ? `[${source.categories.join(",")}]` : "") +
+            (source.measured_at ? `@${source.measured_at}` : ""),
+        )
+        .join(" | ");
+      return `host=${evidence.host} ips=${evidence.ips.join(",")} edge=${evidence.edge_detected} severity=${evidence.worst_severity} ${sources}`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -702,6 +720,10 @@ const ISSUE_TITLES: Record<
     warn: "Mogelijk vatbaar subdomein (dangling CNAME naar onbekend target)",
     fail: "Dangling CNAME naar bekende vulnerable service (subdomain-takeover)",
   },
+  "threat-intel": {
+    warn: "Reputatiesignaal gevonden bij externe blocklist(s)",
+    fail: "Domein of IP staat op een malware-/reputatie-blocklist",
+  },
   "waf-resilience": {
     warn: "Geen WAF/CDN of rate-limit-headers gedetecteerd",
   },
@@ -787,6 +809,8 @@ const REMEDIATION: Record<string, string> = {
     "Publiceer een /robots.txt met een `User-agent: *`-groep en geldige Disallow/Allow-regels, en verwijs via een `Sitemap:`-directive naar je sitemap. Publiceer een geldige sitemap.xml (urlset of sitemapindex) met alleen absolute http(s)-URL's naar bestaande pagina's, en houd de URL's in robots.txt en sitemap gesynchroniseerd met de daadwerkelijke site.",
   "subdomain-takeover":
     "Verwijder de dangling CNAME uit je DNS-zone of her-claim het eindpunt bij de provider (bijv. maak de Heroku-app / S3-bucket / GitHub Pages-repo opnieuw aan met dezelfde naam). Verifieer per gerapporteerd subdomein of het target nog van jou is; ruim CNAME-records op zodra je een externe service opzegt. Automatiseer detectie van niet-resolvende CNAME-targets in je DNS-monitoring om herhaling te voorkomen.",
+  "threat-intel":
+    "Valideer elke reputatie-listing en de meet-timestamp; verwijder malware/phishing of misbruikgedrag en roteer eventueel gecompromitteerde credentials. Vraag daarna review of delisting aan bij de betreffende bron: Spamhaus (https://check.spamhaus.org/), Google Search Console Beveiligingsproblemen (https://support.google.com/webmasters/answer/9044101), URLhaus (https://urlhaus.abuse.ch/contact/), VirusTotal false-positive-contact (https://docs.virustotal.com/docs/false-positive-contacts) en AbuseIPDB (https://www.abuseipdb.com/check/). Behandel CDN/edge-IP-listings als edge-context tot de origin onafhankelijk is geverifieerd.",
   "waf-resilience":
     "Plaats de site achter een WAF/CDN (bijv. Cloudflare, AWS WAF, Akamai) en publiceer rate-limit-headers (`RateLimit-Limit`/`RateLimit-Remaining`/`Retry-After`, RFC 9239/6585) op API-endpoints, zodat clients rate-limiting kunnen respecteren. Ontbrekende headers betekenen niet per se dat er geen bescherming is (een WAF kan op netwerklaag zitten) — bevestig dat gevoelige endpoints daadwerkelijk rate-limiting afdwingen.",
   "rate-limit-burst":

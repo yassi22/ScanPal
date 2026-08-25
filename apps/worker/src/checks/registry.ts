@@ -14,6 +14,7 @@ import { tlsCertCheck } from "./http/tls-cert";
 import { domainWatchtowerCheck } from "./http/domain-watchtower";
 import { dnsEmailCheck } from "./http/dns-email";
 import { subdomainTakeoverCheck } from "./http/subdomain-takeover";
+import { createThreatIntelCheck } from "./http/threat-intel";
 import { SECURITY_HEADER_CHECK_IDS, securityHeadersCheck } from "./http/security-headers";
 import { metaTagsCheck } from "./http/meta-tags";
 import { COOKIE_CHECK_IDS, cookiesCheck } from "./http/cookies";
@@ -58,6 +59,8 @@ export type ImplementedCheck = {
   id: string;
   category: ScanCategory;
   outputCheckIds: string[];
+  /** Finding hoort bij de site als geheel en krijgt dus route_url = null. */
+  siteLevel?: boolean;
   run(ctx: CheckContext): Promise<InlineCheckLike[]>;
 };
 
@@ -68,8 +71,15 @@ const activeTestCatalogIds = checkCatalog
 function toImplemented(
   impl: { id: string; category: ScanCategory; run(ctx: CheckContext): Promise<InlineCheckLike[]> },
   outputCheckIds?: string[],
+  siteLevel = false,
 ): ImplementedCheck {
-  return { id: impl.id, category: impl.category, outputCheckIds: outputCheckIds ?? [impl.id], run: impl.run };
+  return {
+    id: impl.id,
+    category: impl.category,
+    outputCheckIds: outputCheckIds ?? [impl.id],
+    siteLevel,
+    run: impl.run,
+  };
 }
 
 export function buildRegistry(
@@ -88,6 +98,8 @@ export function buildRegistry(
       // Plan 72: subdomain-takeover (dangling CNAME) — passief: publieke DNS +
       // Certificate Transparency (crt.sh) + sitemap-hostnames. Geen active-gating.
       toImplemented(subdomainTakeoverCheck),
+      // Plan 75: passieve externe reputatiebronnen; één site-level finding.
+      toImplemented(createThreatIntelCheck({ redis: cruxDeps.redis }), undefined, true),
       toImplemented(securityHeadersCheck, [...SECURITY_HEADER_CHECK_IDS]),
       toImplemented(metaTagsCheck),
       toImplemented(cookiesCheck, [...COOKIE_CHECK_IDS]),

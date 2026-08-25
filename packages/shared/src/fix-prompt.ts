@@ -149,6 +149,8 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a platform/security engineer. Hide the origin server behind the CDN (override the server header) and set cache-control: private on authenticated documents so session content does not leak via shared caches.",
   "subdomain-takeover":
     "You are a security engineer. Remove the dangling CNAME record for the affected subdomain, or re-claim the cloud resource endpoint it points to, so an attacker cannot take over the subdomain.",
+  "threat-intel":
+    "You are a security incident responder. Validate every reputation listing and measurement timestamp, remove malware/phishing or abusive behavior, rotate compromised credentials, then request review or delisting from the matching source: Spamhaus (https://check.spamhaus.org/), Google Search Console Security Issues (https://support.google.com/webmasters/answer/9044101), URLhaus (https://urlhaus.abuse.ch/contact/), VirusTotal false-positive contacts (https://docs.virustotal.com/docs/false-positive-contacts), and AbuseIPDB (https://www.abuseipdb.com/check/). Treat CDN/edge-IP listings as edge context until the origin is independently verified.",
   "waf-resilience":
     "You are a security engineer. Deploy a WAF/CDN in front of the origin and add explicit API rate-limiting (return 429 with Retry-After and rate-limit headers) on public endpoints so they resist abuse.",
   "rate-limit-burst":

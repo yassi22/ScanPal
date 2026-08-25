@@ -30,6 +30,17 @@ const envSchema = z.object({
   APP_URL: z.url().optional().default("http://localhost:3000"),
   /** Plan 62: CrUX-API-key (Google, gratis). Zonder key → geen field data. */
   CRUX_API_KEY: z.string().min(1).optional(),
+  /** Plan 75: optionele externe reputatiebronnen; elke ontbrekende key skipt. */
+  SPAMHAUS_DQS_KEY: z.string().min(1).optional(),
+  ABUSECH_AUTH_KEY: z.string().min(1).optional(),
+  SAFE_BROWSING_API_KEY: z.string().min(1).optional(),
+  VIRUSTOTAL_API_KEY: z.string().min(1).optional(),
+  ABUSEIPDB_API_KEY: z.string().min(1).optional(),
+  THREAT_INTEL_CACHE_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(60)
+    .default(12 * 60 * 60),
 });
 
 const parsed = envSchema.safeParse(process.env);

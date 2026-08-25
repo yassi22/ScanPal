@@ -150,6 +150,7 @@ export * from "./osv";
 export * from "./client-deps";
 export * from "./browser-vitals";
 export * from "./crux";
+export * from "./reputation";
 export * from "./accessibility";
 export * from "./browser-runtime";
 export * from "./aeo-render";

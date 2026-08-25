@@ -139,7 +139,7 @@ async function runRoute(
     const now = new Date().toISOString();
     // Github-checks zijn site-level (AGENTS.md): findings krijgen geen
     // route_url (null → aparte NULL-partial-index in de checks-tabel).
-    const routeUrlForFindings = impl.category === "github" ? null : route.url;
+    const routeUrlForFindings = impl.category === "github" || impl.siteLevel ? null : route.url;
 
     let results: InlineCheckLike[];
     try {

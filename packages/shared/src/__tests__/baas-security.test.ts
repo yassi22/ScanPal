@@ -100,17 +100,23 @@ describe("extractBaasFingerprints", () => {
     expect(fps.filter((f) => f.platform === "supabase")).toHaveLength(2);
   });
 
-  it("werkt op minified/gebundelde code (geneste braces, geen whitespace)", () => {
-    const apiKey = "AIza" + "E".repeat(35);
-    const minified =
-      'const e={supabaseUrl:"https://min.supabase.co",supabaseKey:"sb_publishable_"+"D".repeat(40)};' +
-      `const firebaseConfig={apiKey:"${apiKey}",projectId:"minapp",storageBucket:"minapp.appspot.com"};` +
-      "firebase.initializeApp(firebaseConfig);";
+  it("werkt op echte esbuild-bundleroutput (mangled identifiers, brace-eliminatie)", () => {
+    // Letterlijke `esbuild --bundle --minify --format=iife`-output van een snippet
+    // met Supabase createClient + Firebase initializeApp (bron + commando: zie
+    // __tests__/fixtures/baas-minified.md). esbuild mangelt de `firebaseConfig`-
+    // identifier weg (`t={apiKey:...}`), dus detectie leunt op de string-literals
+    // die de minificatie overleven — precies wat we in productie willen borgen.
+    const minified = `(()=>{function i(a,e){return{url:a,key:e,from:p=>({t:p})}}var n={initializeApp(a){return{config:a,name:"[DEFAULT]"}}},s=i("https://min.supabase.co","sb_publishable_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcd"),t={apiKey:"AIzaSyB1234567890abcdefghijklmnopqrstuv",authDomain:"minapp.firebaseapp.com",databaseURL:"https://minapp.firebaseio.com",projectId:"minapp",storageBucket:"minapp.appspot.com",messagingSenderId:"1234567890",appId:"1:1234567890:web:abcdef123456"},o=n.initializeApp(t);window.__app=o;window.__db=s.from("users");})();`;
     const fps = extractBaasFingerprints(minified);
-    expect(fps.some((f) => f.projectUrl === "https://min.supabase.co")).toBe(true);
+
+    const supa = fps.find((f) => f.platform === "supabase");
+    expect(supa?.projectUrl).toBe("https://min.supabase.co");
+    expect(supa?.evidence.anon_key).toBeDefined();
+
     const fb = fps.find((f) => f.platform === "firebase");
     expect(fb?.projectUrl).toBe("https://minapp.firebaseio.com");
     expect(fb?.evidence.storage_bucket).toBe("https://minapp.appspot.com");
+    expect(fb?.evidence.api_key).toBeDefined();
   });
 });
 

@@ -42,7 +42,8 @@ describe("skeletonTotals (progress-skelet)", () => {
     // (rate-limit-burst is active: true, telt niet mee zonder flag).
     // Plan 74: baas-security produceert 3 passieve http-checks
     // (supabase/firebase/convex-security) → http 27->30.
-    expect(totals.http).toBe(30);
+    // Plan 75: threat-intel voegt één passieve site-level http-check toe → 31.
+    expect(totals.http).toBe(31);
     expect(totals.seo).toBe(6);
     expect(totals.aeo).toBe(9);
     expect(totals.compliance).toBe(5);
@@ -55,8 +56,8 @@ describe("skeletonTotals (progress-skelet)", () => {
     const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
     // 12 actieve-test-catalog-checks (plan 73 voegt rate-limit-burst toe) +
-    // 30 passieve http-checks (plan 74 voegt 3 baas-security-checks toe).
-    expect(totals.http).toBe(42);
+    // 31 passieve http-checks (plan 75 voegt threat-intel toe).
+    expect(totals.http).toBe(43);
     expect(totals.compliance).toBe(5);
   });
 

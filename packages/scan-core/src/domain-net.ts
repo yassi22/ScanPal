@@ -78,6 +78,184 @@ export type DnsRecords = {
   caa_records: string[];
 };
 
+/** A- en AAAA-resolutie via de bestaande verwisselbare resolver. */
+export async function resolveIps(
+  apexPunycode: string,
+  deps: DomainDeps = {},
+): Promise<string[]> {
+  const resolver = deps.dnsResolver ?? dns;
+  const [ipv4, ipv6] = await Promise.all([
+    safeResolve(resolver.resolve4, resolver, apexPunycode),
+    safeResolve(resolver.resolve6, resolver, apexPunycode),
+  ]);
+  return [...new Set([...ipv4, ...ipv6])].sort();
+}
+
+const EDGE_CNAME_SUFFIXES = [
+  ".akamaiedge.net",
+  ".akamaized.net",
+  ".azureedge.net",
+  ".cdn.cloudflare.net",
+  ".cloudfront.net",
+  ".fastly.net",
+  ".netlify.global",
+  ".vercel-dns.com",
+];
+
+/** Best-effort edge/proxy-markering uit bekende CDN-CNAME-doelen. */
+export async function detectEdgeProxy(
+  hostPunycode: string,
+  deps: DomainDeps = {},
+): Promise<boolean> {
+  const resolver = deps.dnsResolver ?? dns;
+  const cnames = await safeResolve(resolver.resolveCname, resolver, hostPunycode);
+  return cnames.some((record) => {
+    const cname = record.toLowerCase().replace(/\.+$/, "");
+    return EDGE_CNAME_SUFFIXES.some((suffix) => cname.endsWith(suffix));
+  });
+}
+
+export type SpamhausDqsResult = {
+  queried: boolean;
+  listed: boolean;
+  categories: string[];
+  detail: string;
+};
+
+const ZEN_CODES: Record<string, string> = {
+  "127.0.0.2": "ZEN:SBL",
+  "127.0.0.3": "ZEN:CSS",
+  "127.0.0.4": "ZEN:XBL",
+  "127.0.0.9": "ZEN:DROP",
+  "127.0.0.10": "ZEN:PBL",
+  "127.0.0.11": "ZEN:PBL",
+  "127.0.0.30": "ZEN:BCL",
+};
+
+const DBL_CODES: Record<string, string> = {
+  "127.0.1.2": "DBL:low-reputation",
+  "127.0.1.4": "DBL:phishing",
+  "127.0.1.5": "DBL:malware",
+  "127.0.1.6": "DBL:botnet-c2",
+  "127.0.1.102": "DBL:abused-legit",
+  "127.0.1.103": "DBL:abused-redirector",
+  "127.0.1.104": "DBL:abused-phishing",
+  "127.0.1.105": "DBL:abused-malware",
+  "127.0.1.106": "DBL:abused-c2",
+};
+
+export function parseSpamhausDqsAnswers(
+  zone: "zen" | "dbl",
+  answers: string[],
+): SpamhausDqsResult {
+  const unique = [...new Set(answers)];
+  if (unique.some((answer) => answer.startsWith("127.255.255."))) {
+    return {
+      queried: false,
+      listed: false,
+      categories: [],
+      detail: "Spamhaus DQS-key geweigerd of ongeldig.",
+    };
+  }
+  if (zone === "dbl" && unique.includes("127.0.1.255")) {
+    return {
+      queried: false,
+      listed: false,
+      categories: [],
+      detail: "Spamhaus DBL ontving een ongeldige IP-query.",
+    };
+  }
+  if (unique.some((answer) => !answer.startsWith("127."))) {
+    return {
+      queried: false,
+      listed: false,
+      categories: [],
+      detail: "Onverwacht Spamhaus DNS-antwoord buiten 127.0.0.0/8.",
+    };
+  }
+  const mapping = zone === "zen" ? ZEN_CODES : DBL_CODES;
+  const categories = unique
+    .filter((answer) => answer.startsWith("127.0."))
+    .map((answer) => mapping[answer] ?? `${zone.toUpperCase()}:${answer}`)
+    .sort();
+  return {
+    queried: true,
+    listed: categories.length > 0,
+    categories,
+    detail:
+      categories.length > 0
+        ? `Spamhaus ${zone.toUpperCase()}: ${categories.join(", ")}.`
+        : `Niet gelist in Spamhaus ${zone.toUpperCase()}.`,
+  };
+}
+
+function expandIpv6(ip: string): string[] | null {
+  const value = ip.toLowerCase().split("%")[0];
+  const parts = value.split("::");
+  if (parts.length > 2) return null;
+  const left = parts[0] ? parts[0].split(":") : [];
+  const right = parts[1] ? parts[1].split(":") : [];
+  const missing = 8 - left.length - right.length;
+  if ((parts.length === 1 && missing !== 0) || missing < 0) return null;
+  return [...left, ...Array(missing).fill("0"), ...right].map((part) =>
+    part.padStart(4, "0"),
+  );
+}
+
+export function spamhausDqsQueryName(input: string, key: string): {
+  query: string;
+  zone: "zen" | "dbl";
+} | null {
+  const version = net.isIP(input);
+  const cleanKey = key.trim().replace(/\.+$/, "");
+  if (!cleanKey) return null;
+  if (version === 4) {
+    const reversed = input.split(".").reverse().join(".");
+    return { query: `${reversed}.${cleanKey}.zen.dq.spamhaus.net`, zone: "zen" };
+  }
+  if (version === 6) {
+    const groups = expandIpv6(input);
+    if (!groups) return null;
+    const reversed = groups.join("").split("").reverse().join(".");
+    return { query: `${reversed}.${cleanKey}.zen.dq.spamhaus.net`, zone: "zen" };
+  }
+  const host = input.toLowerCase().replace(/\.+$/, "");
+  if (!host) return null;
+  return { query: `${host}.${cleanKey}.dbl.dq.spamhaus.net`, zone: "dbl" };
+}
+
+function isNegativeDnsAnswer(err: unknown): boolean {
+  const code = (err as { code?: unknown } | null)?.code;
+  return code === "ENODATA" || code === "ENOTFOUND" || code === "NXDOMAIN";
+}
+
+/** Spamhaus DQS ZEN/DBL A-query met failure-resistente return-status. */
+export async function querySpamhausDqs(
+  input: string,
+  key: string,
+  deps: DomainDeps = {},
+): Promise<SpamhausDqsResult> {
+  const built = spamhausDqsQueryName(input, key);
+  if (!built) {
+    return { queried: false, listed: false, categories: [], detail: "Ongeldige DQS-query." };
+  }
+  const resolver = deps.dnsResolver ?? dns;
+  try {
+    const raw = await resolver.resolve(built.query, "A");
+    const answers = Array.isArray(raw) ? raw.filter((value): value is string => typeof value === "string") : [];
+    return parseSpamhausDqsAnswers(built.zone, answers);
+  } catch (err) {
+    if (isNegativeDnsAnswer(err)) return parseSpamhausDqsAnswers(built.zone, []);
+    const message = err instanceof Error ? err.message : "DNS-query mislukt";
+    return {
+      queried: false,
+      listed: false,
+      categories: [],
+      detail: `Spamhaus DQS niet bereikbaar: ${message}`,
+    };
+  }
+}
+
 /**
  * DNS-queries via `node:dns` (plan 56, besluit 2): NS-set, DNSSEC (DS aanwezig
  * → enabled) en CAA. Failure-resistent: een falende query levert een lege set /

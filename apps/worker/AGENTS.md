@@ -65,9 +65,10 @@ mapper converts them to v1 findings.
 Registry (`src/checks/registry.ts`): queue → implemented checks. The http
 queue already runs reachability, https, security-headers, meta-tags,
 secrets-in-bundles, the active-tests bundle (plan 52), aeo-engine-matrix
-(plan 55), compliance (plan 61) en crux-field-data (plan 62 — CrUX History
-API-call, schrijft `scans.crux` via scan-core, 24u Redis-cache per origin);
-browser/github queues are empty until features 41–43 / 46–49.
+(plan 55), compliance (plan 61), crux-field-data (plan 62 — CrUX History
+API-call, schrijft `scans.crux` via scan-core, 24u Redis-cache per origin) en
+threat-intel (plan 75 — vijf optionele reputatiebronnen, 12u broncache, één
+site-level finding); browser/github queues draaien hun geregistreerde checks.
 `skeletonTotals` computes the progress totals per category (active-tests only
 when the scan flag is on).
 
