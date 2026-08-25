@@ -49,6 +49,7 @@ import { createBrowserStorageCheck } from "./browser/browser-storage";
 import { createClientDepsRuntimeCheck } from "./browser/client-deps-runtime";
 import { createAeoRenderCheck } from "./browser/aeo-render";
 import { createAuthFlowCheck } from "./browser/auth-flow";
+import { createFileUploadCheck } from "./browser/file-upload";
 import type { BrowserRunner } from "./browser/runner";
 
 /**
@@ -180,6 +181,9 @@ export function buildRegistry(
       // (Playwright); catalog-categorie http (active-tests-sectie). Eén impl
       // produceert de zeven auth-*-ids; site-level (route_url null).
       toImplemented(createAuthFlowCheck(browserRunner), [...AUTH_FLOW_CHECK_IDS], true),
+      // Plan 78: veilige upload-canaries achter active-tests + live ownership.
+      // Credentials zijn optioneel voor publieke formulieren. Site-level.
+      toImplemented(createFileUploadCheck(browserRunner), [...UPLOAD_CHECK_IDS], true),
     ],
     // Features 46–49 vullen de github-worker.
     github: [
@@ -211,6 +215,7 @@ export function skeletonTotals(
     for (const impl of registry[queue]) {
       if (impl.id === "active-tests" && !activeTests) continue;
       if (impl.id === "auth-flow" && !activeTests) continue;
+      if (impl.id === "upload-scan" && !activeTests) continue;
       const count = impl.outputCheckIds.length;
       totals[impl.category] = (totals[impl.category] ?? 0) + count;
     }

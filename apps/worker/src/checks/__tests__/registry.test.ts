@@ -59,8 +59,9 @@ describe("skeletonTotals (progress-skelet)", () => {
     const totals = skeletonTotals(registry, ["http", "browser"], true);
     // 12 actieve-test-catalog-checks (plan 73 voegt rate-limit-burst toe) +
     // 31 passieve http-checks (plan 75 voegt threat-intel toe) +
-    // 7 auth-flow-checks (plan 77, active: true, tellen mee met de flag aan).
-    expect(totals.http).toBe(50);
+    // 7 auth-flow-checks (plan 77) + 5 upload-checks (plan 78), beide alleen
+    // met active-tests. De upload-ids zitten niet ook in active-tests zelf.
+    expect(totals.http).toBe(55);
     expect(totals.compliance).toBe(5);
   });
 
