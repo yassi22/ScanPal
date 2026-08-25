@@ -72,7 +72,15 @@ describe("createClientDepsRuntimeCheck (plan 71 v2)", () => {
       vulnerable: 1,
       by_severity: expect.objectContaining({ critical: 1 }),
     });
-    expect(result.evidence?.samples[0].source).toBe("runtime-global");
+    if (
+      !result.evidence ||
+      typeof result.evidence !== "object" ||
+      !("kind" in result.evidence) ||
+      result.evidence.kind !== "client-deps"
+    ) {
+      throw new Error("client-deps evidence verwacht");
+    }
+    expect(result.evidence.samples[0]?.source).toBe("runtime-global");
     expect(queryOsv).toHaveBeenCalledTimes(1);
     expect(queryOsv.mock.calls[0][0]).toEqual([
       { package: { name: "jquery", ecosystem: "npm" }, version: "3.4.1" },
