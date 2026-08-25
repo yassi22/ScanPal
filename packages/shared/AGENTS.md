@@ -21,6 +21,7 @@ BullMQ.
 | `src/fix-prompt.ts` | AI fix-prompts (plan 60): `fixPromptSchema` (`{prompt, findings_covered, truncated}`), `fixPromptTemplates` per check-id + fallback, `buildFindingFixPrompt`/`buildScanFixPrompt` (grouping per bestand/route, ~1500-token-truncatie), `findingLocation`/`extractFilePath`, `estimateTokens` |
 | `src/crux.ts` | Plan 62 CrUX field data: `cruxMetricSchema`/`cruxDataSchema`/`cruxEvidenceSchema`/`cruxDivergenceEvidenceSchema`, `computeCruxDivergences` (drempels: LCP > 1s, INP > 200ms, CLS > 0,1), `CRUX_VITAL_LABELS` |
 | `src/reputation.ts` | Plan 75 threat intelligence: `reputationSchema`/evidence, vijf bronstatussen en pure `classifyReputation`-severity |
+| `src/ownership.ts` | Plan 76 DNS-eigendom: ownership-responsecontracten, 30-dagen badge-status en pure `matchesOwnershipTxt` voor TXT-chunks/quotes |
 | `src/index.ts` | Re-exports |
 
 ## Rules

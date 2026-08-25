@@ -52,6 +52,12 @@ describe("registrableDomain — apex-resolutie", () => {
     expect(registrableDomain("example.co.uk")).toBe("example.co.uk");
   });
 
+  it("herkent uitgebreide commerciële tweede-niveaus (plan 76)", () => {
+    expect(registrableDomain("shop.example.com.mx")).toBe("example.com.mx");
+    expect(registrableDomain("app.example.co.id")).toBe("example.co.id");
+    expect(registrableDomain("www.example.com.sg")).toBe("example.com.sg");
+  });
+
   it("geeft null voor IP's en ongeldig", () => {
     expect(registrableDomain("192.168.1.1")).toBeNull();
     expect(registrableDomain("localhost")).toBeNull();

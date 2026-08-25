@@ -89,6 +89,9 @@ export type SiteRow = {
   uptime_enabled: boolean;
   scan_frequency: (typeof scanFrequencies)[number];
   next_scan_at: Date | null;
+  ownership_token: string | null;
+  ownership_verified_at: Date | null;
+  ownership_method: string | null;
   created_at: Date;
 };
 

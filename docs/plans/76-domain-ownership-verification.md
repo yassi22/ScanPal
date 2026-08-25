@@ -2,9 +2,9 @@
 
 **Doel**: Een herbruikbare flow waarmee een gebruiker bewijst dat hij eigenaar is van een gescand domein, via een DNS TXT-record. Dit is de poort voor hoog-risico acties die je niet op andermans domein mag uitvoeren — in de eerste plaats de Authentication Flow Scanner (G9, plan 77), maar ook toekomstige eigendom-gated features (bv. actievere WAF-burst uit plan 73/G7). Losstaand plan zodat de verificatie niet aan één scanner vastzit.
 
-**Status**: 📝 Plan klaar (niet gestart). Feature 76. Voorwaarde voor plan 77 (G9).
+**Status**: ✅ Opgeleverd op 2026-08-25. Feature 76. Voorwaarde voor plan 77 (G9).
 
-## Besluiten
+## Besluiten (bevestigd 2026-08-25)
 
 1. **Methode: DNS TXT-record** (gekozen boven well-known bestand). Per site genereren we een geheim token; de gebruiker zet een TXT-record `scanpal-verify=<token>` op de **apex** van het domein (industriestandaard, zoals Google Search Console). Herbruikt de bestaande swappable `dnsResolver` (`resolveTxt`) uit `packages/scan-core/src/domain-net.ts` — geen nieuwe transport-laag.
 2. **Token = geheim, per site, roteerbaar.** Willekeurig gegenereerd (bv. 32 bytes base32), opgeslagen op de site-rij. Rotatie mogelijk (nieuw token invalideert de oude), zodat een gecompromitteerd of gedeeld token ingetrokken kan worden.
@@ -29,29 +29,30 @@
 - **API**:
   - `GET /api/sites/:id/ownership` → `{ token, record_name, record_value: "scanpal-verify=<token>", verified_at }` (instructies voor de gebruiker).
   - `POST /api/sites/:id/verify-ownership` → bevraagt live TXT; `200 {verified:true, verified_at}` of `200 {verified:false, reason}`. Rate-limit per site (hergebruik Redis-limiter) tegen hameren.
+  - `POST /api/sites/:id/ownership-token-rotations` → roteert het token en wist `ownership_verified_at`/`ownership_method` atomair.
   - Helper (intern, niet publiek): `verifyOwnershipLive(siteId, deps): Promise<boolean>` — herbruikt door plan 77's dispatch-gate.
 - **Shared**: `ownershipSchema` + pure `matchesOwnershipTxt(records, token)` (parse van TXT-records, tolereert quotes/whitespace/meerdere records). Unit-getest op mock-resolver.
 - **UI**: op de site-detailpagina een "Eigendom verifiëren"-kaart: toont `record_name`/`record_value` om te kopiëren, een "Verifieer nu"-knop en een status-badge (Geverifieerd / Niet geverifieerd / Verlopen).
 
 ## Stappen
 
-1. Migratie: `ownership_token`/`ownership_verified_at`/`ownership_method` op `sites`; token genereren bij site-aanmaak (backfill bestaande sites lazily bij eerste `GET /ownership`).
-2. `packages/shared`: `ownershipSchema` + pure `matchesOwnershipTxt(records, token)` + tests.
-3. `packages/scan-core`: `verifyOwnershipLive(siteId, deps)` die `resolveTxt(apexPunycode)` doet en `matchesOwnershipTxt` toepast.
-4. API: `GET /ownership` + `POST /verify-ownership` (met per-site rate-limit); schrijft `ownership_verified_at`.
-5. UI: verificatie-kaart op site-detail met kopieerbare record-instructies + status-badge.
-6. Tests: token-match (quotes, meerdere TXT-records, apex vs subdomein), niet-gevonden → verified:false, rotatie invalideert oud token, rate-limit op de verify-endpoint, IDN→punycode.
+1. ✅ Migratie `030_domain_ownership_verification.sql`: `ownership_token`/`ownership_verified_at`/`ownership_method` op `sites`; tokens worden lazy aangemaakt bij de eerste ownership-call.
+2. ✅ `packages/shared`: `ownershipSchema`, response-contracten, statushelper en pure `matchesOwnershipTxt(records, token)`.
+3. ✅ `packages/scan-core`: `verifyOwnershipLive(siteId, deps)` en de race-veilige ownership-statehelpers; DNS-query op `apexPunycode` via de swappable resolver.
+4. ✅ API: `GET /ownership`, `POST /verify-ownership` (5 pogingen/minuut/site) en tokenrotatie; team/workspace-scoped zonder token in URL of logs.
+5. ✅ UI: responsive verificatiekaart op site-detail met kopieerbare record-instructies, rotatie en statusbadge.
+6. ✅ Tests: quotes/chunks/meerdere TXT-records, subdomein/apex, niet-gevonden, resolverfout, rotatie, rate-limit en IDN→punycode; alle DNS-calls gemockt.
 
 ## Open vragen
 
-- **Record-naam: apex (`example.com`) of subdomein (`_scanpal-verify.example.com`)?** → *Voorstel*: apex TXT (`scanpal-verify=<token>`), meest herkenbaar; subdomein-variant later toevoegen als gebruikers apex-TXT-clutter willen vermijden.
-- **Token genereren bij site-aanmaak of pas bij eerste verify-poging?** → *Voorstel*: lazy bij eerste `GET /ownership` (geen migratie-backfill-storm), deterministisch daarna.
-- **Geldigheidsvenster van de badge**: 30 dagen redelijk? De harde gate is toch de live her-check. → *Voorstel*: 30 dagen, config-baar.
+- ~~**Record-naam: apex (`example.com`) of subdomein (`_scanpal-verify.example.com`)?**~~ → Besloten: apex TXT (`scanpal-verify=<token>`).
+- ~~**Token genereren bij site-aanmaak of pas bij eerste verify-poging?**~~ → Besloten: lazy bij de eerste `GET /ownership` of directe verify-poging; geen migratie-backfill.
+- ~~**Geldigheidsvenster van de badge**~~ → Besloten: 30 dagen; de live her-check blijft de harde gate.
 
 ## Acceptatiecriteria
 
-- [ ] Gebruiker kan per site een token ophalen, een TXT-record zetten en via "Verifieer nu" de eigendom bevestigen; status-badge weerspiegelt de uitkomst.
-- [ ] `verifyOwnershipLive(siteId)` bevraagt live DNS en is herbruikbaar als harde gate door andere plannen (plan 77).
-- [ ] Token-rotatie invalideert het oude record; verify faalt dan tot het nieuwe record staat.
-- [ ] `verify-ownership` is per-site rate-limited; token wordt niet in URL's/logs gelekt.
-- [ ] Pure `matchesOwnershipTxt` is unit-getest op quote-/meervoud-/whitespace-varianten; geen echte DNS-calls in tests.
+- [x] Gebruiker kan per site een token ophalen, een TXT-record zetten en via "Verifieer nu" de eigendom bevestigen; status-badge weerspiegelt de uitkomst.
+- [x] `verifyOwnershipLive(siteId)` bevraagt live DNS en is herbruikbaar als harde gate door andere plannen (plan 77).
+- [x] Token-rotatie invalideert het oude record; verify faalt dan tot het nieuwe record staat.
+- [x] `verify-ownership` is per-site rate-limited; token wordt niet in URL's/logs gelekt.
+- [x] Pure `matchesOwnershipTxt` is unit-getest op quote-/meervoud-/whitespace-varianten; geen echte DNS-calls in tests.

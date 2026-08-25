@@ -82,8 +82,14 @@ const TWO_LABEL_TLDS = new Set([
   "co.uk", "org.uk", "ac.uk", "gov.uk", "me.uk", "ltd.uk", "plc.uk",
   "com.au", "net.au", "org.au", "edu.au", "gov.au",
   "co.nz", "net.nz", "org.nz", "ac.nz",
-  "co.jp", "co.kr", "or.kr", "ne.jp",
+  "co.jp", "co.kr", "or.kr", "ne.jp", "or.jp", "gr.jp", "ac.jp",
   "com.br", "com.cn", "com.tw", "co.in", "org.in", "co.za", "co.il",
+  // Veelgebruikte commerciële tweede-niveaus — eigendom-verificatie (plan 76)
+  // hangt af van de juiste apex, dus deze uitgebreid t.o.v. de plan 56-set.
+  "com.mx", "com.ar", "com.co", "com.pe", "com.ve", "com.ec", "com.uy",
+  "com.sg", "com.hk", "com.my", "com.ph", "com.vn", "com.pk", "com.bd",
+  "com.tr", "com.ua", "com.sa", "com.eg", "com.ng", "com.gh",
+  "co.id", "co.th", "co.ke", "co.ug", "or.id", "net.id",
 ]);
 
 /**

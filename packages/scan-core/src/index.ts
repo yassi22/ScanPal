@@ -12,3 +12,4 @@ export * from "./checks";
 export * from "./domain-net";
 export * from "./domain";
 export * from "./crux";
+export * from "./ownership";

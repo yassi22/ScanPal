@@ -16,6 +16,7 @@ import { ScanTrendChart } from "@/components/scan-trend-chart";
 import { DomainWatchtowerCard } from "@/components/domain-watchtower-card";
 import { PublicStatusToggle } from "@/components/public-status-toggle";
 import { DeployWebhookCard } from "@/components/deploy-webhook-card";
+import { OwnershipVerificationCard } from "@/components/ownership-verification-card";
 import { SiteScanAutoRefresh } from "@/components/site-scan-auto-refresh";
 import { getMembershipWorkspace } from "@/lib/workspace-scope";
 import { getDashboardContext } from "@/lib/dashboard-context";
@@ -152,6 +153,7 @@ export default async function SiteDetailPage({
 
       <div className="site-detail-stack">
         <ScanTrendChart points={trendPoints} />
+        <OwnershipVerificationCard siteId={site.id} />
         <DomainWatchtowerCard siteId={site.id} />
         <PublicStatusToggle siteId={site.id} initialSlug={site.public_status_slug} />
         <DeployWebhookCard
