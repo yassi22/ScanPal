@@ -161,6 +161,20 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a security engineer. Secure your Firebase Realtime Database and Storage rules (`{ \"rules\": { \".read\": false, \".write\": false } }` as the default, then allow per authenticated user) so the database and buckets are not publicly readable.",
   "convex-security":
     "You are a security engineer. Add authentication to your Convex functions so public metadata endpoints do not expose callable functions without auth.",
+  "auth-transport":
+    "You are a security engineer. Serve all login/signup/reset pages only over HTTPS (redirect http to https) and set autocomplete=\"current-password\" on login password fields and autocomplete=\"new-password\" on signup/reset password fields.",
+  "auth-csrf":
+    "You are a security engineer. Add CSRF protection (synchronizer token or signed double-submit cookie) to every authentication form and reject state-changing requests without a valid token.",
+  "auth-user-enumeration":
+    "You are a security engineer. Make the password-reset response uniform regardless of whether the email exists (same status, body and timing) so the reset flow does not leak which accounts exist.",
+  "auth-rate-limit":
+    "You are a security engineer. Enforce rate-limiting and/or account lockout on the login endpoint so a short burst of failed attempts returns 429 (with Retry-After) or a temporary lockout.",
+  "auth-password-policy":
+    "You are a security engineer. Enforce a server-side password policy that rejects trivial passwords (e.g. 123456) via a minimum length and a breached-password check (HaveIBeenPwned).",
+  "auth-session-security":
+    "You are a security engineer. Set Secure; HttpOnly; SameSite=Lax on the session cookie and regenerate the session id immediately after a successful login to prevent session fixation.",
+  "auth-mfa":
+    "You are a security engineer. Offer and enforce multi-factor authentication (TOTP or passkeys) for sensitive accounts and prompt for MFA setup after login.",
 };
 
 export function fixPromptTemplateFor(checkId: string): string {

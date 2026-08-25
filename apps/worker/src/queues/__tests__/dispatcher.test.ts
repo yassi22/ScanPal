@@ -44,6 +44,7 @@ const mockRunner: BrowserRunner = {
   captureRenderCompare: () => Promise.resolve({ ok: false, error: "mock" }),
   captureStorage: () => Promise.resolve({ ok: false, error: "mock" }),
   captureClientDeps: () => Promise.resolve({ ok: false, error: "mock" }),
+  captureAuthFlow: () => Promise.resolve({ ok: false, error: "mock" }),
 };
 const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
 

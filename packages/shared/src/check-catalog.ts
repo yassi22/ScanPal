@@ -127,6 +127,17 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // de scan-URL om 429/rate-limit-gedrag te observeren. Opt-in + Pro; erft de
   // gating van plan 52. Wordt geproduceerd door de active-tests-impl.
   { id: "rate-limit-burst", category: "http", name: "Rate-limit burst-probe", active: true },
+  // Plan 77: authentication flow scanner (login/signup/reset) — actieve, veilige
+  // subset achter driedubbele gating (opt-in + Pro + live domeineigendom + wegwerp-
+  // testaccount). Eén implementatie (browser-queue, Playwright) produceert de
+  // zeven auth-*-ids; findings `active: true` (niet in de score).
+  { id: "auth-transport", category: "http", name: "Auth-pagina's: HTTPS & wachtwoord-autocomplete", active: true },
+  { id: "auth-csrf", category: "http", name: "CSRF-bescherming op auth-formulieren", active: true },
+  { id: "auth-user-enumeration", category: "http", name: "User-enumeration via reset-flow", active: true },
+  { id: "auth-rate-limit", category: "http", name: "Rate-limiting op login", active: true },
+  { id: "auth-password-policy", category: "http", name: "Wachtwoord-policy bij signup/reset", active: true },
+  { id: "auth-session-security", category: "http", name: "Sessie-cookie-beveiliging & session-fixation", active: true },
+  { id: "auth-mfa", category: "http", name: "Multi-factor authenticatie", active: true },
   // Plan 74: BaaS-security (Supabase/Firebase/Convex) — passieve black-box
   // detectie van BaaS-misconfiguraties (open Realtime DB/Storage, PostgREST-
   // schema-lek, open Convex-functies). Eén implementatie, drie catalog-entries.

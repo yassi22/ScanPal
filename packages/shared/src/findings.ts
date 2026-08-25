@@ -740,6 +740,27 @@ const ISSUE_TITLES: Record<
   "convex-security": {
     warn: "Convex-functies publiek opvraagbaar",
   },
+  "auth-transport": {
+    warn: "Auth-pagina's niet volledig over HTTPS of zwakke wachtwoord-autocomplete",
+  },
+  "auth-csrf": {
+    warn: "Auth-formulieren zonder CSRF-bescherming",
+  },
+  "auth-user-enumeration": {
+    warn: "Reset-flow lekt welke e-mailadressen bestaan (user-enumeration)",
+  },
+  "auth-rate-limit": {
+    warn: "Geen rate-limiting/lockout waargenomen op de login",
+  },
+  "auth-password-policy": {
+    warn: "Triviaal zwak wachtwoord geaccepteerd op validatieniveau",
+  },
+  "auth-session-security": {
+    warn: "Sessie-cookie mist Secure/HttpOnly/SameSite of sessie-id roteert niet na login",
+  },
+  "auth-mfa": {
+    warn: "MFA niet beschikbaar of niet afgedwongen",
+  },
 };
 
 const REMEDIATION: Record<string, string> = {
@@ -847,6 +868,20 @@ const REMEDIATION: Record<string, string> = {
     "Zorg dat de layout op mobile (375px) geen horizontale overflow veroorzaakt: gebruik responsive units (rem, %, clamp), `overflow-x: hidden` waar nodig, `max-width: 100vw` op media en containers, en meta viewport-tag `width=device-width, initial-scale=1`. Vergroot tap-targets tot minimaal 24×24 CSS-pixels (WCAG 2.5.5) met padding en min-width/min-height.",
   "aeo-scan":
     "Render de kerncontent server-side (SSR/SSG of een static HTML-shell): titel, headings en de hoofdtekst moeten zonder JavaScript in de HTML staan, zodat AI-crawlers en LLM-parsers de pagina ook zonder JS-rendering kunnen begrijpen. Vermijd een lege SPA-shell die alles via client-side JavaScript injecteert. Publiceer de content tevens via llms.txt/JSON-LD voor betere AEO-detecteerbaarheid.",
+  "auth-transport":
+    "Serveer alle login-, signup- en reset-pagina's uitsluitend over HTTPS (forceer een 301-redirect van http:// naar https://) en zet op wachtwoord-velden `autocomplete=\"current-password\"` (login) resp. `autocomplete=\"new-password\"` (signup/reset) zodat wachtwoordbeheerders het veld correct herkennen.",
+  "auth-csrf":
+    "Bescherm elk auth-formulier met een CSRF-token (synchronizer-token of signed double-submit cookie); verwerp state-changing POST-verzoeken zonder geldig token. Hergebruik de bestaande CSRF-middleware van je framework.",
+  "auth-user-enumeration":
+    "Geef op de reset-flow een uniforme respons en statuscode ongeacht of het e-mailadres bestaat (bijv. 'Als dit adres bij ons bekend is, hebben we een reset-link verstuurd'), en zorg dat de verwerkingstijd niet verschilt tussen bestaande en onbestaande adressen (constant-time reactie).",
+  "auth-rate-limit":
+    "Dwing rate-limiting en/of account-lockout af op de login-endpoint: een korte burst foute pogingen moet een 429 (met Retry-After) of een tijdelijke lockout opleveren. Gebruik per-IP én per-account limieten en exponentiële backoff.",
+  "auth-password-policy":
+    "Voer een server-side wachtwoord-policy uit die triviale wachtwoorden (zoals '123456') afwijst, bijv. een minimum-lengte en een check tegen een bekende-gelekte-wachtwoorden-lijst (HaveIBeenPwned). Valideer zowel client-side (UX) als server-side (beveiliging).",
+  "auth-session-security":
+    "Zet op de sessie-cookie `Secure; HttpOnly; SameSite=Lax` (of Strict) en roteer het sessie-id direct ná een succesvolle login (session-regeneration) zodat een eventueel voor-login aangeleverd sessie-id niet wordt overgenomen (session-fixatie).",
+  "auth-mfa":
+    "Bied multi-factor authenticatie aan en dwing het af voor gevoelige accounts; toon na login een MFA-setup-stap of verwijs naar de beveiligingsinstellingen. Minimaal TOTP of passkeys; SMS als fallback.",
 };
 
 /**

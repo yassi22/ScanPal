@@ -12,6 +12,7 @@ const mockRunner: BrowserRunner = {
   captureRenderCompare: () => Promise.resolve({ ok: false, error: "mock" }),
   captureStorage: () => Promise.resolve({ ok: false, error: "mock" }),
   captureClientDeps: () => Promise.resolve({ ok: false, error: "mock" }),
+  captureAuthFlow: () => Promise.resolve({ ok: false, error: "mock" }),
 };
 
 describe("skeletonTotals (progress-skelet)", () => {
@@ -56,8 +57,9 @@ describe("skeletonTotals (progress-skelet)", () => {
     const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
     // 12 actieve-test-catalog-checks (plan 73 voegt rate-limit-burst toe) +
-    // 31 passieve http-checks (plan 75 voegt threat-intel toe).
-    expect(totals.http).toBe(43);
+    // 31 passieve http-checks (plan 75 voegt threat-intel toe) +
+    // 7 auth-flow-checks (plan 77, active: true, tellen mee met de flag aan).
+    expect(totals.http).toBe(50);
     expect(totals.compliance).toBe(5);
   });
 

@@ -21,6 +21,8 @@ export type WorkerDeps = {
    * (PROBE_MAX_CONCURRENCY). Default 1 (serieel) wanneer niet opgegeven.
    */
   routeConcurrency?: number;
+  /** Plan 77: AES-GCM-sleutel voor het decrypten van het wegwerp-testaccount. */
+  authCredentialKey?: string;
 };
 
 export type WorkerHandle = {
@@ -85,7 +87,9 @@ export function startScanWorkers(deps: WorkerDeps): WorkerHandle {
 
   const browserWorker = new Worker(
     QUEUES.browser,
-    createScanProcessor(deps.db, registry.browser, rateLimiter),
+    createScanProcessor(deps.db, registry.browser, rateLimiter, {
+      authCredentialKey: deps.authCredentialKey,
+    }),
     {
       ...connection,
       concurrency: 1,

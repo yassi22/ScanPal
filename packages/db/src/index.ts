@@ -295,3 +295,16 @@ export type WebhookDeliveryRow = {
   created_at: Date;
   delivered_at: Date | null;
 };
+
+/** Plan 77: encrypted wegwerp-testaccount per site (auth-flow scanner). */
+export type SiteAuthCredentialRow = {
+  id: string;
+  team_id: string;
+  workspace_id: string | null;
+  site_id: string;
+  login_url: string | null;
+  username: string;
+  password_encrypted: string;
+  created_at: Date;
+  updated_at: Date;
+};

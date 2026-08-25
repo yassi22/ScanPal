@@ -4,6 +4,7 @@ import {
   type QueueName,
   type ScanCategory,
 } from "@scanpal/shared";
+import { AUTH_FLOW_CHECK_IDS } from "@scanpal/shared";
 import type { RateLimiter } from "../rate-limit";
 import type { CheckContext } from "./types";
 import type { Redis } from "ioredis";
@@ -47,6 +48,7 @@ import { createMobileResponsiveCheck } from "./browser/mobile-responsive";
 import { createBrowserStorageCheck } from "./browser/browser-storage";
 import { createClientDepsRuntimeCheck } from "./browser/client-deps-runtime";
 import { createAeoRenderCheck } from "./browser/aeo-render";
+import { createAuthFlowCheck } from "./browser/auth-flow";
 import type { BrowserRunner } from "./browser/runner";
 
 /**
@@ -65,7 +67,7 @@ export type ImplementedCheck = {
 };
 
 const activeTestCatalogIds = checkCatalog
-  .filter((entry) => entry.active)
+  .filter((entry) => entry.active && !AUTH_FLOW_CHECK_IDS.includes(entry.id as never))
   .map((entry) => entry.id);
 
 function toImplemented(
@@ -168,6 +170,11 @@ export function buildRegistry(
       toImplemented(createClientDepsRuntimeCheck(browserRunner)),
       // Feature 43: AEO JS-rendered content (server-HTML vs gerenderde DOM).
       toImplemented(createAeoRenderCheck(browserRunner)),
+      // Plan 77: authentication flow scanner (login/signup/reset) — actieve,
+      // veilige subset achter driedubbele gating. Draait in de browser-queue
+      // (Playwright); catalog-categorie http (active-tests-sectie). Eén impl
+      // produceert de zeven auth-*-ids; site-level (route_url null).
+      toImplemented(createAuthFlowCheck(browserRunner), [...AUTH_FLOW_CHECK_IDS], true),
     ],
     // Features 46–49 vullen de github-worker.
     github: [
@@ -198,6 +205,7 @@ export function skeletonTotals(
   for (const queue of queues) {
     for (const impl of registry[queue]) {
       if (impl.id === "active-tests" && !activeTests) continue;
+      if (impl.id === "auth-flow" && !activeTests) continue;
       const count = impl.outputCheckIds.length;
       totals[impl.category] = (totals[impl.category] ?? 0) + count;
     }

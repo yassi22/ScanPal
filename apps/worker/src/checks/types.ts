@@ -1,7 +1,7 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { isBlockedIp } from "@scanpal/notify";
-import type { InlineCheckLike, ScanCategory } from "@scanpal/shared";
+import type { AuthCredentials, InlineCheckLike, ScanCategory } from "@scanpal/shared";
 import type { RateLimiter } from "../rate-limit";
 
 /**
@@ -38,6 +38,23 @@ export type CheckContext = {
    * aanroepen, tests), dan gebruikt de check de directe `fetchPage`.
    */
   fetchPage?: PageFetcher;
+  /**
+   * Plan 77: site-id (voor ownership/credential-lookup). Alleen gezet door de
+   * scan-worker wanneer een auth-flow-impl aanwezig is + activeTests aan staat.
+   */
+  siteId?: string;
+  /**
+   * Plan 77: live domeineigendom geverifieerd op moment van dispatch
+   * (`verifyOwnershipLive`). `false` → auth-flow slaat over met info-finding.
+   * `undefined` → niet gecontroleerd (geen auth-flow-impl in deze run).
+   */
+  ownershipVerified?: boolean;
+  /**
+   * Plan 77: gedecrypteerd wegwerp-testaccount voor de auth-flow. `null` →
+   * geen account → auth-flow slaat over met info-finding. Alleen gezet door de
+   * scan-worker; nooit in logs/DB opslaan (alleen in-memory in de worker).
+   */
+  authCredentials?: AuthCredentials | null;
 };
 
 /** Signatuur van {@link fetchPage} — gedeeld via {@link CheckContext.fetchPage}. */

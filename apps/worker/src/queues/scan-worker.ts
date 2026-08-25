@@ -4,6 +4,7 @@ import {
   inlineChecksToFindings,
   PER_ROUTE_IMPL_IDS,
   severityRank,
+  type AuthCredentials,
   type Finding,
   type FindingSeverity,
   type InlineCheckLike,
@@ -12,8 +13,10 @@ import {
 import {
   advanceCategoryProgress,
   getScanRoutes,
+  loadAuthCredentials,
   setRouteHttpStatuses,
   upsertChecks,
+  verifyOwnershipLive,
   type ScanCheckRow,
 } from "@scanpal/scan-core";
 import type { RateLimiter } from "../rate-limit";
@@ -26,14 +29,18 @@ import type { ScanJobData } from "./index";
 type ScanRow = {
   id: string;
   status: string;
+  site_id: string;
   site_url: string;
+  team_id: string;
+  workspace_id: string | null;
   active_tests: boolean;
   github_repo: string | null;
 };
 
 async function loadScan(db: Pool, scanId: string): Promise<ScanRow | null> {
   const result = await db.query<ScanRow>(
-    `select sc.id, sc.status, s.url as site_url, sc.active_tests, s.github_repo
+    `select sc.id, sc.status, sc.site_id, s.url as site_url, s.team_id, s.workspace_id,
+            sc.active_tests, s.github_repo
      from scans sc
      join sites s on s.id = sc.site_id
      where sc.id = $1`,
@@ -86,6 +93,9 @@ type RouteScan = {
   githubRepo: string | null;
   activeTests: boolean;
   rateLimit: RateLimiter;
+  siteId?: string;
+  ownershipVerified?: boolean;
+  authCredentials?: AuthCredentials | null;
 };
 
 /**
@@ -135,6 +145,9 @@ async function runRoute(
       rateLimit: ctxBase.rateLimit,
       githubRepo: ctxBase.githubRepo,
       fetchPage: sharedFetch,
+      siteId: ctxBase.siteId,
+      ownershipVerified: ctxBase.ownershipVerified,
+      authCredentials: ctxBase.authCredentials,
     };
     const now = new Date().toISOString();
     // Github-checks zijn site-level (AGENTS.md): findings krijgen geen
@@ -173,9 +186,10 @@ export function createScanProcessor(
   db: Pool,
   impls: ImplementedCheck[],
   rateLimit: RateLimiter,
-  options: { routeConcurrency?: number } = {},
+  options: { routeConcurrency?: number; authCredentialKey?: string } = {},
 ) {
   const routeConcurrency = options.routeConcurrency ?? 1;
+  const hasAuthFlow = impls.some((impl) => impl.id === "auth-flow");
 
   return async function processScanJob(job: { data: ScanJobData }): Promise<void> {
     const { scanId } = job.data;
@@ -191,19 +205,66 @@ export function createScanProcessor(
         : [{ url: homepageUrl, source: "seed", http_status: null }];
 
     const activeImpls = impls.filter(
-      (impl) => !(impl.id === "active-tests" && !scan.active_tests),
+      (impl) =>
+        !(impl.id === "active-tests" && !scan.active_tests) &&
+        !(impl.id === "auth-flow" && !scan.active_tests),
     );
     const perRouteImpls = activeImpls.filter((impl) => PER_ROUTE_IMPL_IDS.has(impl.id));
 
     // Homepage/seed (index 0) krijgt álle impls; extra routes alleen de
     // per-route impls. Zijn er geen per-route impls, dan blijft het bij de seed.
     const routesToProcess = perRouteImpls.length > 0 ? routes : routes.slice(0, 1);
+
+    // Plan 77: driedubbele gating — live domeineigendom + wegwerp-testaccount.
+    // Alleen berekend wanneer een auth-flow-impl meedraait + activeTests aan staat,
+    // zodat de http/github-queue dit werk niet onnodig doen. De auth-flow-check
+    // zelf interpreteert `ownershipVerified === false` / `!authCredentials` als
+    // skip + info-finding (geen fout, geen 500).
+    let ownershipVerified: boolean | undefined;
+    let authCredentials: AuthCredentials | null | undefined;
+    if (hasAuthFlow && scan.active_tests) {
+      // Systeem-context: scope op team + (globaal-unieke) site_id, GEEN
+      // workspace-scope. scan.workspace_id is NULL voor niet-workspace-sites en
+      // `workspace_id = NULL` matcht in SQL nooit — dat zou de ownership-gate
+      // en credential-load 100% laten falen voor de default-site.
+      try {
+        ownershipVerified = await verifyOwnershipLive(scan.site_id, {
+          db,
+          teamId: scan.team_id,
+        });
+      } catch {
+        ownershipVerified = false;
+      }
+      if (ownershipVerified && options.authCredentialKey) {
+        try {
+          authCredentials = await loadAuthCredentials(db, {
+            siteId: scan.site_id,
+            teamId: scan.team_id,
+            key: options.authCredentialKey,
+          });
+        } catch (err) {
+          // Decrypt-/key-fout (bijv. geroteerde AUTH_CREDENTIAL_KEY): log dit
+          // zodat het te onderscheiden is van "geen account" — dat pad throwt
+          // niet maar geeft null terug.
+          console.warn(
+            `auth-flow: wegwerp-account decrypten mislukt voor site ${scan.site_id}: ${err instanceof Error ? err.message : String(err)}`,
+          );
+          authCredentials = null;
+        }
+      } else {
+        authCredentials = null;
+      }
+    }
+
     const ctxBase: RouteScan = {
       db,
       scanId,
       githubRepo: scan.github_repo,
       activeTests: scan.active_tests,
       rateLimit,
+      siteId: hasAuthFlow && scan.active_tests ? scan.site_id : undefined,
+      ownershipVerified,
+      authCredentials,
     };
 
     const perRouteResults = await mapWithConcurrency(

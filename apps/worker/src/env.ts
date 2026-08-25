@@ -41,6 +41,8 @@ const envSchema = z.object({
     .int()
     .min(60)
     .default(12 * 60 * 60),
+  /** Plan 77: 32-byte base64 AES-GCM-sleutel voor het wegwerp-testaccount. */
+  AUTH_CREDENTIAL_KEY: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

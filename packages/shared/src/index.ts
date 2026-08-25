@@ -106,6 +106,7 @@ export type RoleChange = z.infer<typeof roleChangeSchema>;
 export * from "./plans";
 export * from "./api-keys";
 export * from "./active-tests";
+export * from "./auth-flow";
 export * from "./bundle-secrets";
 export * from "./browser-storage";
 export * from "./severity";

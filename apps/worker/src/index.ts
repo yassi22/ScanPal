@@ -26,6 +26,7 @@ async function run(): Promise<void> {
     notify,
     log: (line) => console.log(line),
     routeConcurrency: env.PROBE_MAX_CONCURRENCY,
+    authCredentialKey: env.AUTH_CREDENTIAL_KEY,
   });
 
   let shuttingDown = false;
