@@ -33,6 +33,7 @@ import type {
   UploadProbe,
   UploadProbeResult,
 } from "@scanpal/shared";
+import { hasUnsanitizedTraversalEvidence, isSameOriginUrl } from "./upload-safety";
 
 /**
  * Playwright-default BrowserRunner (feature 41). Lanceert een headless Chromium
@@ -60,29 +61,45 @@ function truncateBody(body: string): string {
   return body.length > BODY_TRUNCATE ? body.slice(0, BODY_TRUNCATE) + "…" : body;
 }
 
-type DiscoveredUploadForm = UploadFormCapture & { form_index: number };
+type DiscoveredUploadForm = UploadFormCapture & { form_index: number; form_action: string };
+
+async function installUploadOriginGuard(page: import("playwright").Page, verifiedUrl: string): Promise<void> {
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    const crossOriginNavigation = request.isNavigationRequest() && !isSameOriginUrl(request.url(), verifiedUrl);
+    const crossOriginWrite = request.method() !== "GET" && !isSameOriginUrl(request.url(), verifiedUrl);
+    if (crossOriginNavigation || crossOriginWrite) {
+      await route.abort("blockedbyclient");
+      return;
+    }
+    await route.continue();
+  });
+}
 
 async function captureUploadForms(
   page: import("playwright").Page,
   url: string,
   behindLogin: boolean,
+  verifiedUrl: string,
 ): Promise<DiscoveredUploadForm[]> {
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
     const actualUrl = page.url();
+    if (!isSameOriginUrl(actualUrl, verifiedUrl)) return [];
     const forms = (await page.evaluate(
       `() => Array.from(document.querySelectorAll("form")).map((form, index) => {
         const input = form.querySelector("input[type='file']");
         if (!input) return null;
-        return { form_index: index, accept_attribute: input.getAttribute("accept") };
+        return { form_index: index, accept_attribute: input.getAttribute("accept"), form_action: form.action };
       }).filter(Boolean)`,
-    )) as { form_index: number; accept_attribute: string | null }[];
-    return forms.map((form) => ({
+    )) as { form_index: number; accept_attribute: string | null; form_action: string }[];
+    return forms.filter((form) => isSameOriginUrl(form.form_action, verifiedUrl)).map((form) => ({
       url: actualUrl,
       https: actualUrl.startsWith("https://"),
       behind_login: behindLogin,
       accept_attribute: form.accept_attribute,
       form_index: form.form_index,
+      form_action: form.form_action,
     }));
   } catch {
     return [];
@@ -98,7 +115,7 @@ async function discoverUploadForms(
   const candidates = [baseUrl, ...COMMON_UPLOAD_PATHS.map((path) => `${origin}${path}`)];
   const found: DiscoveredUploadForm[] = [];
   for (const candidate of candidates) {
-    const forms = await captureUploadForms(page, candidate, behindLogin);
+    const forms = await captureUploadForms(page, candidate, behindLogin, baseUrl);
     for (const form of forms) {
       const key = `${form.url}#${form.form_index}`;
       if (!found.some((existing) => `${existing.url}#${existing.form_index}` === key)) found.push(form);
@@ -116,14 +133,19 @@ async function loginForUploadDiscovery(
     await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 20_000 });
     const urls = await discoverAuthUrls(page, baseUrl);
     const loginUrl = credentials.login_url ?? urls.login;
-    if (!loginUrl) return false;
+    if (!loginUrl || !isSameOriginUrl(loginUrl, baseUrl)) return false;
     await page.goto(loginUrl, { waitUntil: "domcontentloaded", timeout: 20_000 });
+    if (!isSameOriginUrl(page.url(), baseUrl)) return false;
+    const loginAction = (await page.evaluate(
+      `() => { const form = document.querySelector("form:has(input[type='password'])"); return form ? form.action : null; }`,
+    )) as string | null;
+    if (!loginAction || !isSameOriginUrl(loginAction, baseUrl)) return false;
     const response = await fillAndSubmit(page, [
       { selector: "input[type='email'], input[name*='email' i], input[name*='user' i], input[name*='login' i], input[type='text']", value: credentials.username },
       { selector: "input[type='password']", value: credentials.password },
     ]);
     await page.waitForTimeout(750).catch(() => {});
-    return response.status > 0 && response.status < 400;
+    return response.status > 0 && response.status < 400 && isSameOriginUrl(page.url(), baseUrl);
   } catch {
     return false;
   }
@@ -176,7 +198,10 @@ async function uploadProbe(
   let error: string | null = null;
   try {
     await page.goto(form.url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+    if (!isSameOriginUrl(page.url(), form.url)) throw new Error("cross-origin redirect vóór upload geweigerd");
     const targetForm = page.locator("form").nth(form.form_index);
+    const currentAction = await targetForm.getAttribute("action");
+    if (!isSameOriginUrl(currentAction ?? page.url(), form.url)) throw new Error("cross-origin upload-action geweigerd");
     const input = targetForm.locator("input[type='file']").first();
     await input.setInputFiles({ name: probe.filename, mimeType: probe.content_type, buffer: Buffer.from(source) });
     const responsePromise = page
@@ -190,9 +215,13 @@ async function uploadProbe(
     status = response?.status() ?? 0;
     if (response) {
       const location = response.headers()["location"];
-      if (location) storedUrl = findStoredUrl(location, form.url, probe.filename, token);
+      if (location) {
+        storedUrl = findStoredUrl(location, form.url, probe.filename, token);
+        if (probe.id === "upload-path-traversal") uploadEvidence = hasUnsanitizedTraversalEvidence(location);
+      }
       const responseBody = truncateBody(await response.text().catch(() => ""));
-      uploadEvidence = responseBody.includes(token) || responseBody.includes(probe.filename.replace("../", ""));
+      uploadEvidence ||= responseBody.includes(token) || responseBody.includes(probe.filename.replace("../", ""));
+      if (probe.id === "upload-path-traversal") uploadEvidence ||= hasUnsanitizedTraversalEvidence(responseBody);
       if (!storedUrl) {
         try {
           storedUrl = findStoredUrl(JSON.parse(responseBody), form.url, probe.filename, token);
@@ -204,13 +233,19 @@ async function uploadProbe(
     if (!storedUrl) {
       const domCandidates = (await page.evaluate(
         `() => Array.from(document.querySelectorAll("a[href], img[src], source[src]"))
-          .map((el) => el.href || el.src || "")`,
+          .map((el) => el.getAttribute("href") || el.getAttribute("src") || "")`,
       ).catch(() => [])) as string[];
       storedUrl = findStoredUrl(domCandidates, page.url(), probe.filename, token);
+      if (probe.id === "upload-path-traversal") {
+        const traversalInDom = domCandidates.some(hasUnsanitizedTraversalEvidence);
+        uploadEvidence ||= traversalInDom;
+        if (!traversalInDom) storedUrl = null;
+      }
     }
+    if (probe.id === "upload-path-traversal" && storedUrl && !hasUnsanitizedTraversalEvidence(storedUrl)) storedUrl = null;
     accepted = status >= 200 && status < 400 && (uploadEvidence || storedUrl !== null);
     if (storedUrl) {
-      const retrievedResponse = await page.context().request.get(storedUrl, { timeout: UPLOAD_WAIT_MS }).catch(() => null);
+      const retrievedResponse = await page.context().request.get(storedUrl, { timeout: UPLOAD_WAIT_MS, maxRedirects: 0 }).catch(() => null);
       if (retrievedResponse && retrievedResponse.ok()) {
         retrieved = true;
         retrievedBody = truncateBody(await retrievedResponse.text().catch(() => ""));
@@ -677,6 +712,7 @@ async function runUploadFlowCapture(
     browser = await chromium.launch({ headless: true });
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
+    await installUploadOriginGuard(page, url);
 
     const publicForms = await discoverUploadForms(page, url, false);
     let protectedForms: DiscoveredUploadForm[] = [];
@@ -710,7 +746,7 @@ async function runUploadFlowCapture(
     }
 
     return {
-      forms: discoveredForms.map(({ form_index: _formIndex, ...form }) => form),
+      forms: discoveredForms.map(({ form_index: _formIndex, form_action: _formAction, ...form }) => form),
       probes,
       leftover_files: [...new Set(leftoverFiles)],
       cleaned_up: uploadedCanaries > 0 && cleanedCanaries === uploadedCanaries,
