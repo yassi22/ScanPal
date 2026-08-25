@@ -26,7 +26,8 @@ function dbRecording() {
   const db = {
     query: async (sql: string, params: unknown[] = []) => {
       calls.push({ sql: sql.replace(/\s+/g, " ").trim(), params });
-      return { rows: [], rowCount: 0 };
+      // Een geslaagde upsert/delete raakt één rij (zoals echte pg).
+      return { rows: [], rowCount: 1 };
     },
   } as unknown as Pool;
   return { db, calls };
@@ -105,12 +106,12 @@ describe("loadAuthCredentials", () => {
   it("werpt CredentialsNotConfiguredError zonder key", async () => {
     const db = dbWithRows([]);
     await expect(
-      loadAuthCredentials(db, { siteId: SITE_ID, key: "" }),
+      loadAuthCredentials(db, { siteId: SITE_ID, teamId: TEAM_ID, key: "" }),
     ).rejects.toBeInstanceOf(CredentialsNotConfiguredError);
   });
   it("retourneert null wanneer er geen rij is", async () => {
     const db = dbWithRows([]);
-    const result = await loadAuthCredentials(db, { siteId: SITE_ID, key: KEY });
+    const result = await loadAuthCredentials(db, { siteId: SITE_ID, teamId: TEAM_ID, key: KEY });
     expect(result).toBeNull();
   });
   it("decrypt het password en scopet op team/workspace", async () => {

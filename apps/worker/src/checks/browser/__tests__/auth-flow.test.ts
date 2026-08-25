@@ -239,7 +239,7 @@ describe("createAuthFlowCheck — findings uit een capture", () => {
     const runner = makeRunner({
       ok: true,
       capture: capture({
-        password_policy: { accepted: true, validation_message: "" },
+        password_policy: { accepted: true, validation_message: "", measurable: true },
       }),
     });
     const check = createAuthFlowCheck(runner);
@@ -253,7 +253,7 @@ describe("createAuthFlowCheck — findings uit een capture", () => {
     const runner = makeRunner({
       ok: true,
       capture: capture({
-        password_policy: { accepted: false, validation_message: "too weak" },
+        password_policy: { accepted: false, validation_message: "too weak", measurable: true },
       }),
     });
     const check = createAuthFlowCheck(runner);

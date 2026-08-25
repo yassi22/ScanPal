@@ -143,16 +143,21 @@ async function captureFormMeta(
         if (!form) return null;
         const pw = form.querySelector("input[type='password']");
         if (!pw) return null;
-        return { html: form.outerHTML.slice(0, 4000), autocomplete: pw.getAttribute("autocomplete") };
+        // SPA/Rails/Laravel/Django zetten het CSRF-token vaak in een <meta>-tag
+        // (verstuurd als request-header) i.p.v. een hidden form-input.
+        const metaCsrf = !!document.querySelector(
+          "meta[name*='csrf' i], meta[name*='xsrf' i], meta[name*='token' i][name*='verif' i]",
+        );
+        return { html: form.outerHTML.slice(0, 4000), autocomplete: pw.getAttribute("autocomplete"), metaCsrf };
       }`,
-    )) as { html: string; autocomplete: string | null } | null;
+    )) as { html: string; autocomplete: string | null; metaCsrf: boolean } | null;
     if (!formHtml) return null;
     return {
       url,
       kind,
       https,
       password_autocomplete: formHtml.autocomplete,
-      csrf_token: csrfInHtml(formHtml.html),
+      csrf_token: csrfInHtml(formHtml.html) || formHtml.metaCsrf,
     };
   } catch {
     return null;
@@ -170,18 +175,34 @@ async function fillAndSubmit(
       if (!el) throw new Error(`veld niet gevonden: ${f.selector}`);
       await el.fill(f.value);
     }
-    // Submit + wacht op navigatie/response.
-    const [navRes] = await Promise.all([
-      page.waitForNavigation({ timeout: 15_000 }).catch(() => null),
+    // Submit + wacht op de eerste van: (a) een klassieke navigatie, of (b) een
+    // non-GET-respons (de fetch/XHR-login van een SPA die niet navigeert).
+    // De race resolvet zodra één van beide binnen is, zodat een niet-navigerend
+    // formulier niet de volle timeout dood-wacht (voorheen 15s × vele probes).
+    const WAIT_MS = 8_000;
+    const [outcome] = await Promise.all([
+      Promise.race<{ status: number } | null>([
+        page
+          .waitForNavigation({ timeout: WAIT_MS })
+          .then((r) => (r ? { status: r.status() } : null))
+          .catch(() => null),
+        // XHR/SPA-login: lees de status van het auth-POST-antwoord zelf, zodat
+        // 429/423 (rate-limit/lockout) en status-gebaseerde user-enumeration ook
+        // werken wanneer er geen navigatie plaatsvindt.
+        page
+          .waitForResponse((r) => r.request().method() !== "GET", { timeout: WAIT_MS })
+          .then((r) => ({ status: r.status() }))
+          .catch(() => null),
+      ]),
       page
         .$("button[type='submit'], input[type='submit'], button:not([type])")
         .then((btn) => btn?.click().catch(() => {})),
     ]);
-    // Geen navigatie-status (XHR/SPA-login die niet navigeert) → 0 als enige
-    // "onbekend"-sentinel, gelijk aan de catch-tak. Nooit een verzonnen 200,
-    // want dat zou als "success" gelezen worden door status-vergelijkingen
-    // (user-enumeration) en de 429-lockout-detectie.
-    const status = navRes?.status() ?? 0;
+    // Geen navigatie én geen non-GET-respons → 0 als "onbekend"-sentinel, gelijk
+    // aan de catch-tak. Nooit een verzonnen 200, want dat zou als "success"
+    // gelezen worden door status-vergelijkingen (user-enumeration) en de
+    // 429-lockout-detectie.
+    const status = outcome?.status ?? 0;
     const body = truncateBody(await visibleText(page));
     return { status, body, duration_ms: Date.now() - start };
   } catch (err) {
@@ -251,7 +272,7 @@ async function probeRateLimit(
 async function probePasswordPolicy(
   page: import("playwright").Page,
   url: string,
-): Promise<{ accepted: boolean; validation_message: string } | null> {
+): Promise<{ accepted: boolean; validation_message: string; measurable: boolean } | null> {
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
     const pw = await page.$("input[type='password']");
@@ -264,14 +285,20 @@ async function probePasswordPolicy(
     const result = (await page.evaluate(
       `() => {
         const pw = document.querySelector("input[type='password']");
-        if (!pw) return { accepted: true, validation_message: "" };
+        if (!pw) return { accepted: true, validation_message: "", measurable: false };
         const valid = pw.validity.valid;
         const msg = pw.validationMessage || "";
         const errEl = document.querySelector("[role='alert'], .error, .invalid-feedback, .field-error");
         const errText = errEl && errEl.textContent ? errEl.textContent.trim().slice(0, 200) : "";
-        return { accepted: valid && !errText, validation_message: msg || errText };
+        // Alleen zonder submit is server-side beleid onzichtbaar. We mogen dus
+        // enkel oordelen als er een client-side constraint (minlength/pattern)
+        // aanwezig is die '123456' toeliet, óf als de site het actief afwees.
+        const minLenAttr = pw.getAttribute("minlength");
+        const hasConstraint = (minLenAttr !== null && parseInt(minLenAttr, 10) > 0) || pw.hasAttribute("pattern");
+        const measurable = hasConstraint || errText.length > 0;
+        return { accepted: valid && !errText, validation_message: msg || errText, measurable };
       }`,
-    )) as { accepted: boolean; validation_message: string };
+    )) as { accepted: boolean; validation_message: string; measurable: boolean };
     return result;
   } catch {
     return null;

@@ -64,7 +64,7 @@ export async function saveAuthCredentials(db: Queryable, input: SaveInput): Prom
   const key = requireKey(input.key);
   const passwordEncrypted = encryptCredential(key, input.password);
   const params = [input.siteId, input.teamId, input.workspaceId ?? null, input.loginUrl, input.username, passwordEncrypted];
-  await db.query(
+  const result = await db.query(
     `insert into site_auth_credentials (site_id, team_id, workspace_id, login_url, username, password_encrypted)
      values ($1, $2, $3, $4, $5, $6)
      on conflict (site_id) do update
@@ -75,11 +75,19 @@ export async function saveAuthCredentials(db: Queryable, input: SaveInput): Prom
      where site_auth_credentials.team_id = $2`,
     params,
   );
+  // Een geslaagde insert of update raakt precies één rij. rowCount 0 betekent
+  // dat de conflict-rij een ander team_id heeft en de `where`-guard de update
+  // blokkeerde: Postgres werpt daar niet, dus zonder deze check zou het opslaan
+  // stil mislukken (HTTP 200, niets gepersisteerd). Maak het expliciet.
+  if (result.rowCount === 0) {
+    throw new Error("auth-credentials opslaan geblokkeerd: de site behoort tot een ander team");
+  }
 }
 
 type LoadInput = {
   siteId: string;
-  teamId?: string;
+  /** Verplicht: de tenant-scope. Zonder team_id geen decryptie (fail closed). */
+  teamId: string;
   workspaceId?: string | null;
   key: string;
 };
@@ -87,15 +95,16 @@ type LoadInput = {
 /** Laadt + decrypt het wegwerp-testaccount. `null` als er geen rij is. */
 export async function loadAuthCredentials(db: Queryable, input: LoadInput): Promise<AuthCredentials | null> {
   const key = requireKey(input.key);
-  const params: unknown[] = [input.siteId];
-  let scope = "";
-  if (input.teamId !== undefined) {
-    params.push(input.teamId);
-    scope += ` and team_id = $${params.length}`;
-    if (input.workspaceId !== undefined) {
-      params.push(input.workspaceId);
-      scope += ` and workspace_id = $${params.length}`;
-    }
+  // Fail closed: dit is het enige decryptie-punt van een gevoelig secret, dus
+  // een ontbrekende tenant-scope mag nooit een site_id-brede query worden.
+  if (!input.teamId) {
+    throw new Error("loadAuthCredentials vereist een teamId (tenant-scope)");
+  }
+  const params: unknown[] = [input.siteId, input.teamId];
+  let scope = " and team_id = $2";
+  if (input.workspaceId !== undefined) {
+    params.push(input.workspaceId);
+    scope += ` and workspace_id = $${params.length}`;
   }
   const result = await db.query<{ login_url: string | null; username: string; password_encrypted: string }>(
     `select login_url, username, password_encrypted from site_auth_credentials

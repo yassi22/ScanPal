@@ -74,6 +74,14 @@ export type AuthRateLimitAttempt = {
 export type AuthPasswordPolicyProbe = {
   accepted: boolean;
   validation_message: string;
+  /**
+   * Of het oordeel client-side überhaupt meetbaar was: er is een client-side
+   * constraint (minlength/pattern) aanwezig, óf de site wees het wachtwoord
+   * actief af. `false` → er is geen client-side signaal en server-side
+   * validatie is niet observeerbaar, dus de check degradeert naar info i.p.v.
+   * een vals-positieve "zwak wachtwoord geaccepteerd"-melding.
+   */
+  measurable: boolean;
 };
 
 export type AuthSessionCookie = {
@@ -170,10 +178,23 @@ function normalizeBody(body: string): string {
 export function detectUserEnumeration(
   nonexistent: AuthProbeResponse,
   known: AuthProbeResponse,
-): { enumeration: boolean; reason: string } {
+): { enumeration: boolean; measurable: boolean; reason: string } {
+  // Status 0 is de runner-sentinel voor "geen betrouwbare respons" (reset-pagina
+  // onbereikbaar, e-mailveld niet gevonden, geen navigatie). Als één van beide
+  // probes niet echt draaide, is een gelijke status/body geen bewijs van een
+  // uniforme respons — dan is er niets gemeten en mag de check geen "veilig"
+  // (pass) tonen, maar degradeert naar info.
+  if (nonexistent.status === 0 || known.status === 0) {
+    return {
+      enumeration: false,
+      measurable: false,
+      reason: "reset-probe niet uitvoerbaar (geen betrouwbare respons) — geen oordeel over user-enumeration",
+    };
+  }
   if (nonexistent.status !== known.status) {
     return {
       enumeration: true,
+      measurable: true,
       reason: `reset-respons verschilt: onbestaand HTTP ${nonexistent.status} vs. bestaand HTTP ${known.status}`,
     };
   }
@@ -182,6 +203,7 @@ export function detectUserEnumeration(
   if (a !== b) {
     return {
       enumeration: true,
+      measurable: true,
       reason:
         "reset-respons verschilt: onbestaand vs. bestaand e-mailadres leveren een andere body op bij gelijke status",
     };
@@ -190,10 +212,11 @@ export function detectUserEnumeration(
   if (delta >= ENUMERATION_TIMING_THRESHOLD_MS) {
     return {
       enumeration: true,
+      measurable: true,
       reason: `reset-timing verschilt ${delta}ms (≥ ${ENUMERATION_TIMING_THRESHOLD_MS}ms) → timing-gebaseerde enumeratie mogelijk`,
     };
   }
-  return { enumeration: false, reason: "uniforme reset-respons (status, body, timing)" };
+  return { enumeration: false, measurable: true, reason: "uniforme reset-respons (status, body, timing)" };
 }
 
 /**

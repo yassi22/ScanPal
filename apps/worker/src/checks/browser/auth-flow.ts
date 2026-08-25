@@ -114,6 +114,9 @@ function authUserEnumerationFinding(capture: AuthFlowCapture): AuthOutput {
   }
   const { nonexistent, known } = capture.reset_probe;
   const result = detectUserEnumeration(nonexistent, known);
+  if (!result.measurable) {
+    return { id, name, status: "info", detail: `Auth-flow niet getest: ${result.reason}.`, active: true, evidence: null };
+  }
   if (result.enumeration) {
     return {
       id,
@@ -179,6 +182,9 @@ function authPasswordPolicyFinding(capture: AuthFlowCapture): AuthOutput {
   if (!policy) {
     return { id, name, status: "info", detail: "Geen signup/reset-formulier gevonden om wachtwoord-policy te testen.", active: true, evidence: null };
   }
+  if (!policy.measurable) {
+    return { id, name, status: "info", detail: "Wachtwoord-policy niet client-side meetbaar (geen client-side constraint, server-side validatie niet observeerbaar) — geen oordeel.", active: true, evidence: null };
+  }
   if (policy.accepted) {
     return {
       id,
@@ -222,7 +228,7 @@ function authSessionSecurityFinding(capture: AuthFlowCapture): AuthOutput {
       active: true,
       evidence: evidenceOf(
         "session-security (login met wegwerp-account)",
-        `cookies: ${session.cookies.map((c) => `${c.name}(Secure=${c.secure},HttpOnly=${c.http_only},SameSite=${c.same_site})`).join(", ")}\nsessie-id voor/na: ${session.session_id_before ?? "—"} / ${session.session_id_after ?? "—"}`,
+        `cookies: ${session.cookies.map((c) => `${c.name}(Secure=${c.secure},HttpOnly=${c.http_only},SameSite=${c.same_site})`).join(", ")}\nsessie-id-rotatie: ${!rotation.measurable ? "niet meetbaar" : rotation.rotated ? "geroteerd na login" : "ongewijzigd (session-fixatie)"}`,
       ),
     };
   }
