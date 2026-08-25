@@ -1,0 +1,112 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - banner [ref=f3e3]:
+      - generic [ref=f3e4]:
+        - link "ScanPal home" [ref=f3e5] [cursor=pointer]:
+          - /url: /
+          - text: ScanPal
+        - navigation "Primary navigation" [ref=f3e10]:
+          - link "Pricing" [ref=f3e11] [cursor=pointer]:
+            - /url: /pricing
+          - link "Gratis starten" [ref=f3e12] [cursor=pointer]:
+            - /url: /register
+    - main [ref=f3e13]:
+      - status [ref=f3e14]:
+        - generic [ref=f3e17]:
+          - strong [ref=f3e18]: Checkout geannuleerd
+          - generic [ref=f3e19]: Er is niets in rekening gebracht. Je kunt rustig verder vergelijken.
+      - region [ref=f3e20]:
+        - heading "Simpele prijzen, geen verrassingen" [level=1] [ref=f3e21]
+        - paragraph [ref=f3e22]: Start gratis en upgrade wanneer je meer scans, uptime-monitoring of GitHub-scans nodig hebt.
+      - region "ScanPal plans" [ref=f3e23]:
+        - generic [ref=f3e24]:
+          - generic [ref=f3e25]:
+            - generic "Facturatieperiode" [ref=f3e26]:
+              - button "Maandelijks" [pressed] [ref=f3e27] [cursor=pointer]
+              - button "Jaarlijks" [ref=f3e28] [cursor=pointer]
+            - generic [ref=f3e29]: 2 maanden gratis bij jaarbetaling
+          - paragraph [ref=f3e30]: Prijzen exclusief btw — btw wordt toegevoegd op de factuur.
+          - generic [ref=f3e31]:
+            - article [ref=f3e32]:
+              - generic [ref=f3e33]:
+                - heading "Free" [level=2] [ref=f3e35]
+                - paragraph [ref=f3e36]: Voor een eerste indruk en incidentele scans.
+              - generic [ref=f3e37]:
+                - paragraph [ref=f3e38]:
+                  - generic [ref=f3e39]: €0
+                - generic [ref=f3e40]: Geen betaalgegevens nodig
+              - list [ref=f3e41]:
+                - listitem [ref=f3e42]:
+                  - generic [ref=f3e45]: 5 scans per maand
+                - listitem [ref=f3e46]:
+                  - generic [ref=f3e49]: Maximaal 3 teamleden
+                - listitem [ref=f3e50]:
+                  - generic [ref=f3e53]:
+                    - generic [ref=f3e54]: "Niet inbegrepen:"
+                    - text: Uptime monitoring
+                - listitem [ref=f3e55]:
+                  - generic [ref=f3e58]:
+                    - generic [ref=f3e59]: "Niet inbegrepen:"
+                    - text: GitHub-reposcans
+                - listitem [ref=f3e60]:
+                  - generic [ref=f3e63]:
+                    - generic [ref=f3e64]: "Niet inbegrepen:"
+                    - text: White-label branding
+              - link "Start gratis" [ref=f3e66] [cursor=pointer]:
+                - /url: /register
+            - article [ref=f3e69]:
+              - generic [ref=f3e70]:
+                - heading "Pro" [level=2] [ref=f3e72]
+                - paragraph [ref=f3e73]: Voor websites die doorlopend bewaakt en verbeterd worden.
+              - generic [ref=f3e74]:
+                - paragraph [ref=f3e75]:
+                  - generic [ref=f3e76]: € 29
+                  - generic [ref=f3e77]: /maand
+                - generic [ref=f3e78]: Maandelijks opzegbaar
+              - list [ref=f3e79]:
+                - listitem [ref=f3e80]:
+                  - generic [ref=f3e83]: 500 scans per maand
+                - listitem [ref=f3e84]:
+                  - generic [ref=f3e87]: Maximaal 10 teamleden
+                - listitem [ref=f3e88]:
+                  - generic [ref=f3e91]: Uptime monitoring
+                - listitem [ref=f3e92]:
+                  - generic [ref=f3e95]: GitHub-reposcans
+                - listitem [ref=f3e96]:
+                  - generic [ref=f3e99]:
+                    - generic [ref=f3e100]: "Niet inbegrepen:"
+                    - text: White-label branding
+              - link "Aanmelden en upgraden" [ref=f3e102] [cursor=pointer]:
+                - /url: /register
+            - article [ref=f3e105]:
+              - generic [ref=f3e106]:
+                - generic [ref=f3e107]:
+                  - heading "Max" [level=2] [ref=f3e108]
+                  - generic [ref=f3e109]: Meest compleet
+                - paragraph [ref=f3e110]: Voor kleine teams met meer volume en white-label rapporten.
+              - generic [ref=f3e111]:
+                - paragraph [ref=f3e112]:
+                  - generic [ref=f3e113]: € 116
+                  - generic [ref=f3e114]: /maand
+                - generic [ref=f3e115]: Maandelijks opzegbaar
+              - list [ref=f3e116]:
+                - listitem [ref=f3e117]:
+                  - generic [ref=f3e120]: 2.000 scans per maand
+                - listitem [ref=f3e121]:
+                  - generic [ref=f3e124]: 3 betaalde seats
+                - listitem [ref=f3e125]:
+                  - generic [ref=f3e128]: Uptime monitoring
+                - listitem [ref=f3e129]:
+                  - generic [ref=f3e132]: GitHub-reposcans
+                - listitem [ref=f3e133]:
+                  - generic [ref=f3e136]: White-label branding
+              - link "Aanmelden en upgraden" [ref=f3e138] [cursor=pointer]:
+                - /url: /register
+      - region "Billing information" [ref=f3e141]:
+        - paragraph [ref=f3e142]: Alle plan- en factuurinstellingen blijven na het upgraden beschikbaar vanuit je ScanPal-billingpagina.
+        - link "Begin met Free" [ref=f3e143] [cursor=pointer]:
+          - /url: /register
+    - contentinfo [ref=f3e146]:
+      - generic [ref=f3e147]: ScanPal
+      - generic [ref=f3e148]: Website health, made clear.
+  - button "Open Next.js Dev Tools" [ref=f3e154] [cursor=pointer]

@@ -20,6 +20,7 @@ import { OwnershipVerificationCard } from "@/components/ownership-verification-c
 import { SiteScanAutoRefresh } from "@/components/site-scan-auto-refresh";
 import { getMembershipWorkspace } from "@/lib/workspace-scope";
 import { getDashboardContext } from "@/lib/dashboard-context";
+import { isSiteId, toAbsoluteSiteUrl } from "@/lib/site-navigation";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +55,7 @@ export default async function SiteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  if (!isSiteId(id)) notFound();
 
   const result = await getDashboardContext();
   const user = result.authUser;
@@ -104,7 +106,12 @@ export default async function SiteDetailPage({
             Back to sites
           </Link>
           <h1>{site.label ?? site.url}</h1>
-          <a href={site.url} target="_blank" rel="noreferrer" className="site-detail-url">
+          <a
+            href={toAbsoluteSiteUrl(site.url)}
+            target="_blank"
+            rel="noreferrer"
+            className="site-detail-url"
+          >
             {site.url}
             <ArrowSquareOut size={14} aria-hidden="true" />
           </a>
