@@ -211,6 +211,25 @@ const SIGNATURES: Signature[] = [
     category: "server",
     headers: { server: "microsoft-iis" },
   },
+  // Plan 74: BaaS-platformen herkennen uit HTML/JS-substrings.
+  {
+    id: "supabase",
+    name: "Supabase",
+    category: "platform",
+    html: ["supabase.co", "@supabase/supabase-js"],
+  },
+  {
+    id: "firebase",
+    name: "Firebase",
+    category: "platform",
+    html: ["firebaseio.com", "firebase/app", "@firebase/app"],
+  },
+  {
+    id: "convex",
+    name: "Convex",
+    category: "platform",
+    html: ["convex.cloud", "convex/_generated"],
+  },
 ];
 
 export type HeaderSource = { get(name: string): string | null };

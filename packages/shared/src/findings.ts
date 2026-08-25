@@ -16,6 +16,10 @@ import {
   type StackDetectionEvidence,
 } from "./stack-detection";
 import {
+  hostingFingerprintEvidenceSchema,
+  type HostingFingerprintEvidence,
+} from "./hosting-fingerprint";
+import {
   redirectsMixedEvidenceSchema,
   type RedirectsMixedEvidence,
 } from "./redirects-mixed";
@@ -81,6 +85,26 @@ import {
   type RenderCompareEvidence,
 } from "./aeo-render";
 import {
+  browserStorageEvidenceSchema,
+  type BrowserStorageEvidence,
+} from "./browser-storage";
+import {
+  clientDepsEvidenceSchema,
+  type ClientDepsEvidence,
+} from "./client-deps";
+import {
+  wafResilienceEvidenceSchema,
+  type WafResilienceEvidence,
+} from "./waf-resilience";
+import {
+  baasSecurityEvidenceSchema,
+  type BaasSecurityEvidence,
+} from "./baas-security";
+import {
+  reputationEvidenceSchema,
+  type ReputationEvidence,
+} from "./reputation";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -123,6 +147,7 @@ export const findingSchema = z.object({
       complianceEvidenceSchema,
       metaTagsEvidenceSchema,
       stackDetectionEvidenceSchema,
+      hostingFingerprintEvidenceSchema,
       redirectsMixedEvidenceSchema,
       subresourcesEvidenceSchema,
       structuredDataEvidenceSchema,
@@ -141,6 +166,11 @@ export const findingSchema = z.object({
       consoleEvidenceSchema,
       responsiveEvidenceSchema,
       renderCompareEvidenceSchema,
+      browserStorageEvidenceSchema,
+      clientDepsEvidenceSchema,
+      wafResilienceEvidenceSchema,
+      baasSecurityEvidenceSchema,
+      reputationEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -282,6 +312,7 @@ export type InlineCheckLike = {
     | ComplianceEvidence
     | MetaTagsEvidence
     | StackDetectionEvidence
+    | HostingFingerprintEvidence
     | RedirectsMixedEvidence
     | SubresourcesEvidence
     | StructuredDataEvidence
@@ -300,6 +331,11 @@ export type InlineCheckLike = {
     | ConsoleEvidence
     | ResponsiveEvidence
     | RenderCompareEvidence
+    | BrowserStorageEvidence
+    | ClientDepsEvidence
+    | WafResilienceEvidence
+    | BaasSecurityEvidence
+    | ReputationEvidence
     | string
     | null;
 };
@@ -314,6 +350,7 @@ export function evidenceText(
     | ComplianceEvidence
     | MetaTagsEvidence
     | StackDetectionEvidence
+    | HostingFingerprintEvidence
     | RedirectsMixedEvidence
     | SubresourcesEvidence
     | StructuredDataEvidence
@@ -332,6 +369,11 @@ export function evidenceText(
     | ConsoleEvidence
     | ResponsiveEvidence
     | RenderCompareEvidence
+    | BrowserStorageEvidence
+    | ClientDepsEvidence
+    | WafResilienceEvidence
+    | BaasSecurityEvidence
+    | ReputationEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -381,6 +423,12 @@ export function evidenceText(
       return evidence.detected
         .map((s) => `${s.name} (${s.category}) ${s.signals.join("; ")}`)
         .join(" | ");
+    }
+    if (evidence.kind === "hosting-fingerprint") {
+      const signals = evidence.signals
+        .map((s) => `${s.signal}:${s.severity} ${s.detail}`)
+        .join(" | ");
+      return `platform=${evidence.platform}${signals ? ` | ${signals}` : ""}`;
     }
     if (evidence.kind === "redirects-mixed") {
       return `redirected=${evidence.redirected} https_upgraded=${evidence.https_upgraded} final=${evidence.final_url} mixed=${evidence.mixed_content.length}`;
@@ -450,6 +498,35 @@ export function evidenceText(
     }
     if (evidence.kind === "aeo-render") {
       return `server=${evidence.server.text_length}chars dom=${evidence.rendered.text_length}chars ratio=${evidence.text_ratio} ${evidence.issues.join(" | ")}`;
+    }
+    if (evidence.kind === "browser-storage") {
+      return evidence.entries
+        .map((e) => `${e.store}:${e.key} ${e.kind}${e.secret_type ? `(${e.secret_type})` : ""} ${e.masked}`)
+        .join(" | ");
+    }
+    if (evidence.kind === "client-deps") {
+      return `total=${evidence.total} vulnerable=${evidence.vulnerable} critical=${evidence.by_severity.critical} high=${evidence.by_severity.high} medium=${evidence.by_severity.medium} low=${evidence.by_severity.low}`;
+    }
+    if (evidence.kind === "waf-resilience") {
+      const prot = [evidence.waf, evidence.cdn].filter(Boolean).join("/");
+      return `waf/cdn=${prot || "geen"} signals=${evidence.signals.join(",")} rate_limit_headers=${evidence.rate_limit_headers.join(",")} 429=${evidence.status_429}`;
+    }
+    if (evidence.kind === "baas-security") {
+      const fps = evidence.fingerprints
+        .map((f) => `${f.project_url}[${f.config_keys.map((k) => `${k.type}:${k.masked}`).join(",")}]`)
+        .join(" | ");
+      return `platform=${evidence.platform} fingerprints=${fps} probe=${evidence.probe.performed ? `status=${evidence.probe.status} ${evidence.probe.summary ?? ""}` : "none"} budget_exhausted=${evidence.budget_exhausted}`;
+    }
+    if (evidence.kind === "threat-intel") {
+      const sources = evidence.sources
+        .map(
+          (source) =>
+            `${source.source}:queried=${source.queried},listed=${source.listed}` +
+            (source.categories?.length ? `[${source.categories.join(",")}]` : "") +
+            (source.measured_at ? `@${source.measured_at}` : ""),
+        )
+        .join(" | ");
+      return `host=${evidence.host} ips=${evidence.ips.join(",")} edge=${evidence.edge_detected} severity=${evidence.worst_severity} ${sources}`;
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -547,6 +624,14 @@ const ISSUE_TITLES: Record<
     warn: "OSV-Scanner vond kwetsbare dependencies",
     fail: "OSV-Scanner vond kritieke dependency-kwetsbaarheden",
   },
+  "client-deps-cve": {
+    warn: "Kwetsbare client-side JS-library geladen",
+    fail: "Kritieke kwetsbaarheid in client-side JS-library",
+  },
+  "client-deps-runtime": {
+    warn: "Kwetsbare client-side JS-library bevestigd via runtime",
+    fail: "Kritieke kwetsbaarheid in client-side JS-library (runtime-bevestigd)",
+  },
   "core-web-vitals": {
     warn: "Core Web Vitals komen niet volledig in orde (needs improvement)",
     fail: "Een of meer Core Web Vitals zijn arm (poor)",
@@ -607,6 +692,10 @@ const ISSUE_TITLES: Record<
     warn: "Geen CMS/framework herkend",
     fail: "Geen CMS/framework herkend",
   },
+  "hosting-security": {
+    warn: "Platform-specifieke hosting-misconfiguratie",
+    fail: "Platform-specifieke hosting-misconfiguratie",
+  },
   "redirects-mixed": {
     warn: "Redirect of mixed content issue",
     fail: "Mixed content op https-pagina of final URL is niet HTTPS",
@@ -626,6 +715,51 @@ const ISSUE_TITLES: Record<
   "robots-sitemap": {
     warn: "robots.txt of sitemap is onvolledig",
     fail: "robots.txt of sitemap ontbreekt of is ongeldig",
+  },
+  "subdomain-takeover": {
+    warn: "Mogelijk vatbaar subdomein (dangling CNAME naar onbekend target)",
+    fail: "Dangling CNAME naar bekende vulnerable service (subdomain-takeover)",
+  },
+  "threat-intel": {
+    warn: "Reputatiesignaal gevonden bij externe blocklist(s)",
+    fail: "Domein of IP staat op een malware-/reputatie-blocklist",
+  },
+  "waf-resilience": {
+    warn: "Geen WAF/CDN of rate-limit-headers gedetecteerd",
+  },
+  "rate-limit-burst": {
+    warn: "Geen rate-limiting waargenomen onder een request-burst",
+  },
+  "supabase-security": {
+    warn: "Supabase PostgREST-schema opvraagbaar met anon-key (RLS mogelijk ontbrekend)",
+    fail: "Supabase PostgREST-schema publiek leesbaar (tabelnamen lekken)",
+  },
+  "firebase-security": {
+    fail: "Firebase Realtime Database of Storage publiek leesbaar",
+  },
+  "convex-security": {
+    warn: "Convex-functies publiek opvraagbaar",
+  },
+  "auth-transport": {
+    warn: "Auth-pagina's niet volledig over HTTPS of zwakke wachtwoord-autocomplete",
+  },
+  "auth-csrf": {
+    warn: "Auth-formulieren zonder CSRF-bescherming",
+  },
+  "auth-user-enumeration": {
+    warn: "Reset-flow lekt welke e-mailadressen bestaan (user-enumeration)",
+  },
+  "auth-rate-limit": {
+    warn: "Geen rate-limiting/lockout waargenomen op de login",
+  },
+  "auth-password-policy": {
+    warn: "Triviaal zwak wachtwoord geaccepteerd op validatieniveau",
+  },
+  "auth-session-security": {
+    warn: "Sessie-cookie mist Secure/HttpOnly/SameSite of sessie-id roteert niet na login",
+  },
+  "auth-mfa": {
+    warn: "MFA niet beschikbaar of niet afgedwongen",
   },
 };
 
@@ -682,6 +816,8 @@ const REMEDIATION: Record<string, string> = {
     "Voeg GDPR-signalen toe: een DSAR/data-verwijderingsverwijzing en een CMP/IAB-TCF-signaal zodat bezoekers hun rechten kunnen uitoefenen.",
   "stack-detection":
     "Informatief — geen actie vereist. Stacksignalen helpen bij het diagnosticeren van beveiligings- en SEO-problemen.",
+  "hosting-security":
+    "Verberg de origin-server achter het CDN (overschrijf de `server`-header via Cloudflare Transform/Response-Header Rules of Vercel/Netlify headers-config). Zet `cache-control: private` op geauthenticeerde documenten (vercel.json `headers` / netlify.toml `[[headers]]` / Cloudflare Rules) zodat sessie-content niet via gedeelde caches lekt. Scan de productie-URL, niet een publieke preview/branch-deploy.",
   "redirects-mixed":
     "Forceer HTTPS met een 301-redirect van http:// naar https://, en vervang alle http://-resources (scripts, stylesheets, images, iframes) door https://-equivalenten om mixed content te voorkomen.",
   "subresources":
@@ -692,6 +828,20 @@ const REMEDIATION: Record<string, string> = {
     "Publiceer een /.well-known/security.txt volgens RFC 9116 met verplichte velden `Contact:` en `Expires:` (in de toekomst), plus een favicon op /favicon.ico en een custom 404-pagina met h1, zoekfunctie en een link naar de homepage.",
   "robots-sitemap":
     "Publiceer een /robots.txt met een `User-agent: *`-groep en geldige Disallow/Allow-regels, en verwijs via een `Sitemap:`-directive naar je sitemap. Publiceer een geldige sitemap.xml (urlset of sitemapindex) met alleen absolute http(s)-URL's naar bestaande pagina's, en houd de URL's in robots.txt en sitemap gesynchroniseerd met de daadwerkelijke site.",
+  "subdomain-takeover":
+    "Verwijder de dangling CNAME uit je DNS-zone of her-claim het eindpunt bij de provider (bijv. maak de Heroku-app / S3-bucket / GitHub Pages-repo opnieuw aan met dezelfde naam). Verifieer per gerapporteerd subdomein of het target nog van jou is; ruim CNAME-records op zodra je een externe service opzegt. Automatiseer detectie van niet-resolvende CNAME-targets in je DNS-monitoring om herhaling te voorkomen.",
+  "threat-intel":
+    "Valideer elke reputatie-listing en de meet-timestamp; verwijder malware/phishing of misbruikgedrag en roteer eventueel gecompromitteerde credentials. Vraag daarna review of delisting aan bij de betreffende bron: Spamhaus (https://check.spamhaus.org/), Google Search Console Beveiligingsproblemen (https://support.google.com/webmasters/answer/9044101), URLhaus (https://urlhaus.abuse.ch/contact/), VirusTotal false-positive-contact (https://docs.virustotal.com/docs/false-positive-contacts) en AbuseIPDB (https://www.abuseipdb.com/check/). Behandel CDN/edge-IP-listings als edge-context tot de origin onafhankelijk is geverifieerd.",
+  "waf-resilience":
+    "Plaats de site achter een WAF/CDN (bijv. Cloudflare, AWS WAF, Akamai) en publiceer rate-limit-headers (`RateLimit-Limit`/`RateLimit-Remaining`/`Retry-After`, RFC 9239/6585) op API-endpoints, zodat clients rate-limiting kunnen respecteren. Ontbrekende headers betekenen niet per se dat er geen bescherming is (een WAF kan op netwerklaag zitten) — bevestig dat gevoelige endpoints daadwerkelijk rate-limiting afdwingen.",
+  "rate-limit-burst":
+    "Dwing rate-limiting af op (login-, zoek- en API-)endpoints zodat een snelle request-burst een 429 (met `Retry-After`) oplevert. Configureer limieten op de WAF/CDN-edge of in de applicatie (bijv. token-bucket per IP/API-key) en communiceer de status via `RateLimit-*`-headers.",
+  "supabase-security":
+    "Schakel Row Level Security in op alle Supabase-tabellen (`ALTER TABLE <table> ENABLE ROW LEVEL SECURITY;`) en voeg policies toe die rijen per geauthenticeerde gebruiker scopen. Blootstel nooit de `service_role`-key in frontend-code — houd die server-side. Een open PostgREST-schema-listing lekt tabelnamen; verifieer per tabel of RLS daadwerkelijk ongeautoriseerde rij-toegang blokkeert.",
+  "firebase-security":
+    "Beveilig je Firebase Realtime Database- en Storage-rules: standaard `{ \"rules\": { \".read\": false, \".write\": false } }`, daarna per geauthenticeerde gebruiker toestaan. Gebruik `shallow`-reads niet als beveiliging. De Firebase `apiKey` (AIza…) is ontworpen als publiek en is op zichzelf geen bevinding — pas de rules aan zodat de database en buckets niet zonder auth leesbaar zijn.",
+  "convex-security":
+    "Voeg authenticatie toe aan je Convex-functies zodat publieke metadata-endpoints geen callable functies zonder auth blootstellen. Controleer per functie of de access-control expliciet is ingesteld.",
   "secrets-in-html":
     "Verwijder het geheim uit de inline HTML/JS en roteer het direct (behandel het als gelekt). Plaats secrets server-side in omgevingsvariabelen of een secrets-manager en lever ze via een beveiligde API-endpoint, nooit inline in het HTML-document of in inline <script>-blokken.",
   "mini-crawl":
@@ -704,6 +854,10 @@ const REMEDIATION: Record<string, string> = {
     "Verwijder het gelekte geheim uit de repo-geschiedenis (git filter-repo / BFG) en roteer het direct (behandel het als gelekt). Plaats secrets in een secrets-manager of omgevingsvariabelen, nooit in broncode of commits. Voeg gitleaks toe aan de CI als pre-commit/pre-push hook.",
   "osv-scanner":
     "Update de kwetsbare dependencies naar een niet-kwetsbare versie (zie het advisory-id in de evidence). Bij een onbeperkt advisary zonder patch: pin de versie, pas mitigaties toe of vervang de dependency. Voeg OSV-Scanner toe aan de CI voor continue controle.",
+  "client-deps-cve":
+    "Upgrade de kwetsbare client-side JS-library naar een niet-kwetsbare versie (zie het advisory-id in de evidence). Laad libraries bij voorkeur via een beheerde bundel met pinned versies i.p.v. een openbare CDN-URL, en voeg een dependency-scan (OSV-Scanner/npm audit) toe aan de CI. Een client-side gevonden versie is een observatie — verifieer exploitabiliteit in jouw context.",
+  "client-deps-runtime":
+    "Upgrade de kwetsbare client-side JS-library naar een niet-kwetsbare versie (zie het advisory-id in de evidence). De versie is runtime-bevestigd via een window-global, dus de kwetsbare versie is daadwerkelijk geladen. Voeg een dependency-scan (OSV-Scanner/npm audit) toe aan de CI en pin library-versies in een beheerde bundel.",
   "core-web-vitals":
     "Optimaliseer LCP (verlaag de largest render-time: pre-load van kritische resources, CDN, lazy-load niet-kritieke media), CLS (reserveer ruimte voor media/ad-banners, vermijd layout-shift door late inserts) en INP (verdeel lange taken, gebruik requestIdleCallback, optimaliseer interactie-handlers). Meet met Lighthouse / PageSpeed Insights / CrUX-field data.",
   accessibility:
@@ -714,6 +868,20 @@ const REMEDIATION: Record<string, string> = {
     "Zorg dat de layout op mobile (375px) geen horizontale overflow veroorzaakt: gebruik responsive units (rem, %, clamp), `overflow-x: hidden` waar nodig, `max-width: 100vw` op media en containers, en meta viewport-tag `width=device-width, initial-scale=1`. Vergroot tap-targets tot minimaal 24×24 CSS-pixels (WCAG 2.5.5) met padding en min-width/min-height.",
   "aeo-scan":
     "Render de kerncontent server-side (SSR/SSG of een static HTML-shell): titel, headings en de hoofdtekst moeten zonder JavaScript in de HTML staan, zodat AI-crawlers en LLM-parsers de pagina ook zonder JS-rendering kunnen begrijpen. Vermijd een lege SPA-shell die alles via client-side JavaScript injecteert. Publiceer de content tevens via llms.txt/JSON-LD voor betere AEO-detecteerbaarheid.",
+  "auth-transport":
+    "Serveer alle login-, signup- en reset-pagina's uitsluitend over HTTPS (forceer een 301-redirect van http:// naar https://) en zet op wachtwoord-velden `autocomplete=\"current-password\"` (login) resp. `autocomplete=\"new-password\"` (signup/reset) zodat wachtwoordbeheerders het veld correct herkennen.",
+  "auth-csrf":
+    "Bescherm elk auth-formulier met een CSRF-token (synchronizer-token of signed double-submit cookie); verwerp state-changing POST-verzoeken zonder geldig token. Hergebruik de bestaande CSRF-middleware van je framework.",
+  "auth-user-enumeration":
+    "Geef op de reset-flow een uniforme respons en statuscode ongeacht of het e-mailadres bestaat (bijv. 'Als dit adres bij ons bekend is, hebben we een reset-link verstuurd'), en zorg dat de verwerkingstijd niet verschilt tussen bestaande en onbestaande adressen (constant-time reactie).",
+  "auth-rate-limit":
+    "Dwing rate-limiting en/of account-lockout af op de login-endpoint: een korte burst foute pogingen moet een 429 (met Retry-After) of een tijdelijke lockout opleveren. Gebruik per-IP én per-account limieten en exponentiële backoff.",
+  "auth-password-policy":
+    "Voer een server-side wachtwoord-policy uit die triviale wachtwoorden (zoals '123456') afwijst, bijv. een minimum-lengte en een check tegen een bekende-gelekte-wachtwoorden-lijst (HaveIBeenPwned). Valideer zowel client-side (UX) als server-side (beveiliging).",
+  "auth-session-security":
+    "Zet op de sessie-cookie `Secure; HttpOnly; SameSite=Lax` (of Strict) en roteer het sessie-id direct ná een succesvolle login (session-regeneration) zodat een eventueel voor-login aangeleverd sessie-id niet wordt overgenomen (session-fixatie).",
+  "auth-mfa":
+    "Bied multi-factor authenticatie aan en dwing het af voor gevoelige accounts; toon na login een MFA-setup-stap of verwijs naar de beveiligingsinstellingen. Minimaal TOTP of passkeys; SMS als fallback.",
 };
 
 /**

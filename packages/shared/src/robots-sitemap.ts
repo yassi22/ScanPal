@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { extractSitemapLocs } from "./sitemap-loc";
 
 /**
  * Feature 36 — robots.txt & sitemap geldigheid/kwaliteit. De crawler (plan 54)
@@ -185,13 +186,7 @@ export function inspectSitemap(
   }
   inspection.isXml = true;
 
-  const locRe = /<loc>\s*([^<]+?)\s*<\/loc>/gi;
-  const rawLocs: string[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = locRe.exec(text)) !== null) {
-    rawLocs.push(match[1].trim());
-    if (rawLocs.length >= 1000) break;
-  }
+  const rawLocs = extractSitemapLocs(text, 1000);
 
   if (rawLocs.length === 0) {
     inspection.error = "geen <loc>-entries gevonden";

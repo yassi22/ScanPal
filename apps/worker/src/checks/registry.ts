@@ -4,6 +4,7 @@ import {
   type QueueName,
   type ScanCategory,
 } from "@scanpal/shared";
+import { AUTH_FLOW_CHECK_IDS } from "@scanpal/shared";
 import type { RateLimiter } from "../rate-limit";
 import type { CheckContext } from "./types";
 import type { Redis } from "ioredis";
@@ -12,6 +13,9 @@ import { reachabilityCheck } from "./http/reachability";
 import { httpsCheck } from "./http/https";
 import { tlsCertCheck } from "./http/tls-cert";
 import { domainWatchtowerCheck } from "./http/domain-watchtower";
+import { dnsEmailCheck } from "./http/dns-email";
+import { subdomainTakeoverCheck } from "./http/subdomain-takeover";
+import { createThreatIntelCheck } from "./http/threat-intel";
 import { SECURITY_HEADER_CHECK_IDS, securityHeadersCheck } from "./http/security-headers";
 import { metaTagsCheck } from "./http/meta-tags";
 import { COOKIE_CHECK_IDS, cookiesCheck } from "./http/cookies";
@@ -23,6 +27,10 @@ import { aeoEngineMatrixCheck } from "./http/aeo-engine-matrix";
 import { createCruxFieldDataCheck } from "./http/crux-field-data";
 import { COMPLIANCE_CHECK_IDS, complianceCheck } from "./http/compliance";
 import { stackDetectionCheck } from "./http/stack-detection";
+import { hostingSecurityCheck } from "./http/hosting-fingerprint";
+import { wafResilienceCheck } from "./http/waf-resilience";
+import { createClientDepsCveCheck } from "./http/client-deps-cve";
+import { baasSecurityCheck } from "./http/baas-security";
 import { redirectsMixedCheck } from "./http/redirects-mixed";
 import { subresourcesCheck } from "./http/subresources";
 import { structuredDataCheck } from "./http/structured-data";
@@ -37,7 +45,10 @@ import { createCoreWebVitalsCheck } from "./browser/core-web-vitals";
 import { createAccessibilityCheck } from "./browser/accessibility";
 import { createConsoleErrorsCheck } from "./browser/console-errors";
 import { createMobileResponsiveCheck } from "./browser/mobile-responsive";
+import { createBrowserStorageCheck } from "./browser/browser-storage";
+import { createClientDepsRuntimeCheck } from "./browser/client-deps-runtime";
 import { createAeoRenderCheck } from "./browser/aeo-render";
+import { createAuthFlowCheck } from "./browser/auth-flow";
 import type { BrowserRunner } from "./browser/runner";
 
 /**
@@ -50,18 +61,27 @@ export type ImplementedCheck = {
   id: string;
   category: ScanCategory;
   outputCheckIds: string[];
+  /** Finding hoort bij de site als geheel en krijgt dus route_url = null. */
+  siteLevel?: boolean;
   run(ctx: CheckContext): Promise<InlineCheckLike[]>;
 };
 
 const activeTestCatalogIds = checkCatalog
-  .filter((entry) => entry.active)
+  .filter((entry) => entry.active && !AUTH_FLOW_CHECK_IDS.includes(entry.id as never))
   .map((entry) => entry.id);
 
 function toImplemented(
   impl: { id: string; category: ScanCategory; run(ctx: CheckContext): Promise<InlineCheckLike[]> },
   outputCheckIds?: string[],
+  siteLevel = false,
 ): ImplementedCheck {
-  return { id: impl.id, category: impl.category, outputCheckIds: outputCheckIds ?? [impl.id], run: impl.run };
+  return {
+    id: impl.id,
+    category: impl.category,
+    outputCheckIds: outputCheckIds ?? [impl.id],
+    siteLevel,
+    run: impl.run,
+  };
 }
 
 export function buildRegistry(
@@ -75,6 +95,13 @@ export function buildRegistry(
       toImplemented(httpsCheck),
       toImplemented(tlsCertCheck),
       toImplemented(domainWatchtowerCheck),
+      // Plan 68: DNS & e-mail (SPF/DKIM/DMARC/MX) — passieve publieke-DNS-meting.
+      toImplemented(dnsEmailCheck),
+      // Plan 72: subdomain-takeover (dangling CNAME) — passief: publieke DNS +
+      // Certificate Transparency (crt.sh) + sitemap-hostnames. Geen active-gating.
+      toImplemented(subdomainTakeoverCheck),
+      // Plan 75: passieve externe reputatiebronnen; één site-level finding.
+      toImplemented(createThreatIntelCheck({ redis: cruxDeps.redis }), undefined, true),
       toImplemented(securityHeadersCheck, [...SECURITY_HEADER_CHECK_IDS]),
       toImplemented(metaTagsCheck),
       toImplemented(cookiesCheck, [...COOKIE_CHECK_IDS]),
@@ -94,6 +121,25 @@ export function buildRegistry(
       toImplemented(complianceCheck, [...COMPLIANCE_CHECK_IDS]),
       // Plan 40: stackdetectie op de homepage (CMS/framework/server/CDN).
       toImplemented(stackDetectionCheck),
+      // Plan 69: hosting-fingerprint & platform-security (passief; hergebruikt
+      // de homepage-fetch). Eén site-level finding met platform-context.
+      toImplemented(hostingSecurityCheck),
+      // Plan 73: WAF/CDN-weerbaarheid & API-rate-limit-inspectie (G7) — passief:
+      // fingerprint WAF/CDN + inspecteert rate-limit-headers op de bestaande
+      // fetch. De actieve burst-helft (rate-limit-burst) wordt geproduceerd door
+      // active-tests (hieronder) en auto-geclaimd via activeTestCatalogIds.
+      toImplemented(wafResilienceCheck),
+      // Plan 71: client-side dependencies & CVE — herkent JS-libs + versies uit
+      // script-URL's en matcht ze batched tegen OSV. Passief; URL-only sites
+      // (geen repo) krijgen zo dependency-dekking.
+      toImplemented(createClientDepsCveCheck()),
+      // Plan 74: BaaS-security (Supabase/Firebase/Convex) — passieve black-box
+      // detectie van BaaS-misconfiguraties. Eén implementatie, drie catalog-ids.
+      toImplemented(baasSecurityCheck, [
+        "supabase-security",
+        "firebase-security",
+        "convex-security",
+      ]),
       // Plan 32: redirects + mixed content (http:// op https-pagina).
       toImplemented(redirectsMixedCheck),
       // Plan 34: subresource-integriteit (SRI integrity-attrs).
@@ -117,8 +163,18 @@ export function buildRegistry(
       toImplemented(createConsoleErrorsCheck(browserRunner)),
       // Feature 45: mobile/responsive basis-check via Playwright.
       toImplemented(createMobileResponsiveCheck(browserRunner)),
+      // Plan 70: browser storage & session-tokens (passief, leest storage).
+      toImplemented(createBrowserStorageCheck(browserRunner)),
+      // Plan 71 v2: client-side deps via runtime-globals (passief, leest
+      // window-globals); hardere versiebewijzen dan de statische http-check.
+      toImplemented(createClientDepsRuntimeCheck(browserRunner)),
       // Feature 43: AEO JS-rendered content (server-HTML vs gerenderde DOM).
       toImplemented(createAeoRenderCheck(browserRunner)),
+      // Plan 77: authentication flow scanner (login/signup/reset) — actieve,
+      // veilige subset achter driedubbele gating. Draait in de browser-queue
+      // (Playwright); catalog-categorie http (active-tests-sectie). Eén impl
+      // produceert de zeven auth-*-ids; site-level (route_url null).
+      toImplemented(createAuthFlowCheck(browserRunner), [...AUTH_FLOW_CHECK_IDS], true),
     ],
     // Features 46–49 vullen de github-worker.
     github: [
@@ -149,6 +205,7 @@ export function skeletonTotals(
   for (const queue of queues) {
     for (const impl of registry[queue]) {
       if (impl.id === "active-tests" && !activeTests) continue;
+      if (impl.id === "auth-flow" && !activeTests) continue;
       const count = impl.outputCheckIds.length;
       totals[impl.category] = (totals[impl.category] ?? 0) + count;
     }

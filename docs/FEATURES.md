@@ -122,5 +122,7 @@ Delta op de vergelijking hierboven, op basis van de detailpagina [checkvibe.dev/
 | 69 | Hosting-fingerprint security (Vercel/Netlify/Cloudflare + WAF) — uitbreiding van `stack-detection` | 🔶 | 69-hosting-fingerprint | 📝 |
 | 70 | Browser storage & session-token scanner — uitbreiding van de Playwright-runner | 🔶 | 70-browser-storage-tokens | 📝 |
 | 71 | Client-side dependency & CVE — vult het gat dat `osv-scanner` (repo-only) laat vallen voor URL-only sites | 🔶 | 71-client-dep-cve | 📝 |
+| 75 | Threat intelligence / reputatie (Spamhaus, URLhaus, Safe Browsing, VirusTotal, AbuseIPDB) | 🔶 | 75-threat-intelligence | ✅ |
+| 76 | Domein-eigendom-verificatie via DNS TXT — herbruikbare gate voor hoog-risico scans | 🔶 | 76-domain-ownership-verification | ✅ |
 
-**Tier 2 — echt nieuw, gemiddelde kost (nog geen plan, scope-keuze eerst):** Supabase/Firebase exposed-config · subdomain-takeover · WAF/CDN+API-rate-limit-inspectie · threat-intelligence/reputatie-lookup. **Tier 3 — nieuwe actieve tests (opt-in+Pro):** auth-flow-scanner (eigendom-geverifieerd) · file-upload-scanner. **Parkeren:** audit-logging (black-box niet zinvol te definiëren). Alle vier statussen 💡 — zie het gap-document voor scope en volgorde.
+**Tier 2 — echt nieuw, gemiddelde kost:** Supabase/Firebase exposed-config · subdomain-takeover · WAF/CDN+API-rate-limit-inspectie · threat-intelligence/reputatie-lookup. Threat intelligence (75) en de herbruikbare DNS-eigendomsverificatie (76) zijn ✅ opgeleverd; zie het gap-document voor de overige scope en volgorde. **Tier 3 — nieuwe actieve tests (opt-in+Pro):** auth-flow-scanner (bouwt op de live ownership-gate uit 76) · file-upload-scanner. **Parkeren:** audit-logging (black-box niet zinvol te definiëren).

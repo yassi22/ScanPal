@@ -258,6 +258,59 @@ function parseCvssScore(score: unknown): number | null {
   return null;
 }
 
+/**
+ * Trekt de severity-signalen uit één OSV-vuln-object (zowel de `severity`-array
+ * met CVSS-scores als `database_specific.severity` voor GHSA-style advisories).
+ * Gedeeld door de osv-scanner-JSON-parser en de OSV-REST-API-client (plan 71).
+ */
+export function extractOsvSeverities(vv: {
+  severity?: unknown;
+  database_specific?: unknown;
+}): OsvSeverity[] {
+  const sevs: OsvSeverity[] = [];
+  if (Array.isArray(vv.severity)) {
+    for (const s of vv.severity) {
+      if (!s || typeof s !== "object") continue;
+      const ss = s as { type?: unknown; score?: unknown };
+      if (typeof ss.score !== "undefined") {
+        const parsed = parseCvssScore(ss.score);
+        if (parsed !== null) sevs.push(cvssToSeverity(parsed));
+      }
+    }
+  }
+  // database_specific.severity (GHSA-style: "HIGH"/"MODERATE"/"LOW"/"CRITICAL")
+  const dbSpec = (vv.database_specific ?? {}) as { severity?: unknown };
+  if (typeof dbSpec.severity === "string") {
+    const upper = dbSpec.severity.toUpperCase();
+    if (upper === "CRITICAL") sevs.push("critical");
+    else if (upper === "HIGH") sevs.push("high");
+    else if (upper === "MODERATE" || upper === "MEDIUM") sevs.push("medium");
+    else if (upper === "LOW") sevs.push("low");
+  }
+  return sevs;
+}
+
+/**
+ * Normaliseert één ruw OSV-vuln-object naar de `OsvVulnerability`-vorm. Gedeeld
+ * door `parseOsvJson` (osv-scanner Docker-JSON) en `queryOsvBatch` (REST API,
+ * plan 71) zodat severity-interpretatie over beide bronnen identiek is.
+ */
+export function normalizeOsvVulnerability(
+  vv: { id?: unknown; summary?: unknown; severity?: unknown; database_specific?: unknown },
+  pkgName: string,
+  ecosystem: string,
+  version: string,
+): OsvVulnerability {
+  return {
+    id: typeof vv.id === "string" ? vv.id : "unknown",
+    package_name: pkgName,
+    ecosystem,
+    version,
+    summary: typeof vv.summary === "string" ? vv.summary : "",
+    severity: worstSeverity(extractOsvSeverities(vv)),
+  };
+}
+
 export function parseOsvJson(json: unknown): OsvVulnerability[] {
   if (!json || typeof json !== "object") return [];
   const results = (json as { results?: unknown }).results;
@@ -271,45 +324,14 @@ export function parseOsvJson(json: unknown): OsvVulnerability[] {
       vulnerabilities?: unknown;
     };
     const pkg = (row.package ?? {}) as { name?: unknown; ecosystem?: unknown };
+    const pkgName = typeof pkg.name === "string" ? pkg.name : "";
+    const ecosystem = typeof pkg.ecosystem === "string" ? pkg.ecosystem : "";
     const version = typeof row.version === "string" ? row.version : "";
     const vulnerabilities = row.vulnerabilities;
     if (!Array.isArray(vulnerabilities)) continue;
     for (const v of vulnerabilities) {
       if (!v || typeof v !== "object") continue;
-      const vv = v as {
-        id?: unknown;
-        summary?: unknown;
-        severity?: unknown;
-        database_specific?: unknown;
-      };
-      const sevs: OsvSeverity[] = [];
-      if (Array.isArray(vv.severity)) {
-        for (const s of vv.severity) {
-          if (!s || typeof s !== "object") continue;
-          const ss = s as { type?: unknown; score?: unknown };
-          if (typeof ss.score !== "undefined") {
-            const parsed = parseCvssScore(ss.score);
-            if (parsed !== null) sevs.push(cvssToSeverity(parsed));
-          }
-        }
-      }
-      // database_specific.severity (GHSA-style: "HIGH"/"MODERATE"/"LOW"/"CRITICAL")
-      const dbSpec = (vv.database_specific ?? {}) as { severity?: unknown };
-      if (typeof dbSpec.severity === "string") {
-        const upper = dbSpec.severity.toUpperCase();
-        if (upper === "CRITICAL") sevs.push("critical");
-        else if (upper === "HIGH") sevs.push("high");
-        else if (upper === "MODERATE" || upper === "MEDIUM") sevs.push("medium");
-        else if (upper === "LOW") sevs.push("low");
-      }
-      vulns.push({
-        id: typeof vv.id === "string" ? vv.id : "unknown",
-        package_name: typeof pkg.name === "string" ? pkg.name : "",
-        ecosystem: typeof pkg.ecosystem === "string" ? pkg.ecosystem : "",
-        version,
-        summary: typeof vv.summary === "string" ? vv.summary : "",
-        severity: worstSeverity(sevs),
-      });
+      vulns.push(normalizeOsvVulnerability(v as Record<string, unknown>, pkgName, ecosystem, version));
     }
   }
   return vulns;

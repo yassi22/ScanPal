@@ -53,8 +53,8 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 
 ## Fase 6 — v2
 
-- **Taken**: 12 threat-alerts (honeypot + log-patroon-detectie) · 23 outbound webhook-delivery-service · 52–55, 61–62 worker-uitbreidingen (actieve vulnerability-tests, JS-bundle inspectie, route-discovery, AEO-engine matrix, compliance-pijler, CrUX field data) · 56–59 monitoring-uitbreidingen (domain watchtower, publieke statuspagina, on-deploy triggers, diff-gebaseerde monitoring) · 60 AI fix-prompts · 63 MCP-uitbreiding · 64 team seats/white-label
-- **Plannen**: 12-threat-alerts (klaar), 52–64 (klaar)
+- **Taken**: 12 threat-alerts (honeypot + log-patroon-detectie) · 23 outbound webhook-delivery-service · 52–55, 61–62 worker-uitbreidingen (actieve vulnerability-tests, JS-bundle inspectie, route-discovery, AEO-engine matrix, compliance-pijler, CrUX field data) · 56–59 monitoring-uitbreidingen (domain watchtower, publieke statuspagina, on-deploy triggers, diff-gebaseerde monitoring) · 60 AI fix-prompts · 63 MCP-uitbreiding · 64 team seats/white-label · 76 DNS-eigendomsverificatie als live gate voor hoog-risico scans
+- **Plannen**: 12-threat-alerts (klaar), 52–64 (klaar), 76-domain-ownership-verification (klaar)
 - **Klaar als**: threat-paneel met honeypot-events, resterende checks uit de catalog geïmplementeerd, CheckVibe-gap-features (52–64) per plan opgeleverd
 - **Afhankelijkheden**: Fase 3 (workers), Fase 4 (logging-onderlegger), Fase 5 (notificaties, api-keys, rate limiting); 60 heeft plan 09 nodig (findings + remediatie), 63 bouwt op 09/59/60
 
@@ -106,6 +106,8 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 | `docs/plans/69-hosting-fingerprint.md` | 69 | 📝 |
 | `docs/plans/70-browser-storage-tokens.md` | 70 | 📝 |
 | `docs/plans/71-client-dep-cve.md` | 71 | 📝 |
+| `docs/plans/75-threat-intelligence.md` | 75 | ✅ |
+| `docs/plans/76-domain-ownership-verification.md` | 76 | ✅ |
 | `docs/gap-analysis-checkvibe-security-checks.md` | 68–71 + Tier 2/3-gaten | 📝 (gap-analyse `/security-checks`, 2026-08-21) |
 
 > **Update 2026-08-18 (geverifieerd tegen code)**: feature 36 (robots-sitemap) is opgeleverd — implementatie `apps/worker/src/checks/http/robots-sitemap.ts`, pure helpers + evidence-schema in `packages/shared/src/robots-sitemap.ts` (inspectRobotsTxt/inspectSitemap/evaluateRobotsSitemap), geregistreerd in `apps/worker/src/checks/registry.ts`; de check produceert findings over de geldigheid/kwaliteit van robots.txt en sitemap.xml zelf (los van de route-discovery-parse in plan 54). Alle 67 catalog-entries hebben nu een geregistreerde implementatie — geen open MVP-gap meer. Feature 54 (route-discovery) en 55 (aeo-engine-matrix) waren al eerder opgeleverd en staan nu ook ✅ in dit overzicht. Statussen hierboven zijn bijgewerkt.

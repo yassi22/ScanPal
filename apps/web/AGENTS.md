@@ -82,6 +82,7 @@ covers the webapp layer only.
 | `api/webhooks` + `api/webhooks/[id]` + `[id]/secret` + `[id]/test` + `[id]/deliveries` | 15, 23 | outbound webhooks (plan 15): lijst/create (secret 1×), PATCH/DELETE, rotate (owner-only), test-delivery (event `test`), delivery-log; teamlid-sessie, géén bearer keys |
 | `api/webhooks/github` + `api/webhooks/vercel` | 58 | on-deploy triggers (plan 58): inbound, publiek, HMAC-verified (`x-hub-signature-256` met per-site secret / `x-vercel-signature` met env-secret); match repo/url → scan `trigger='deploy'` (202 `{ scans: [...] }`, 200 stil bij geen match, 401 ongeldig, cooldown 10 min/site via Redis) |
 | `api/sites/[id]/deploy-webhook` | 58 | webhook-setup (plan 58): genereert/roteert `sites.github_webhook_secret` (AES-GCM, owner-only), retourneert URL + secret 1× |
+| `api/sites/[id]/ownership` + `verify-ownership` + `ownership-token-rotations` | 76 | DNS TXT-eigendomsverificatie: lazy token, live apex-check, 5 verify-pogingen/min/site, rotatie wist de oude verificatie; team/workspace-scoped |
 
 ## Rules & conventions
 

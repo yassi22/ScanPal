@@ -56,6 +56,46 @@ async function probeGet(
   }
 }
 
+/**
+ * Plan 73 — rate-limit burst-probe (G7). Eén burst-request met dezelfde per-host
+ * rate-limit als {@link probeGet}, maar retourneert ook de headers die de burst
+ * nodig heeft (`retry-after`, `x-ratelimit-remaining`). Sequentieel aangeroepen
+ * (6×) om 429/rate-limit-gedrag te observeren. `null` = eigen rate-limiter
+ * uitgeput of fetch-fout (de burst degradeert naar info).
+ */
+async function probeBurstRequest(
+  rateLimit: RateLimiter,
+  url: string,
+  host: string,
+): Promise<{
+  status: number;
+  retryAfter: string | null;
+  remaining: string | null;
+} | null> {
+  const rate = await rateLimit(
+    `${RATE_LIMIT_KEY_PREFIX}:${host}`,
+    ACTIVE_TEST_LIMITS.probesPerHostPerMinute,
+    RATE_LIMIT_WINDOW,
+  );
+  if (!rate.ok) return null;
+  try {
+    const res = await fetchPage(url, { timeoutMs: ACTIVE_TEST_LIMITS.timeoutMs });
+    await res.body?.cancel().catch(() => {});
+    return {
+      status: res.status,
+      retryAfter: res.headers.get("retry-after"),
+      remaining:
+        res.headers.get("x-ratelimit-remaining") ??
+        res.headers.get("ratelimit-remaining"),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Plan 73 — begrensde burst-grootte (6 snelle sequentiële GET's op de scan-URL). */
+const RATE_LIMIT_BURST_COUNT = 6;
+
 function evidenceOf(request: string, response: string): FindingEvidence {
   return {
     request: truncateEvidence(request),
@@ -580,6 +620,81 @@ export function createActiveTestsCheck(
         active: true,
         evidence: null,
       });
+
+      // ── 12. rate-limit-burst (actief, plan 73/G7): 6 snelle sequentiële ──
+      //    GET's op de scan-URL om 429/rate-limit-gedrag te observeren. Geen
+      //    load-generatie tegen API-endpoints van derden — alleen de scan-URL.
+      const burstResults: ({
+        status: number;
+        retryAfter: string | null;
+        remaining: string | null;
+      } | null)[] = [];
+      for (let i = 0; i < RATE_LIMIT_BURST_COUNT; i++) {
+        burstResults.push(await probeBurstRequest(rateLimit, ctx.url, host));
+      }
+      const valid = burstResults.filter(
+        (r): r is { status: number; retryAfter: string | null; remaining: string | null } =>
+          r !== null,
+      );
+      const got429 = valid.some((r) => r.status === 429);
+      const gotRetryAfter = valid.some((r) => r.retryAfter !== null);
+      // `remaining` numeriek parsen en alleen als burst-signaal tellen wanneer
+      // de teller ONDER de burst van >0 naar 0 daalt. Een respons die al met
+      // `remaining: 0` binnenkomt (bijv. door eerdere actieve tests op dezelfde
+      // server-quota) mag geen `pass` opleveren — dat was niet de burst.
+      let remainingHitZero = false;
+      let sawPositiveRemaining = false;
+      for (const r of valid) {
+        if (r.remaining === null) continue;
+        const n = Number.parseInt(r.remaining.trim(), 10);
+        if (!Number.isFinite(n)) continue;
+        if (n > 0) sawPositiveRemaining = true;
+        else if (sawPositiveRemaining) remainingHitZero = true;
+      }
+      const rateLimited = got429 || gotRetryAfter || remainingHitZero;
+      if (valid.length < RATE_LIMIT_BURST_COUNT / 2) {
+        push({
+          id: "rate-limit-burst",
+          name: "Rate-limit burst-probe",
+          status: "info",
+          detail:
+            "Burst onvolledig (eigen rate-limiter uitgeput of fetch-fouten) — rate-limit-gedrag niet betrouwbaar vastgesteld.",
+          active: true,
+          evidence: null,
+        });
+      } else if (rateLimited) {
+        const signals: string[] = [];
+        if (got429) signals.push("429");
+        if (gotRetryAfter) signals.push("retry-after");
+        if (remainingHitZero) signals.push("remaining=0");
+        push({
+          id: "rate-limit-burst",
+          name: "Rate-limit burst-probe",
+          status: "pass",
+          detail: `Rate-limiting trad in onder de burst (${signals.join(", ")}).`,
+          active: true,
+          evidence: evidenceOf(
+            `Burst ${RATE_LIMIT_BURST_COUNT}× GET ${ctx.url}`,
+            burstResults
+              .map((r, i) => `#${i + 1}: ${r ? `HTTP ${r.status}` : "blocked/error"}`)
+              .join("\n"),
+          ),
+        });
+      } else {
+        push({
+          id: "rate-limit-burst",
+          name: "Rate-limit burst-probe",
+          status: "warn",
+          detail: `Geen rate-limiting waargenomen onder ${valid.length}/${RATE_LIMIT_BURST_COUNT} snelle requests (geen 429, geen retry-after, geen remaining=0).`,
+          active: true,
+          evidence: evidenceOf(
+            `Burst ${RATE_LIMIT_BURST_COUNT}× GET ${ctx.url}`,
+            burstResults
+              .map((r, i) => `#${i + 1}: ${r ? `HTTP ${r.status}` : "blocked/error"}`)
+              .join("\n"),
+          ),
+        });
+      }
 
       return results;
     },

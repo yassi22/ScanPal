@@ -10,6 +10,9 @@ const mockRunner: BrowserRunner = {
   captureConsole: () => Promise.resolve({ ok: false, error: "mock" }),
   captureResponsive: () => Promise.resolve({ ok: false, error: "mock" }),
   captureRenderCompare: () => Promise.resolve({ ok: false, error: "mock" }),
+  captureStorage: () => Promise.resolve({ ok: false, error: "mock" }),
+  captureClientDeps: () => Promise.resolve({ ok: false, error: "mock" }),
+  captureAuthFlow: () => Promise.resolve({ ok: false, error: "mock" }),
 };
 
 describe("skeletonTotals (progress-skelet)", () => {
@@ -30,9 +33,20 @@ describe("skeletonTotals (progress-skelet)", () => {
     // Feature 44 (console-errors) + 45 (mobile-responsive) → aeo 3->5;
     // feature 43 (aeo-scan render-vergelijking) → aeo 5->6.
     // Plan 62: crux-field-data draait in de http-worker (aeo) → aeo 6->7.
-    expect(totals.http).toBe(22);
+    // Plan 68: dns-email is een nieuwe http-check → http 22->23.
+    // Plan 69: hosting-security is een nieuwe http-check → http 23->24.
+    // Plan 70: browser-storage is een nieuwe aeo-check → aeo 7->8.
+    // Plan 71: client-deps-cve is een nieuwe http-check → http 24->25.
+    // Plan 71 v2: client-deps-runtime is een nieuwe aeo-check → aeo 8->9.
+    // Plan 72: subdomain-takeover is een nieuwe http-check → http 25->26.
+    // Plan 73: waf-resilience is een nieuwe passieve http-check → http 26->27
+    // (rate-limit-burst is active: true, telt niet mee zonder flag).
+    // Plan 74: baas-security produceert 3 passieve http-checks
+    // (supabase/firebase/convex-security) → http 27->30.
+    // Plan 75: threat-intel voegt één passieve site-level http-check toe → 31.
+    expect(totals.http).toBe(31);
     expect(totals.seo).toBe(6);
-    expect(totals.aeo).toBe(7);
+    expect(totals.aeo).toBe(9);
     expect(totals.compliance).toBe(5);
     // Categorieën zonder queue-owner krijgen geen key (initialProgressDetails
     // default naar 0).
@@ -42,8 +56,10 @@ describe("skeletonTotals (progress-skelet)", () => {
   it("telt de actieve-test-checks mee met de flag aan", () => {
     const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
-    // 11 actieve-test-catalog-checks + 22 passieve http-checks.
-    expect(totals.http).toBe(33);
+    // 12 actieve-test-catalog-checks (plan 73 voegt rate-limit-burst toe) +
+    // 31 passieve http-checks (plan 75 voegt threat-intel toe) +
+    // 7 auth-flow-checks (plan 77, active: true, tellen mee met de flag aan).
+    expect(totals.http).toBe(50);
     expect(totals.compliance).toBe(5);
   });
 

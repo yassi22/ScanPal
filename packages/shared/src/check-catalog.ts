@@ -42,6 +42,16 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // TLS-runway (hergebruikt notAfter uit tls-cert). Stille check behalve bij
   // afwijking (expiry/runway/dnssec/ns-drift).
   { id: "domain-watchtower", category: "http", name: "Domain watchtower", active: false },
+  // Plan 68: DNS & e-mail (SPF/DKIM/DMARC/MX) — passieve publieke-DNS-meting,
+  // draait in de http-worker naast domain-watchtower. Geen active-gating.
+  { id: "dns-email", category: "http", name: "DNS & e-mail (SPF/DKIM/DMARC)", active: false },
+  // Plan 72: subdomain-takeover (dangling CNAME) — passief: leest publieke DNS
+  // + Certificate Transparency (crt.sh). Hergebruikt de swappable resolver uit
+  // domain-net. Geen active-gating (geen interactie met de doelsite).
+  { id: "subdomain-takeover", category: "http", name: "Subdomain-takeover (dangling CNAME)", active: false },
+  // Plan 75: vijf passieve externe reputatiebronnen (Spamhaus DQS, URLhaus,
+  // Safe Browsing, VirusTotal en AbuseIPDB). Geen active-gating.
+  { id: "threat-intel", category: "http", name: "Threat Intelligence & reputatie", active: false },
   { id: "redirects-mixed", category: "http", name: "Redirects & mixed content", active: false },
   { id: "secrets-in-html", category: "http", name: "Secrets in HTML", active: false },
   { id: "secrets-in-bundles", category: "http", name: "Secrets in JS-bundles", active: false },
@@ -54,6 +64,16 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // Plan 40: stackdetectie herkent CMS/framework/server/CDN uit headers +
   // HTML (Server, X-Powered-By, generator-meta, framework-markers).
   { id: "stack-detection", category: "seo", name: "Stackdetectie (CMS/framework)", active: false },
+  // Plan 69: hosting-fingerprint & platform-security — herkent Vercel/Netlify/
+  // Cloudflare/… uit response-headers en beoordeelt platform-specifieke
+  // signalen (cache-hygiëne, origin-lek, preview-URL). Passief; hergebruikt de
+  // bestaande fetch; geen dubbele header-findings met check 28.
+  { id: "hosting-security", category: "http", name: "Hosting-fingerprint & platform-security", active: false },
+  // Plan 73: WAF/CDN-weerbaarheid & API-rate-limit-inspectie (G7) — passief:
+  // fingerprint WAF/CDN uit response-headers + inspecteert rate-limit-headers op
+  // de bestaande fetch. Beoordeelt andere signalen dan plan 69 (geen dubbele
+  // findings). Geen active-gating.
+  { id: "waf-resilience", category: "http", name: "WAF/CDN-weerbaarheid & rate-limit", active: false },
   // Plan 55: AEO per-engine matrix draait in de http-worker (geen browser nodig)
   // — als eerste aeo-entry geplaatst zodat de progress-kaart de juiste check
   // markeert (enige aeo-check die vandaag draait).
@@ -69,9 +89,20 @@ export const checkCatalog: CheckCatalogEntry[] = [
   { id: "console-errors", category: "aeo", name: "Console-errors & network-failures", active: false },
   // Feature 45: mobile/responsive basis-check (horizontal overflow + tap-targets).
   { id: "mobile-responsive", category: "aeo", name: "Mobile / responsive", active: false },
+  // Plan 70: browser storage & session-tokens — leest localStorage/sessionStorage
+  // na page-load (passief, geen interactie). Categorie aeo (browser-queue).
+  { id: "browser-storage", category: "aeo", name: "Browser storage & session-tokens", active: false },
   { id: "semgrep", category: "github", name: "Semgrep (SAST)", active: false },
   { id: "gitleaks", category: "github", name: "Gitleaks (secrets)", active: false },
   { id: "osv-scanner", category: "github", name: "OSV-Scanner (deps)", active: false },
+  // Plan 71: client-side dependencies & CVE — herkent JS-libs + versies uit
+  // script-URL's (CDN-patronen) en matcht ze tegen OSV. Werkt op URL-only sites
+  // (geen repo nodig) en vult zo het gat dat osv-scanner laat vallen. Passief.
+  { id: "client-deps-cve", category: "http", name: "Client-side dependencies & CVE", active: false },
+  // Plan 71 v2: runtime-deps via window-globals (browser-queue). Hardere
+  // versiebewijzen dan de statische URL-parsing van client-deps-cve; vangt ook
+  // libs zonder versie in de CDN-URL. Passief; eigen check-id (geen collision).
+  { id: "client-deps-runtime", category: "aeo", name: "Client-side dependencies (runtime)", active: false },
   { id: "repo-health", category: "github", name: "Repo-health", active: false },
   // Plan 61: compliance-pijler — passieve checks (cookie-banner/CMP-detectie,
   // consent-API, privacy-policy, legal-pagina's, GDPR-signalen). Geen cookies
@@ -92,6 +123,27 @@ export const checkCatalog: CheckCatalogEntry[] = [
   { id: "jwt-audit", category: "http", name: "JWT-zwakke-algoritme/key-audit", active: true },
   { id: "webhook-signature", category: "http", name: "Webhook-handlers zonder signature-verificatie", active: true },
   { id: "tenant-isolation", category: "http", name: "Cross-tenant leestoegang", active: true },
+  // Plan 73: rate-limit burst-probe (G7, actief) — 6 snelle sequentiële GET's op
+  // de scan-URL om 429/rate-limit-gedrag te observeren. Opt-in + Pro; erft de
+  // gating van plan 52. Wordt geproduceerd door de active-tests-impl.
+  { id: "rate-limit-burst", category: "http", name: "Rate-limit burst-probe", active: true },
+  // Plan 77: authentication flow scanner (login/signup/reset) — actieve, veilige
+  // subset achter driedubbele gating (opt-in + Pro + live domeineigendom + wegwerp-
+  // testaccount). Eén implementatie (browser-queue, Playwright) produceert de
+  // zeven auth-*-ids; findings `active: true` (niet in de score).
+  { id: "auth-transport", category: "http", name: "Auth-pagina's: HTTPS & wachtwoord-autocomplete", active: true },
+  { id: "auth-csrf", category: "http", name: "CSRF-bescherming op auth-formulieren", active: true },
+  { id: "auth-user-enumeration", category: "http", name: "User-enumeration via reset-flow", active: true },
+  { id: "auth-rate-limit", category: "http", name: "Rate-limiting op login", active: true },
+  { id: "auth-password-policy", category: "http", name: "Wachtwoord-policy bij signup/reset", active: true },
+  { id: "auth-session-security", category: "http", name: "Sessie-cookie-beveiliging & session-fixation", active: true },
+  { id: "auth-mfa", category: "http", name: "Multi-factor authenticatie", active: true },
+  // Plan 74: BaaS-security (Supabase/Firebase/Convex) — passieve black-box
+  // detectie van BaaS-misconfiguraties (open Realtime DB/Storage, PostgREST-
+  // schema-lek, open Convex-functies). Eén implementatie, drie catalog-entries.
+  { id: "supabase-security", category: "http", name: "Supabase-security (RLS / key-exposure)", active: false },
+  { id: "firebase-security", category: "http", name: "Firebase-security (rules / bucket-access)", active: false },
+  { id: "convex-security", category: "http", name: "Convex-security (open endpoints)", active: false },
 ];
 
 export function checksForCategory(category: ScanCategory): CheckCatalogEntry[] {

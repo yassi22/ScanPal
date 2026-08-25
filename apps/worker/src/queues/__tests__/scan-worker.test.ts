@@ -43,6 +43,29 @@ function fakeDb(scan: Record<string, unknown> | null) {
 const rateLimit = { hit: vi.fn().mockResolvedValue(true) } as unknown as RateLimiter;
 
 describe("createScanProcessor (sub-job consumer, plan 54 route-bewust)", () => {
+  it("schrijft site-level checks met route_url null", async () => {
+    const scan = {
+      id: "scan-site-level",
+      status: "running",
+      site_url: "example.com",
+      active_tests: false,
+    };
+    const { db, queries } = fakeDb(scan);
+    const impl: ImplementedCheck = {
+      id: "threat-intel",
+      category: "http",
+      outputCheckIds: ["threat-intel"],
+      siteLevel: true,
+      run: vi.fn().mockResolvedValue([
+        { id: "threat-intel", name: "Threat Intel", status: "info", detail: "clean" },
+      ]),
+    };
+    const processor = createScanProcessor(db, [impl], rateLimit);
+    await processor({ data: { scanId: "scan-site-level" } });
+    const insert = queries.find((query) => query.startsWith("insert into checks"));
+    expect(insert).toBeDefined();
+    expect(insert).not.toContain("https://example.com/");
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(fakeResponse(200)));

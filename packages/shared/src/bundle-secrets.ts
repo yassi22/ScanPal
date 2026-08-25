@@ -151,7 +151,7 @@ const BASE64_CHARS =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /** Minimale base64url-decode (JWT-payloads; alleen ASCII-substrings nodig). */
-function decodeBase64Url(value: string): string {
+export function decodeBase64Url(value: string): string {
   const b64 = value.replace(/-/g, "+").replace(/_/g, "/");
   const table: Record<string, number> = {};
   for (let i = 0; i < BASE64_CHARS.length; i++) table[BASE64_CHARS[i]] = i;

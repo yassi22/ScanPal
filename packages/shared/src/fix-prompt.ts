@@ -117,6 +117,10 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a security engineer. Remove the leaked secrets found by Gitleaks, rotate them, and move secrets out of source control.",
   "osv-scanner":
     "You are a security engineer. Upgrade or replace the vulnerable dependencies reported by OSV-Scanner.",
+  "client-deps-cve":
+    "You are a security engineer. Upgrade the vulnerable client-side JS libraries loaded via CDN to a non-vulnerable version, or bundle pinned versions locally; verify the advisory IDs in the evidence.",
+  "client-deps-runtime":
+    "You are a security engineer. Upgrade the vulnerable client-side JS libraries (version confirmed at runtime via window globals) to a non-vulnerable version, or bundle pinned versions locally; verify the advisory IDs in the evidence.",
   "repo-health":
     "You are a software engineer. Improve repository health by fixing the reported repo-level issues.",
   "sqli-probe":
@@ -141,6 +145,36 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a security engineer. Add signature verification to the webhook handlers.",
   "tenant-isolation":
     "You are a security engineer. Fix the cross-tenant data access issue found (enforce tenant scoping on every query).",
+  "hosting-security":
+    "You are a platform/security engineer. Hide the origin server behind the CDN (override the server header) and set cache-control: private on authenticated documents so session content does not leak via shared caches.",
+  "subdomain-takeover":
+    "You are a security engineer. Remove the dangling CNAME record for the affected subdomain, or re-claim the cloud resource endpoint it points to, so an attacker cannot take over the subdomain.",
+  "threat-intel":
+    "You are a security incident responder. Validate every reputation listing and measurement timestamp, remove malware/phishing or abusive behavior, rotate compromised credentials, then request review or delisting from the matching source: Spamhaus (https://check.spamhaus.org/), Google Search Console Security Issues (https://support.google.com/webmasters/answer/9044101), URLhaus (https://urlhaus.abuse.ch/contact/), VirusTotal false-positive contacts (https://docs.virustotal.com/docs/false-positive-contacts), and AbuseIPDB (https://www.abuseipdb.com/check/). Treat CDN/edge-IP listings as edge context until the origin is independently verified.",
+  "waf-resilience":
+    "You are a security engineer. Deploy a WAF/CDN in front of the origin and add explicit API rate-limiting (return 429 with Retry-After and rate-limit headers) on public endpoints so they resist abuse.",
+  "rate-limit-burst":
+    "You are a security engineer. Add server-side rate-limiting to the affected route (return 429 with Retry-After and rate-limit headers once the burst threshold is reached).",
+  "supabase-security":
+    "You are a security engineer. Enable Row Level Security on all Supabase tables (`ALTER TABLE <table> ENABLE ROW LEVEL SECURITY;`) and add policies that scope rows per authenticated user; never expose the service_role key in frontend code — keep it server-side only.",
+  "firebase-security":
+    "You are a security engineer. Secure your Firebase Realtime Database and Storage rules (`{ \"rules\": { \".read\": false, \".write\": false } }` as the default, then allow per authenticated user) so the database and buckets are not publicly readable.",
+  "convex-security":
+    "You are a security engineer. Add authentication to your Convex functions so public metadata endpoints do not expose callable functions without auth.",
+  "auth-transport":
+    "You are a security engineer. Serve all login/signup/reset pages only over HTTPS (redirect http to https) and set autocomplete=\"current-password\" on login password fields and autocomplete=\"new-password\" on signup/reset password fields.",
+  "auth-csrf":
+    "You are a security engineer. Add CSRF protection (synchronizer token or signed double-submit cookie) to every authentication form and reject state-changing requests without a valid token.",
+  "auth-user-enumeration":
+    "You are a security engineer. Make the password-reset response uniform regardless of whether the email exists (same status, body and timing) so the reset flow does not leak which accounts exist.",
+  "auth-rate-limit":
+    "You are a security engineer. Enforce rate-limiting and/or account lockout on the login endpoint so a short burst of failed attempts returns 429 (with Retry-After) or a temporary lockout.",
+  "auth-password-policy":
+    "You are a security engineer. Enforce a server-side password policy that rejects trivial passwords (e.g. 123456) via a minimum length and a breached-password check (HaveIBeenPwned).",
+  "auth-session-security":
+    "You are a security engineer. Set Secure; HttpOnly; SameSite=Lax on the session cookie and regenerate the session id immediately after a successful login to prevent session fixation.",
+  "auth-mfa":
+    "You are a security engineer. Offer and enforce multi-factor authentication (TOTP or passkeys) for sensitive accounts and prompt for MFA setup after login.",
 };
 
 export function fixPromptTemplateFor(checkId: string): string {

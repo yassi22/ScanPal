@@ -8,6 +8,7 @@ import {
   CheckCircle,
   GithubLogo,
   GlobeHemisphereWest,
+  Key,
   PencilSimple,
   Play,
   Plus,
@@ -20,8 +21,10 @@ import {
 import {
   addSiteInputSchema,
   detectGithubRepoFromUrl,
+  ownershipVerificationStatus,
   type SiteWithStatus,
 } from "@scanpal/shared";
+import { SiteAuthAccount } from "./site-auth-account";
 
 type Props = {
   sites: SiteWithStatus[];
@@ -115,6 +118,7 @@ export function SitesManager({
   const [editRepo, setEditRepo] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [activeTests, setActiveTests] = useState(false);
+  const [authPanelSiteId, setAuthPanelSiteId] = useState<string | null>(null);
 
   function runValidation(): FormErrors {
     const parsed = addSiteInputSchema.safeParse({
@@ -183,6 +187,31 @@ export function SitesManager({
     setFormError(null);
     setNotice(null);
     try {
+      // Plan 77: blokkeer de scan met een eigendom-hint wanneer activeTests
+      // aan staat maar domeineigendom niet geverifieerd is of er geen
+      // wegwerp-testaccount is. De server-kant gatet ook (skip + info-finding),
+      // maar deze hint voorkomt een nutteloze scan.
+      if (activeTests) {
+        const [ownRes, credRes] = await Promise.all([
+          fetch(`/api/sites/${site.id}/ownership`),
+          fetch(`/api/sites/${site.id}/auth-credentials`),
+        ]);
+        const own = ownRes.ok ? await ownRes.json().catch(() => null) : null;
+        const cred = credRes.ok ? await credRes.json().catch(() => null) : null;
+        const ownershipOk =
+          own && ownershipVerificationStatus(own.verified_at) === "verified";
+        const hasCreds = Boolean(cred?.has_credentials);
+        if (!ownershipOk || !hasCreds) {
+          setAuthPanelSiteId(site.id);
+          setFormError(
+            !ownershipOk
+              ? "Verifieer eerst domeineigendom voordat je de auth-flow-scanner draait."
+              : "Voeg een wegwerp-testaccount toe voordat je de auth-flow-scanner draait.",
+          );
+          return;
+        }
+      }
+
       const res = await fetch("/api/scans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -540,6 +569,11 @@ export function SitesManager({
                     <button type="button" onClick={() => scanSite(site)} disabled={busyId === site.id} className="site-scan-action">
                       <Play size={15} weight="fill" aria-hidden="true" /> {busyId === site.id ? "Starting…" : "Run scan"}
                     </button>
+                    {activeTestsEnabled && (
+                      <button type="button" onClick={() => setAuthPanelSiteId(authPanelSiteId === site.id ? null : site.id)} aria-label={`Auth test-account voor ${site.url}`} title="Auth-flow test-account">
+                        <Key size={17} aria-hidden="true" />
+                      </button>
+                    )}
                     <button type="button" onClick={() => editingId === site.id ? setEditingId(null) : startEdit(site)} aria-label={`Edit ${site.label ?? site.url}`}>
                       {editingId === site.id ? <X size={17} aria-hidden="true" /> : <PencilSimple size={17} aria-hidden="true" />}
                     </button>
@@ -549,6 +583,15 @@ export function SitesManager({
                       </button>
                     )}
                   </div>
+
+                  {activeTestsEnabled && (
+                    <SiteAuthAccount
+                      siteId={site.id}
+                      siteUrl={site.url}
+                      open={authPanelSiteId === site.id}
+                      onClose={() => setAuthPanelSiteId(null)}
+                    />
+                  )}
                 </article>
               );
             })}

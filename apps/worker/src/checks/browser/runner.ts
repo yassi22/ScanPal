@@ -1,4 +1,4 @@
-import type { CwvMetrics, ConsoleCapture, ResponsiveCapture, RenderCompareCapture } from "@scanpal/shared";
+import type { CwvMetrics, ConsoleCapture, ResponsiveCapture, RenderCompareCapture, StorageSnapshot, RuntimeDepsCapture, AuthFlowCapture, AuthCredentials } from "@scanpal/shared";
 
 /**
  * Features 41–45 — BrowserRunner interface (injectable, Playwright-default).
@@ -33,6 +33,21 @@ export type RenderRunResult =
   | { ok: true; capture: RenderCompareCapture }
   | { ok: false; error: string };
 
+/** Resultaat van een browser-storage-capture (plan 70). */
+export type StorageRunResult =
+  | { ok: true; snapshot: StorageSnapshot }
+  | { ok: false; error: string };
+
+/** Resultaat van een runtime-deps-capture (plan 71 v2): window-globals per lib. */
+export type ClientDepsRunResult =
+  | { ok: true; capture: RuntimeDepsCapture }
+  | { ok: false; error: string };
+
+/** Resultaat van een auth-flow-capture (plan 77): observaties voor 7 sub-checks. */
+export type AuthFlowRunResult =
+  | { ok: true; capture: AuthFlowCapture }
+  | { ok: false; error: string };
+
 export type BrowserRunner = {
   /** Draait één page-load en vangt CWV-metrics. */
   captureVitals(url: string): Promise<BrowserRunResult>;
@@ -44,4 +59,15 @@ export type BrowserRunner = {
   captureResponsive(url: string): Promise<ResponsiveRunResult>;
   /** Vergelijkt server-HTML (zonder JS) met de gerenderde DOM (feature 43). */
   captureRenderCompare(url: string): Promise<RenderRunResult>;
+  /** Leest localStorage/sessionStorage na page-load (plan 70, passief). */
+  captureStorage(url: string): Promise<StorageRunResult>;
+  /** Leest window-globals van bekende JS-libs na page-load (plan 71 v2, passief). */
+  captureClientDeps(url: string): Promise<ClientDepsRunResult>;
+  /**
+   * Auth-flow-capture (plan 77): ontdekt login/signup/reset-formulieren en
+   * voert de veilige actieve subset uit (reset-probe, begrensde login-burst,
+   * zwak-wachtwoord-validatie, sessie-observatie, MFA-signaal) met het eigen
+   * wegwerp-testaccount. Niet-destructief; raakt nooit een ander account.
+   */
+  captureAuthFlow(url: string, credentials: AuthCredentials): Promise<AuthFlowRunResult>;
 };

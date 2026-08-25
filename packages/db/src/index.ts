@@ -89,6 +89,9 @@ export type SiteRow = {
   uptime_enabled: boolean;
   scan_frequency: (typeof scanFrequencies)[number];
   next_scan_at: Date | null;
+  ownership_token: string | null;
+  ownership_verified_at: Date | null;
+  ownership_method: string | null;
   created_at: Date;
 };
 
@@ -291,4 +294,17 @@ export type WebhookDeliveryRow = {
   dedup_key: string;
   created_at: Date;
   delivered_at: Date | null;
+};
+
+/** Plan 77: encrypted wegwerp-testaccount per site (auth-flow scanner). */
+export type SiteAuthCredentialRow = {
+  id: string;
+  team_id: string;
+  workspace_id: string | null;
+  site_id: string;
+  login_url: string | null;
+  username: string;
+  password_encrypted: string;
+  created_at: Date;
+  updated_at: Date;
 };
