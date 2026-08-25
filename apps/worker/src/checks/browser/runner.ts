@@ -1,4 +1,6 @@
-import type { CwvMetrics, ConsoleCapture, ResponsiveCapture, RenderCompareCapture, StorageSnapshot, RuntimeDepsCapture, AuthFlowCapture, AuthCredentials } from "@scanpal/shared";
+import type { CwvMetrics, ConsoleCapture, ResponsiveCapture, RenderCompareCapture, StorageSnapshot, RuntimeDepsCapture, AuthFlowCapture, AuthCredentials, UploadFlowRunResult } from "@scanpal/shared";
+
+export type { UploadFlowRunResult } from "@scanpal/shared";
 
 /**
  * Features 41–45 — BrowserRunner interface (injectable, Playwright-default).
@@ -70,4 +72,11 @@ export type BrowserRunner = {
    * wegwerp-testaccount. Niet-destructief; raakt nooit een ander account.
    */
   captureAuthFlow(url: string, credentials: AuthCredentials): Promise<AuthFlowRunResult>;
+  /**
+   * Upload-flow-capture (plan 78): ontdekt publieke en, met optionele
+   * credentials, afgeschermde upload-formulieren. Uploadt uitsluitend inerte
+   * canaries; path-traversal wordt alleen via de multipart-bestandsnaam
+   * geobserveerd en nooit op het worker-bestandssysteem uitgevoerd.
+   */
+  captureUploadFlow(url: string, credentials: AuthCredentials | null): Promise<UploadFlowRunResult>;
 };

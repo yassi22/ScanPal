@@ -13,6 +13,7 @@ const mockRunner: BrowserRunner = {
   captureStorage: () => Promise.resolve({ ok: false, error: "mock" }),
   captureClientDeps: () => Promise.resolve({ ok: false, error: "mock" }),
   captureAuthFlow: () => Promise.resolve({ ok: false, error: "mock" }),
+  captureUploadFlow: () => Promise.resolve({ ok: false, error: "mock" }),
 };
 
 describe("skeletonTotals (progress-skelet)", () => {
