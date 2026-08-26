@@ -189,7 +189,9 @@ export function createScanProcessor(
   options: { routeConcurrency?: number; authCredentialKey?: string } = {},
 ) {
   const routeConcurrency = options.routeConcurrency ?? 1;
-  const hasAuthFlow = impls.some((impl) => impl.id === "auth-flow");
+  const hasGatedActiveTest = impls.some(
+    (impl) => impl.id === "auth-flow" || impl.id === "upload-scan",
+  );
 
   return async function processScanJob(job: { data: ScanJobData }): Promise<void> {
     const { scanId } = job.data;
@@ -207,7 +209,8 @@ export function createScanProcessor(
     const activeImpls = impls.filter(
       (impl) =>
         !(impl.id === "active-tests" && !scan.active_tests) &&
-        !(impl.id === "auth-flow" && !scan.active_tests),
+        !(impl.id === "auth-flow" && !scan.active_tests) &&
+        !(impl.id === "upload-scan" && !scan.active_tests),
     );
     const perRouteImpls = activeImpls.filter((impl) => PER_ROUTE_IMPL_IDS.has(impl.id));
 
@@ -215,14 +218,15 @@ export function createScanProcessor(
     // per-route impls. Zijn er geen per-route impls, dan blijft het bij de seed.
     const routesToProcess = perRouteImpls.length > 0 ? routes : routes.slice(0, 1);
 
-    // Plan 77: driedubbele gating — live domeineigendom + wegwerp-testaccount.
-    // Alleen berekend wanneer een auth-flow-impl meedraait + activeTests aan staat,
-    // zodat de http/github-queue dit werk niet onnodig doen. De auth-flow-check
-    // zelf interpreteert `ownershipVerified === false` / `!authCredentials` als
-    // skip + info-finding (geen fout, geen 500).
+    // Plan 77/78: actieve browserchecks krijgen live domeineigendom en, indien
+    // beschikbaar, het wegwerp-testaccount. Alleen berekend wanneer auth-flow
+    // of upload-scan meedraait + activeTests aan staat, zodat andere queues dit
+    // werk niet onnodig doen. Ownership is voor beide een harde gate; credentials
+    // zijn voor upload-scan optioneel omdat publieke formulieren zonder account
+    // meetbaar blijven. Een ontbrekende gate wordt een info-finding, geen fout.
     let ownershipVerified: boolean | undefined;
     let authCredentials: AuthCredentials | null | undefined;
-    if (hasAuthFlow && scan.active_tests) {
+    if (hasGatedActiveTest && scan.active_tests) {
       // Systeem-context: scope op team + (globaal-unieke) site_id, GEEN
       // workspace-scope. scan.workspace_id is NULL voor niet-workspace-sites en
       // `workspace_id = NULL` matcht in SQL nooit — dat zou de ownership-gate
@@ -262,7 +266,7 @@ export function createScanProcessor(
       githubRepo: scan.github_repo,
       activeTests: scan.active_tests,
       rateLimit,
-      siteId: hasAuthFlow && scan.active_tests ? scan.site_id : undefined,
+      siteId: hasGatedActiveTest && scan.active_tests ? scan.site_id : undefined,
       ownershipVerified,
       authCredentials,
     };

@@ -39,20 +39,20 @@ export type CheckContext = {
    */
   fetchPage?: PageFetcher;
   /**
-   * Plan 77: site-id (voor ownership/credential-lookup). Alleen gezet door de
-   * scan-worker wanneer een auth-flow-impl aanwezig is + activeTests aan staat.
+   * Plan 77/78: site-id (voor ownership/credential-lookup). Alleen gezet door
+   * de scan-worker wanneer auth-flow/upload-scan aanwezig is + activeTests aan.
    */
   siteId?: string;
   /**
    * Plan 77: live domeineigendom geverifieerd op moment van dispatch
-   * (`verifyOwnershipLive`). `false` → auth-flow slaat over met info-finding.
-   * `undefined` → niet gecontroleerd (geen auth-flow-impl in deze run).
+   * (`verifyOwnershipLive`). `false` → actieve browsercheck slaat over met een
+   * info-finding. `undefined` → niet gecontroleerd in deze run.
    */
   ownershipVerified?: boolean;
   /**
-   * Plan 77: gedecrypteerd wegwerp-testaccount voor de auth-flow. `null` →
-   * geen account → auth-flow slaat over met info-finding. Alleen gezet door de
-   * scan-worker; nooit in logs/DB opslaan (alleen in-memory in de worker).
+   * Plan 77/78: gedecrypteerd wegwerp-testaccount. `null` laat auth-flow
+   * overslaan, maar upload-scan test nog publieke formulieren. Alleen in-memory
+   * in de worker; nooit in logs/DB opslaan.
    */
   authCredentials?: AuthCredentials | null;
 };

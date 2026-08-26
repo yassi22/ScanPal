@@ -138,6 +138,16 @@ export const checkCatalog: CheckCatalogEntry[] = [
   { id: "auth-password-policy", category: "http", name: "Wachtwoord-policy bij signup/reset", active: true },
   { id: "auth-session-security", category: "http", name: "Sessie-cookie-beveiliging & session-fixation", active: true },
   { id: "auth-mfa", category: "http", name: "Multi-factor authenticatie", active: true },
+  // Plan 78: file-upload security scanner (G10) — curated canary-uploads naar
+  // ontdekte upload-formulieren (extensie/content-type-mismatch, double
+  // extension, content-type sniffing, groottelimiet, path-traversal). Eén
+  // implementatie (browser-queue, Playwright) produceert de vijf
+  // upload-*-ids; findings `active: true` (niet in de score).
+  { id: "upload-unrestricted-type", category: "http", name: "Onbeperkte bestandstypes bij upload", active: true },
+  { id: "upload-executable", category: "http", name: "Uitvoerbare upload (RCE-klasse)", active: true },
+  { id: "upload-content-sniff", category: "http", name: "Content-type sniffing bij upload", active: true },
+  { id: "upload-size-limit", category: "http", name: "Ontbrekende upload-groottelimiet", active: true },
+  { id: "upload-path-traversal", category: "http", name: "Path-traversal in bestandsnaam", active: true },
   // Plan 74: BaaS-security (Supabase/Firebase/Convex) — passieve black-box
   // detectie van BaaS-misconfiguraties (open Realtime DB/Storage, PostgREST-
   // schema-lek, open Convex-functies). Eén implementatie, drie catalog-entries.

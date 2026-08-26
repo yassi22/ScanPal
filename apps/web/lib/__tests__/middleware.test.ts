@@ -42,4 +42,9 @@ describe("middleware (auth-middleware)", () => {
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toContain("/login");
   });
+
+  it("laat de publieke pricing-pagina zonder sessie door", async () => {
+    const res = await middleware(req("/pricing?checkout=canceled"));
+    expect(res.headers.get("location")).toBeNull();
+  });
 });

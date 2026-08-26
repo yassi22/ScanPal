@@ -26,6 +26,7 @@ function makeRunner(result: RenderRunResult): BrowserRunner {
     captureStorage: vi.fn().mockResolvedValue({ ok: false, error: "unused" }),
     captureClientDeps: vi.fn().mockResolvedValue({ ok: false, error: "unused" }),
     captureAuthFlow: vi.fn().mockResolvedValue({ ok: false, error: "unused" }),
+    captureUploadFlow: vi.fn().mockResolvedValue({ ok: false, error: "unused" }),
   };
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ArrowRight, Check, Minus } from "@phosphor-icons/react";
 import type { PlanId, PublicPlan, SubscriptionInterval } from "@scanpal/shared";
 
 type UsageState = {
@@ -10,8 +11,23 @@ type UsageState = {
 
 function formatPrice(priceCents: number): string {
   if (priceCents === 0) return "€0";
-  return `€${(priceCents / 100).toFixed(priceCents % 100 === 0 ? 0 : 2)}`;
+  return new Intl.NumberFormat("nl-NL", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: priceCents % 100 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(priceCents / 100);
 }
+
+function formatInteger(value: number): string {
+  return new Intl.NumberFormat("nl-NL").format(value);
+}
+
+const planDescriptions: Record<PlanId, string> = {
+  free: "Voor een eerste indruk en incidentele scans.",
+  pro: "Voor websites die doorlopend bewaakt en verbeterd worden.",
+  max: "Voor kleine teams met meer volume en white-label rapporten.",
+};
 
 export function PricingCards({
   plans,
@@ -23,6 +39,7 @@ export function PricingCards({
   const [usage, setUsage] = useState<UsageState>(null);
   const [busy, setBusy] = useState<PlanId | null>(null);
   const [interval, setInterval] = useState<SubscriptionInterval>("month");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!signedIn) return;
@@ -34,6 +51,7 @@ export function PricingCards({
 
   async function checkout(planId: PlanId) {
     setBusy(planId);
+    setError(null);
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
@@ -44,47 +62,47 @@ export function PricingCards({
       if (!res.ok) throw new Error(data?.error ?? "Checkout starten mislukt");
       window.location.assign(data.url);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Checkout starten mislukt");
+      setError(err instanceof Error ? err.message : "Checkout starten mislukt");
     } finally {
       setBusy(null);
     }
   }
 
   return (
-    <div>
-      <div className="mb-8 flex items-center justify-center gap-3 text-sm">
-        <span
-          className={interval === "month" ? "font-semibold text-slate-100" : "text-slate-500"}
-        >
-          Maandelijks
-        </span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={interval === "year"}
-          onClick={() => setInterval(interval === "month" ? "year" : "month")}
-          className="relative h-6 w-11 rounded-full border border-slate-700 bg-slate-800 transition"
-        >
-          <span
-            className={`absolute top-0.5 h-5 w-5 rounded-full bg-brand transition-all ${
-              interval === "year" ? "left-[22px]" : "left-0.5"
-            }`}
-          />
-        </button>
-        <span
-          className={interval === "year" ? "font-semibold text-slate-100" : "text-slate-500"}
-        >
-          Jaarlijks
-          <span className="ml-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
-            2 maanden gratis
-          </span>
-        </span>
+    <div className="pricing-plans">
+      <div className="pricing-controls">
+        <div className="pricing-interval" aria-label="Facturatieperiode">
+          <button
+            type="button"
+            className={interval === "month" ? "is-active" : ""}
+            aria-pressed={interval === "month"}
+            onClick={() => setInterval("month")}
+          >
+            Maandelijks
+          </button>
+          <button
+            type="button"
+            className={interval === "year" ? "is-active" : ""}
+            aria-pressed={interval === "year"}
+            onClick={() => setInterval("year")}
+          >
+            Jaarlijks
+          </button>
+        </div>
+        <span className="pricing-saving">2 maanden gratis bij jaarbetaling</span>
       </div>
-      <p className="mb-8 text-center text-xs text-slate-500">
+
+      <p className="pricing-tax-note">
         Prijzen exclusief btw — btw wordt toegevoegd op de factuur.
       </p>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      {error && (
+        <p className="pricing-error" role="alert">
+          {error} Probeer het opnieuw of kies een ander plan.
+        </p>
+      )}
+
+      <div className="pricing-plan-grid">
         {plans.map((plan) => {
           const isCurrent = usage?.plan?.id === plan.id;
           const isFeatured = plan.id === "max";
@@ -92,102 +110,119 @@ export function PricingCards({
             interval === "year" && plan.annualPriceCents
               ? plan.annualPriceCents
               : plan.priceCents;
-          return (
-            <div
-              key={plan.id}
-              className={`flex flex-col rounded-2xl border p-8 ${
-                isFeatured
-                  ? "border-brand/40 bg-brand/5"
-                  : "border-slate-800 bg-slate-900/50"
-              }`}
-            >
-              <h2 className="text-lg font-semibold">{plan.name}</h2>
-              <p className="mt-3 text-4xl font-bold">
-                {formatPrice(priceCents)}
-                <span className="text-base font-normal text-slate-400">
-                  {plan.priceCents === 0
-                    ? ""
-                    : interval === "year"
-                      ? "/jaar"
-                      : "/maand"}
-                </span>
-              </p>
-              {plan.annualPriceCents && interval === "year" && (
-                <p className="mt-1 text-xs text-emerald-400">
-                  {formatPrice(plan.priceCents)}/maand bij jaarbetaling
-                </p>
-              )}
+          const monthlyEquivalent =
+            interval === "year" && plan.annualPriceCents
+              ? plan.annualPriceCents / 12
+              : null;
 
-              <ul className="mt-6 space-y-2 text-sm text-slate-300">
-                <li className="flex items-center gap-2">
-                  <span className="text-brand">✓</span>
-                  {plan.creditsPerPeriod} scans per{" "}
-                  {plan.priceCents === 0 || interval === "month" ? "maand" : "jaar"}
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-brand">✓</span>
-                  {plan.features.seats !== null
-                    ? `${plan.features.seats} betaalde seats`
-                    : `Maximaal ${plan.maxMembers} teamleden`}
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className={plan.features.uptime ? "text-brand" : "text-slate-600"}>
-                    {plan.features.uptime ? "✓" : "✕"}
-                  </span>
-                  Uptime monitoring
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className={plan.features.github ? "text-brand" : "text-slate-600"}>
-                    {plan.features.github ? "✓" : "✕"}
-                  </span>
-                  GitHub-reposcans
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className={plan.features.white_label ? "text-brand" : "text-slate-600"}>
-                    {plan.features.white_label ? "✓" : "✕"}
-                  </span>
-                  White-label branding
-                </li>
+          const features = [
+            {
+              included: true,
+              label: `${formatInteger(plan.creditsPerPeriod)} scans per ${
+                plan.priceCents === 0 || interval === "month" ? "maand" : "jaar"
+              }`,
+            },
+            {
+              included: true,
+              label:
+                plan.features.seats !== null
+                  ? `${plan.features.seats} betaalde seats`
+                  : `Maximaal ${plan.maxMembers} teamleden`,
+            },
+            { included: plan.features.uptime, label: "Uptime monitoring" },
+            { included: plan.features.github, label: "GitHub-reposcans" },
+            { included: plan.features.white_label, label: "White-label branding" },
+          ];
+
+          return (
+            <article
+              key={plan.id}
+              className={`pricing-plan${isFeatured ? " is-featured" : ""}`}
+            >
+              <div className="pricing-plan-head">
+                <div className="pricing-plan-name-row">
+                  <h2>{plan.name}</h2>
+                  {isFeatured && <span>Meest compleet</span>}
+                </div>
+                <p>{planDescriptions[plan.id]}</p>
+              </div>
+
+              <div className="pricing-price-block">
+                <p className="pricing-price">
+                  <span>{formatPrice(priceCents)}</span>
+                  {plan.priceCents !== 0 && (
+                    <span className="pricing-price-period">
+                      /{interval === "year" ? "jaar" : "maand"}
+                    </span>
+                  )}
+                </p>
+                <div className="pricing-price-context">
+                  {monthlyEquivalent !== null ? (
+                    <span>{formatPrice(monthlyEquivalent)} per maand</span>
+                  ) : plan.priceCents === 0 ? (
+                    <span>Geen betaalgegevens nodig</span>
+                  ) : (
+                    <span>Maandelijks opzegbaar</span>
+                  )}
+                </div>
+              </div>
+
+              <ul className="pricing-feature-list">
+                {features.map((feature) => {
+                  const FeatureIcon = feature.included ? Check : Minus;
+                  return (
+                    <li
+                      key={feature.label}
+                      className={feature.included ? "" : "is-muted"}
+                    >
+                      <FeatureIcon size={17} weight="bold" aria-hidden="true" />
+                      <span>
+                        {!feature.included && (
+                          <span className="sr-only">Niet inbegrepen: </span>
+                        )}
+                        {feature.label}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
 
-              <div className="mt-8 flex-1" />
-
-              {isCurrent ? (
-                <Link
-                  href="/billing"
-                  className="rounded-lg border border-slate-700 px-4 py-3 text-center text-sm font-semibold transition hover:border-slate-500"
-                >
-                  Huidig plan — beheren
-                </Link>
-              ) : !signedIn ? (
-                <Link
-                  href="/register"
-                  className={`rounded-lg px-4 py-3 text-center text-sm font-semibold transition ${
-                    isFeatured
-                      ? "bg-brand text-slate-950 hover:bg-brand/90"
-                      : "border border-slate-700 hover:border-slate-500"
-                  }`}
-                >
-                  {plan.id === "free" ? "Start gratis" : "Aanmelden en upgraden"}
-                </Link>
-              ) : plan.id === "free" ? (
-                <Link
-                  href="/dashboard"
-                  className="rounded-lg border border-slate-700 px-4 py-3 text-center text-sm font-semibold transition hover:border-slate-500"
-                >
-                  Naar dashboard
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  disabled={busy !== null}
-                  onClick={() => checkout(plan.id)}
-                  className="rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-brand/90 disabled:opacity-50"
-                >
-                  {busy === plan.id ? "Bezig…" : `Upgrade naar ${plan.name}`}
-                </button>
-              )}
-            </div>
+              <div className="pricing-plan-action">
+                {isCurrent ? (
+                  <Link href="/billing" className="pricing-button is-secondary">
+                    Huidig plan — beheren
+                    <ArrowRight size={16} weight="bold" aria-hidden="true" />
+                  </Link>
+                ) : !signedIn ? (
+                  <Link
+                    href="/register"
+                    className={`pricing-button${isFeatured ? " is-primary" : " is-secondary"}`}
+                  >
+                    {plan.id === "free" ? "Start gratis" : "Aanmelden en upgraden"}
+                    <ArrowRight size={16} weight="bold" aria-hidden="true" />
+                  </Link>
+                ) : plan.id === "free" ? (
+                  <Link href="/dashboard" className="pricing-button is-secondary">
+                    Naar dashboard
+                    <ArrowRight size={16} weight="bold" aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => checkout(plan.id)}
+                    className="pricing-button is-primary"
+                  >
+                    {busy === plan.id
+                      ? "Checkout openen…"
+                      : `Upgrade naar ${plan.name}`}
+                    {busy !== plan.id && (
+                      <ArrowRight size={16} weight="bold" aria-hidden="true" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </article>
           );
         })}
       </div>

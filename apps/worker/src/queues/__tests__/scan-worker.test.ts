@@ -7,18 +7,27 @@ vi.mock("@scanpal/scan-core", async (importOriginal) => {
     ...actual,
     advanceCategoryProgress: vi.fn(),
     getScanRoutes: vi.fn().mockResolvedValue([]),
+    verifyOwnershipLive: vi.fn().mockResolvedValue(true),
+    loadAuthCredentials: vi.fn().mockResolvedValue(null),
     setRouteHttpStatus: vi.fn().mockResolvedValue(undefined),
   };
 });
 
 import { createScanProcessor } from "../scan-worker";
-import { advanceCategoryProgress, getScanRoutes } from "@scanpal/scan-core";
+import {
+  advanceCategoryProgress,
+  getScanRoutes,
+  loadAuthCredentials,
+  verifyOwnershipLive,
+} from "@scanpal/scan-core";
 import type { ImplementedCheck } from "../../checks/registry";
 import type { RateLimiter } from "../../rate-limit";
 import { fetchPage } from "../../checks/types";
 
 const mockedAdvance = vi.mocked(advanceCategoryProgress);
 const mockedGetRoutes = vi.mocked(getScanRoutes);
+const mockedLoadCredentials = vi.mocked(loadAuthCredentials);
+const mockedVerifyOwnership = vi.mocked(verifyOwnershipLive);
 
 function fakeResponse(status: number): Response {
   return new Response("", { status });
@@ -70,6 +79,73 @@ describe("createScanProcessor (sub-job consumer, plan 54 route-bewust)", () => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(fakeResponse(200)));
     mockedGetRoutes.mockResolvedValue([]);
+    mockedVerifyOwnership.mockResolvedValue(true);
+    mockedLoadCredentials.mockResolvedValue(null);
+  });
+
+  it("injecteert live ownership en null credentials voor upload-scan", async () => {
+    const scan = {
+      id: "scan-upload",
+      status: "running",
+      site_id: "site-1",
+      site_url: "example.com",
+      team_id: "team-1",
+      workspace_id: null,
+      active_tests: true,
+      github_repo: null,
+    };
+    const { db } = fakeDb(scan);
+    const run = vi.fn().mockResolvedValue([]);
+    const impl: ImplementedCheck = {
+      id: "upload-scan",
+      category: "http",
+      outputCheckIds: ["upload-unrestricted-type"],
+      siteLevel: true,
+      run,
+    };
+
+    const processor = createScanProcessor(db, [impl], rateLimit, {
+      authCredentialKey: "test-key",
+    });
+    await processor({ data: { scanId: "scan-upload" } });
+
+    expect(mockedVerifyOwnership).toHaveBeenCalledWith("site-1", {
+      db,
+      teamId: "team-1",
+    });
+    expect(mockedLoadCredentials).toHaveBeenCalled();
+    expect(run).toHaveBeenCalledWith(expect.objectContaining({
+      siteId: "site-1",
+      ownershipVerified: true,
+      authCredentials: null,
+    }));
+  });
+
+  it("filtert upload-scan volledig uit wanneer active_tests uit staat", async () => {
+    const scan = {
+      id: "scan-upload-off",
+      status: "running",
+      site_id: "site-1",
+      site_url: "example.com",
+      team_id: "team-1",
+      workspace_id: null,
+      active_tests: false,
+      github_repo: null,
+    };
+    const { db } = fakeDb(scan);
+    const run = vi.fn().mockResolvedValue([]);
+    const impl: ImplementedCheck = {
+      id: "upload-scan",
+      category: "http",
+      outputCheckIds: ["upload-unrestricted-type"],
+      siteLevel: true,
+      run,
+    };
+
+    await createScanProcessor(db, [impl], rateLimit)({ data: { scanId: "scan-upload-off" } });
+
+    expect(run).not.toHaveBeenCalled();
+    expect(mockedVerifyOwnership).not.toHaveBeenCalled();
   });
 
   it("voert een homepage-only check uit, schrijft een checks-rij en schuift progress op", async () => {

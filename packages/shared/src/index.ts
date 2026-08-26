@@ -107,6 +107,7 @@ export * from "./plans";
 export * from "./api-keys";
 export * from "./active-tests";
 export * from "./auth-flow";
+export * from "./file-upload";
 export * from "./bundle-secrets";
 export * from "./browser-storage";
 export * from "./severity";

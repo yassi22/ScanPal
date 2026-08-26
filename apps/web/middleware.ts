@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PUBLIC_PATHS = ["/login", "/register"];
+const AUTH_PATHS = ["/login", "/register"];
+const PUBLIC_PATHS = [...AUTH_PATHS, "/pricing"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -61,7 +62,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && isPublic && !isInvite) {
+  if (user && AUTH_PATHS.includes(pathname) && !isInvite) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
     redirectUrl.search = "";

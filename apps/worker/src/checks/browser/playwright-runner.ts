@@ -10,8 +10,9 @@ import type {
   StorageRunResult,
   ClientDepsRunResult,
   AuthFlowRunResult,
+  UploadFlowRunResult,
 } from "./runner";
-import { parseConsoleMessages, parseRequestFailures, extractServerProbe, parseRenderProbe, CSRF_TOKEN_NAMES, AUTH_RATE_LIMIT_MAX_ATTEMPTS, isSessionCookie } from "@scanpal/shared";
+import { parseConsoleMessages, parseRequestFailures, extractServerProbe, parseRenderProbe, CSRF_TOKEN_NAMES, AUTH_RATE_LIMIT_MAX_ATTEMPTS, isSessionCookie, UPLOAD_PROBES, buildProbeBody, makeCanaryToken, outputDiffersFromSource } from "@scanpal/shared";
 import type {
   CwvMetrics,
   ConsoleCapture,
@@ -27,7 +28,12 @@ import type {
   AuthCredentials,
   AuthSessionCapture,
   AuthSessionCookie,
+  UploadFlowCapture,
+  UploadFormCapture,
+  UploadProbe,
+  UploadProbeResult,
 } from "@scanpal/shared";
+import { hasUnsanitizedTraversalEvidence, isSameOriginUrl } from "./upload-safety";
 
 /**
  * Playwright-default BrowserRunner (feature 41). Lanceert een headless Chromium
@@ -42,6 +48,9 @@ import type {
 // ── Plan 77: auth-flow-capture helpers ──────────────────────────────────────
 
 const BODY_TRUNCATE = 2048;
+const UPLOAD_WAIT_MS = 8_000;
+const MAX_UPLOAD_FORMS = 4;
+const COMMON_UPLOAD_PATHS = ["/upload", "/profile", "/settings", "/account"] as const;
 const COMMON_AUTH_PATHS: { kind: AuthFormKind; paths: string[] }[] = [
   { kind: "login", paths: ["/login", "/signin", "/sign-in", "/account/login", "/auth/login", "/users/sign_in"] },
   { kind: "signup", paths: ["/signup", "/sign-up", "/register", "/registration", "/account/register", "/auth/signup", "/users/sign_up"] },
@@ -50,6 +59,234 @@ const COMMON_AUTH_PATHS: { kind: AuthFormKind; paths: string[] }[] = [
 
 function truncateBody(body: string): string {
   return body.length > BODY_TRUNCATE ? body.slice(0, BODY_TRUNCATE) + "…" : body;
+}
+
+type DiscoveredUploadForm = UploadFormCapture & { form_index: number; form_action: string };
+
+async function installUploadOriginGuard(page: import("playwright").Page, verifiedUrl: string): Promise<void> {
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    const crossOriginNavigation = request.isNavigationRequest() && !isSameOriginUrl(request.url(), verifiedUrl);
+    const crossOriginWrite = request.method() !== "GET" && !isSameOriginUrl(request.url(), verifiedUrl);
+    if (crossOriginNavigation || crossOriginWrite) {
+      await route.abort("blockedbyclient");
+      return;
+    }
+    await route.continue();
+  });
+}
+
+async function captureUploadForms(
+  page: import("playwright").Page,
+  url: string,
+  behindLogin: boolean,
+  verifiedUrl: string,
+): Promise<DiscoveredUploadForm[]> {
+  try {
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+    const actualUrl = page.url();
+    if (!isSameOriginUrl(actualUrl, verifiedUrl)) return [];
+    const forms = (await page.evaluate(
+      `() => Array.from(document.querySelectorAll("form")).map((form, index) => {
+        const input = form.querySelector("input[type='file']");
+        if (!input) return null;
+        return { form_index: index, accept_attribute: input.getAttribute("accept"), form_action: form.action };
+      }).filter(Boolean)`,
+    )) as { form_index: number; accept_attribute: string | null; form_action: string }[];
+    return forms.filter((form) => isSameOriginUrl(form.form_action, verifiedUrl)).map((form) => ({
+      url: actualUrl,
+      https: actualUrl.startsWith("https://"),
+      behind_login: behindLogin,
+      accept_attribute: form.accept_attribute,
+      form_index: form.form_index,
+      form_action: form.form_action,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function discoverUploadForms(
+  page: import("playwright").Page,
+  baseUrl: string,
+  behindLogin: boolean,
+): Promise<DiscoveredUploadForm[]> {
+  const origin = new URL(baseUrl).origin;
+  const candidates = [baseUrl, ...COMMON_UPLOAD_PATHS.map((path) => `${origin}${path}`)];
+  const found: DiscoveredUploadForm[] = [];
+  for (const candidate of candidates) {
+    const forms = await captureUploadForms(page, candidate, behindLogin, baseUrl);
+    for (const form of forms) {
+      const key = `${form.url}#${form.form_index}`;
+      if (!found.some((existing) => `${existing.url}#${existing.form_index}` === key)) found.push(form);
+    }
+  }
+  return found;
+}
+
+async function loginForUploadDiscovery(
+  page: import("playwright").Page,
+  baseUrl: string,
+  credentials: AuthCredentials,
+): Promise<boolean> {
+  try {
+    await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 20_000 });
+    const urls = await discoverAuthUrls(page, baseUrl);
+    const loginUrl = credentials.login_url ?? urls.login;
+    if (!loginUrl || !isSameOriginUrl(loginUrl, baseUrl)) return false;
+    await page.goto(loginUrl, { waitUntil: "domcontentloaded", timeout: 20_000 });
+    if (!isSameOriginUrl(page.url(), baseUrl)) return false;
+    const loginAction = (await page.evaluate(
+      `() => { const form = document.querySelector("form:has(input[type='password'])"); return form ? form.action : null; }`,
+    )) as string | null;
+    if (!loginAction || !isSameOriginUrl(loginAction, baseUrl)) return false;
+    const response = await fillAndSubmit(page, [
+      { selector: "input[type='email'], input[name*='email' i], input[name*='user' i], input[name*='login' i], input[type='text']", value: credentials.username },
+      { selector: "input[type='password']", value: credentials.password },
+    ]);
+    await page.waitForTimeout(750).catch(() => {});
+    return response.status > 0 && response.status < 400 && isSameOriginUrl(page.url(), baseUrl);
+  } catch {
+    return false;
+  }
+}
+
+function findStoredUrl(value: unknown, baseUrl: string, filename: string, token: string): string | null {
+  const candidates: string[] = [];
+  const visit = (item: unknown, depth: number): void => {
+    if (depth > 4) return;
+    if (typeof item === "string") {
+      candidates.push(item);
+      for (const match of item.matchAll(/https?:\/\/[^\s"'<>]+|\/[A-Za-z0-9_./%?=&-]+/g)) candidates.push(match[0]);
+      return;
+    }
+    if (Array.isArray(item)) {
+      for (const child of item.slice(0, 20)) visit(child, depth + 1);
+      return;
+    }
+    if (item && typeof item === "object") {
+      for (const child of Object.values(item).slice(0, 30)) visit(child, depth + 1);
+    }
+  };
+  visit(value, 0);
+  for (const candidate of candidates) {
+    if (!candidate.includes(filename.replace("../", "")) && !candidate.includes(token)) continue;
+    try {
+      const parsed = new URL(candidate, baseUrl);
+      if (parsed.origin === new URL(baseUrl).origin) return parsed.toString();
+    } catch {
+      // ignore malformed candidates
+    }
+  }
+  return null;
+}
+
+async function uploadProbe(
+  page: import("playwright").Page,
+  form: DiscoveredUploadForm,
+  probe: UploadProbe,
+): Promise<{ result: UploadProbeResult; cleaned: boolean; leftover: string | null; error: string | null }> {
+  const token = makeCanaryToken();
+  const source = buildProbeBody(probe, token);
+  let status = 0;
+  let accepted = false;
+  let storedUrl: string | null = null;
+  let retrievedBody = "";
+  let retrieved = false;
+  let cleaned = false;
+  let uploadEvidence = false;
+  let traversalEvidence = false;
+  let error: string | null = null;
+  try {
+    await page.goto(form.url, { waitUntil: "domcontentloaded", timeout: 20_000 });
+    if (!isSameOriginUrl(page.url(), form.url)) throw new Error("cross-origin redirect vóór upload geweigerd");
+    const targetForm = page.locator("form").nth(form.form_index);
+    const currentAction = await targetForm.getAttribute("action");
+    if (!isSameOriginUrl(currentAction ?? page.url(), form.url)) throw new Error("cross-origin upload-action geweigerd");
+    const input = targetForm.locator("input[type='file']").first();
+    await input.setInputFiles({ name: probe.filename, mimeType: probe.content_type, buffer: Buffer.from(source) });
+    const responsePromise = page
+      .waitForResponse((response) => response.request().method() !== "GET", { timeout: UPLOAD_WAIT_MS })
+      .catch(() => null);
+    const navigationPromise = page.waitForNavigation({ timeout: UPLOAD_WAIT_MS }).catch(() => null);
+    const submit = targetForm.locator("button[type='submit'], input[type='submit'], button:not([type])").first();
+    if ((await submit.count()) === 0) throw new Error("submit-control niet gevonden");
+    await submit.click({ timeout: UPLOAD_WAIT_MS });
+    const response = await Promise.race([responsePromise, navigationPromise]);
+    status = response?.status() ?? 0;
+    if (response) {
+      const location = response.headers()["location"];
+      if (location) {
+        storedUrl = findStoredUrl(location, form.url, probe.filename, token);
+        if (probe.id === "upload-path-traversal") {
+          traversalEvidence ||= hasUnsanitizedTraversalEvidence(location);
+        }
+      }
+      const responseBody = truncateBody(await response.text().catch(() => ""));
+      uploadEvidence ||= responseBody.includes(token) || responseBody.includes(probe.filename.replace("../", ""));
+      if (probe.id === "upload-path-traversal") {
+        traversalEvidence ||= hasUnsanitizedTraversalEvidence(responseBody);
+      }
+      if (!storedUrl) {
+        try {
+          storedUrl = findStoredUrl(JSON.parse(responseBody), form.url, probe.filename, token);
+        } catch {
+          storedUrl = findStoredUrl(responseBody, form.url, probe.filename, token);
+        }
+      }
+    }
+    if (!storedUrl) {
+      const domCandidates = (await page.evaluate(
+        `() => Array.from(document.querySelectorAll("a[href], img[src], source[src]"))
+          .map((el) => el.getAttribute("href") || el.getAttribute("src") || "")`,
+      ).catch(() => [])) as string[];
+      storedUrl = findStoredUrl(domCandidates, page.url(), probe.filename, token);
+      if (probe.id === "upload-path-traversal") {
+        traversalEvidence ||= domCandidates.some(hasUnsanitizedTraversalEvidence);
+      }
+    }
+    if (probe.id === "upload-path-traversal" && storedUrl) {
+      traversalEvidence ||= hasUnsanitizedTraversalEvidence(storedUrl);
+    }
+    accepted =
+      status >= 200 &&
+      status < 400 &&
+      (uploadEvidence || storedUrl !== null) &&
+      (probe.id !== "upload-path-traversal" || traversalEvidence);
+    if (storedUrl) {
+      const retrievedResponse = await page.context().request.get(storedUrl, { timeout: UPLOAD_WAIT_MS, maxRedirects: 0 }).catch(() => null);
+      if (retrievedResponse && retrievedResponse.ok()) {
+        retrieved = true;
+        retrievedBody = truncateBody(await retrievedResponse.text().catch(() => ""));
+      }
+      const deleteControl = page.locator(
+        `a[href*="${token}"][href*="delete" i], a[href*="${token}"][href*="remove" i], form[action*="${token}"][action*="delete" i] button, form[action*="${token}"][action*="remove" i] button`,
+      ).first();
+      if ((await deleteControl.count()) > 0) {
+        await deleteControl.click({ timeout: UPLOAD_WAIT_MS }).then(() => { cleaned = true; }).catch(() => {});
+      }
+    }
+  } catch (err) {
+    // Een mislukte probe blijft een begrensde observatie; volgende probes lopen door.
+    error = err instanceof Error ? err.message : String(err);
+  }
+  return {
+    result: {
+      probe_id: probe.id,
+      filename: probe.filename,
+      content_type: probe.content_type,
+      active_type: probe.active_type,
+      accepted,
+      stored_url: storedUrl,
+      retrieved,
+      executed: retrieved && outputDiffersFromSource(source, retrievedBody, token),
+      retrieved_body: retrievedBody,
+      status,
+    },
+    cleaned,
+    leftover: storedUrl && !cleaned ? storedUrl : null,
+    error,
+  };
 }
 
 /**
@@ -474,6 +711,64 @@ async function runAuthFlowCapture(url: string, credentials: AuthCredentials): Pr
   }
 }
 
+async function runUploadFlowCapture(
+  url: string,
+  credentials: AuthCredentials | null,
+): Promise<UploadFlowCapture> {
+  const errors: string[] = [];
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    await installUploadOriginGuard(page, url);
+
+    const publicForms = await discoverUploadForms(page, url, false);
+    let protectedForms: DiscoveredUploadForm[] = [];
+    if (credentials) {
+      const loggedIn = await loginForUploadDiscovery(page, url, credentials);
+      if (loggedIn) {
+        protectedForms = (await discoverUploadForms(page, url, true)).filter(
+          (candidate) => !publicForms.some(
+            (publicForm) => publicForm.url === candidate.url && publicForm.form_index === candidate.form_index,
+          ),
+        );
+      } else {
+        errors.push("upload-discovery achter login niet mogelijk: login niet bevestigd");
+      }
+    }
+
+    const discoveredForms = [...publicForms, ...protectedForms].slice(0, MAX_UPLOAD_FORMS);
+    const probes: UploadProbeResult[] = [];
+    const leftoverFiles: string[] = [];
+    let uploadedCanaries = 0;
+    let cleanedCanaries = 0;
+    for (const form of discoveredForms) {
+      for (const probe of UPLOAD_PROBES) {
+        const observation = await uploadProbe(page, form, probe);
+        probes.push(observation.result);
+        if (observation.result.accepted) uploadedCanaries += 1;
+        if (observation.cleaned) cleanedCanaries += 1;
+        if (observation.leftover) leftoverFiles.push(observation.leftover);
+        if (observation.error) errors.push(`${form.url} (${probe.id}): ${observation.error}`);
+      }
+    }
+
+    return {
+      forms: discoveredForms.map(({ form_index: _formIndex, form_action: _formAction, ...form }) => form),
+      probes,
+      leftover_files: [...new Set(leftoverFiles)],
+      cleaned_up: uploadedCanaries > 0 && cleanedCanaries === uploadedCanaries,
+      errors,
+    };
+  } catch (err) {
+    errors.push(err instanceof Error ? err.message : String(err));
+    return { forms: [], probes: [], leftover_files: [], cleaned_up: false, errors };
+  } finally {
+    await browser?.close().catch(() => {});
+  }
+}
+
 export function createPlaywrightRunner(): BrowserRunner {
   return {
     async captureVitals(url): Promise<BrowserRunResult> {
@@ -837,6 +1132,17 @@ export function createPlaywrightRunner(): BrowserRunner {
     async captureAuthFlow(url, credentials): Promise<AuthFlowRunResult> {
       try {
         const capture = await runAuthFlowCapture(url, credentials);
+        return { ok: true, capture };
+      } catch (err) {
+        return {
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    },
+    async captureUploadFlow(url, credentials): Promise<UploadFlowRunResult> {
+      try {
+        const capture = await runUploadFlowCapture(url, credentials);
         return { ok: true, capture };
       } catch (err) {
         return {
