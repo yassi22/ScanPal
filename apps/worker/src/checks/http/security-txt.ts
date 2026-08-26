@@ -27,8 +27,8 @@ export const securityTxtCheck: CheckImplementation = {
   async run(ctx) {
     const origin = originOf(ctx.url);
     try {
-      const ok = await ctx.rateLimit(`security-txt:${origin}`, 30, 60);
-      if (!ok) {
+      const rate = await ctx.rateLimit(`security-txt:${origin}`, 30, 60);
+      if (!rate.ok) {
         return [
           {
             id: "security-txt",
