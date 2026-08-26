@@ -17,6 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import { LogoutButton } from "@/components/logout-button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { BrandLogo } from "@/components/brand-logo";
 
 type DashboardShellProps = {
   children: ReactNode;
@@ -84,8 +85,8 @@ function ExistingDashboardShell({
     <div className="min-h-screen">
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/dashboard" className="text-lg font-bold tracking-tight">
-            Scan<span className="text-brand">Pal</span>
+          <Link href="/dashboard" className="text-lg font-bold tracking-tight" aria-label="ScanPal dashboard">
+            <BrandLogo />
           </Link>
           <nav className="flex items-center gap-4 text-sm text-slate-400">
             {!needsOnboarding && (
@@ -124,7 +125,7 @@ function DashboardHomeShell({
       <header className="dashboard-topbar">
         <div className="dashboard-topbar-inner">
           <Link href="/dashboard" className="dashboard-brand" aria-label="ScanPal dashboard">
-            ScanPal
+            <BrandLogo />
           </Link>
 
           <div className="dashboard-topbar-actions">

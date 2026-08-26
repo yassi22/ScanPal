@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle } from "@phosphor-icons/react/dist/ssr";
 import { planList } from "@scanpal/shared";
 import { createClient } from "@/lib/supabase/server";
 import { PricingCards } from "@/components/pricing-cards";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const metadata = {
   title: "Pricing — ScanPal",
@@ -39,12 +40,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
       <header className="pricing-header">
         <div className="pricing-header-inner">
           <Link href="/" className="pricing-brand" aria-label="ScanPal home">
-            <span className="pricing-brand-mark" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </span>
-            ScanPal
+            <BrandLogo />
           </Link>
 
           <nav className="pricing-nav" aria-label="Primary navigation">

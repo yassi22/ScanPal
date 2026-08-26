@@ -105,6 +105,10 @@ import {
   type ReputationEvidence,
 } from "./reputation";
 import {
+  observabilityEvidenceSchema,
+  type ObservabilityEvidence,
+} from "./observability";
+import {
   findingSeveritySchema,
   severityOrder,
   severityRank,
@@ -171,6 +175,7 @@ export const findingSchema = z.object({
       wafResilienceEvidenceSchema,
       baasSecurityEvidenceSchema,
       reputationEvidenceSchema,
+      observabilityEvidenceSchema,
     ])
     .nullable(),
   /** Actieve-test-finding (plan 52): telt niet mee in de overall-score. */
@@ -336,6 +341,7 @@ export type InlineCheckLike = {
     | WafResilienceEvidence
     | BaasSecurityEvidence
     | ReputationEvidence
+    | ObservabilityEvidence
     | string
     | null;
 };
@@ -374,6 +380,7 @@ export function evidenceText(
     | WafResilienceEvidence
     | BaasSecurityEvidence
     | ReputationEvidence
+    | ObservabilityEvidence
     | null,
 ): string {
   if (!evidence) return "";
@@ -527,6 +534,14 @@ export function evidenceText(
         )
         .join(" | ");
       return `host=${evidence.host} ips=${evidence.ips.join(",")} edge=${evidence.edge_detected} severity=${evidence.worst_severity} ${sources}`;
+    }
+    if (evidence.kind === "observability") {
+      const labels = [
+        ...evidence.reporting_headers,
+        ...evidence.beacons,
+        ...(evidence.security_txt ? ["security.txt"] : []),
+      ];
+      return labels.length > 0 ? labels.join(", ") : "geen signalen";
     }
   }
   return `${evidence.request}\n${evidence.response}`;
@@ -816,6 +831,8 @@ const REMEDIATION: Record<string, string> = {
     "Voeg GDPR-signalen toe: een DSAR/data-verwijderingsverwijzing en een CMP/IAB-TCF-signaal zodat bezoekers hun rechten kunnen uitoefenen.",
   "stack-detection":
     "Informatief — geen actie vereist. Stacksignalen helpen bij het diagnosticeren van beveiligings- en SEO-problemen.",
+  "observability-signals":
+    "Goede praktijk (geen kwetsbaarheid): richt client-side error-reporting in (bijv. Sentry, Datadog RUM, Bugsnag) en publiceer CSP-reporting via `report-to`/`report-uri` plus een `Report-To`/`NEL`-header, zodat client-side fouten extern zichtbaar worden gerapporteerd. Publiceer daarnaast een /.well-known/security.txt met een `Contact:`-kanaal. Afwezigheid van deze signalen is geen bevinding — server-side audit-logging is van buitenaf niet observeerbaar.",
   "hosting-security":
     "Verberg de origin-server achter het CDN (overschrijf de `server`-header via Cloudflare Transform/Response-Header Rules of Vercel/Netlify headers-config). Zet `cache-control: private` op geauthenticeerde documenten (vercel.json `headers` / netlify.toml `[[headers]]` / Cloudflare Rules) zodat sessie-content niet via gedeelde caches lekt. Scan de productie-URL, niet een publieke preview/branch-deploy.",
   "redirects-mixed":

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function AuthLayout({
   children,
@@ -7,12 +8,7 @@ export default function AuthLayout({
     <div className="auth-shell">
       <header className="auth-header">
         <Link href="/" className="auth-brand" aria-label="ScanPal home">
-          <span className="auth-brand-mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
-          ScanPal
+          <BrandLogo />
         </Link>
       </header>
       <main className="auth-main">{children}</main>

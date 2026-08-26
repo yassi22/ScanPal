@@ -69,6 +69,11 @@ export const checkCatalog: CheckCatalogEntry[] = [
   // signalen (cache-hygiëne, origin-lek, preview-URL). Passief; hergebruikt de
   // bestaande fetch; geen dubbele header-findings met check 28.
   { id: "hosting-security", category: "http", name: "Hosting-fingerprint & platform-security", active: false },
+  // Plan 79: observability-signalen (G11 herdefinieerd) — passief, default-aan.
+  // Detecteert extern-zichtbare monitoring-signalen (reporting-headers, RUM/
+  // error-tracking-beacons, security.txt). Informatief: altijd info-severity,
+  // afwezigheid straft de score niet.
+  { id: "observability-signals", category: "http", name: "Observability & monitoring-signalen", active: false },
   // Plan 73: WAF/CDN-weerbaarheid & API-rate-limit-inspectie (G7) — passief:
   // fingerprint WAF/CDN uit response-headers + inspecteert rate-limit-headers op
   // de bestaande fetch. Beoordeelt andere signalen dan plan 69 (geen dubbele

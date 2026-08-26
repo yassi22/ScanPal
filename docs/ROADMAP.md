@@ -108,6 +108,9 @@ Fasering van de feature-lijst (`docs/FEATURES.md`) richting MVP. MVP = features 
 | `docs/plans/71-client-dep-cve.md` | 71 | 📝 |
 | `docs/plans/75-threat-intelligence.md` | 75 | ✅ |
 | `docs/plans/76-domain-ownership-verification.md` | 76 | ✅ |
+| `docs/plans/77-auth-flow-scanner.md` | G9 | ✅ (`apps/worker/src/checks/browser/auth-flow.ts`, ids `auth-*`, active-tests-gating) |
+| `docs/plans/78-file-upload-scanner.md` | G10 | ✅ (`apps/worker/src/checks/browser/file-upload.ts`, ids `upload-*`, active-tests-gating) |
+| `docs/plans/79-observability-signals.md` | 79 (G11) | ✅ (`packages/shared/src/observability.ts` + `apps/worker/src/checks/http/observability.ts`, geregistreerd; passief, info-only) |
 | `docs/gap-analysis-checkvibe-security-checks.md` | 68–71 + Tier 2/3-gaten | 📝 (gap-analyse `/security-checks`, 2026-08-21) |
 
 > **Update 2026-08-18 (geverifieerd tegen code)**: feature 36 (robots-sitemap) is opgeleverd — implementatie `apps/worker/src/checks/http/robots-sitemap.ts`, pure helpers + evidence-schema in `packages/shared/src/robots-sitemap.ts` (inspectRobotsTxt/inspectSitemap/evaluateRobotsSitemap), geregistreerd in `apps/worker/src/checks/registry.ts`; de check produceert findings over de geldigheid/kwaliteit van robots.txt en sitemap.xml zelf (los van de route-discovery-parse in plan 54). Alle 67 catalog-entries hebben nu een geregistreerde implementatie — geen open MVP-gap meer. Feature 54 (route-discovery) en 55 (aeo-engine-matrix) waren al eerder opgeleverd en staan nu ook ✅ in dit overzicht. Statussen hierboven zijn bijgewerkt.

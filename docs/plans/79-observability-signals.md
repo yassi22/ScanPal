@@ -2,7 +2,9 @@
 
 **Doel**: Gap **G11** ("Audit Logging & Monitoring") is in de gap-analyse bewust geparkeerd omdat je andermans logging **niet van buitenaf kunt observeren** — een echte black-box "audit-logging-scanner" zou verzonnen zijn. Dit plan herdefinieert G11 tot wat black-box wél eerlijk meetbaar is: **extern-zichtbare observability-signalen** als *indirecte* aanwijzing dat een site foutrapportage/monitoring heeft ingericht. Passief, default-aan. Het is uitdrukkelijk **geen** bewijs dat auth-events gelogd of bewaard worden.
 
-**Status**: 📝 Plan klaar (niet gestart). Feature 79. Vervangt de "needs-definition"-parkeerstatus van G11 door een strak afgebakende passieve check.
+**Status**: ✅ Opgeleverd (2026-08-26). Feature 79. Vervangt de "needs-definition"-parkeerstatus van G11 door een strak afgebakende passieve check. Implementatie: pure logica + vendorlijst in `packages/shared/src/observability.ts` (`detectReportingHeaders`/`detectBeacons`/`collectObservabilitySignals`/`classifyObservability`/`observabilityEvidence`), worker-check `apps/worker/src/checks/http/observability.ts`, geregistreerd in `registry.ts` (http-queue), catalog-entry `observability-signals` + REMEDIATION + evidence-schema in `findings.ts`. Unit-tests: `packages/shared/src/__tests__/observability.test.ts` (11) + `apps/worker/src/checks/http/__tests__/observability.test.ts` (3).
+
+**Score-besluit (verfijnd t.o.v. besluit 3):** de gekozen weging is *"klein positief gewicht, afwezigheid geen straf"*. In de pass-ratio-scoring (`severity: "info"` = pass, alles anders = straf; `active: true` = buiten score, maar dat wordt in de UI als "Active tests / Pro" gelabeld) kan een zichtbare disclaimer-regel niet tegelijk score-neutraal zijn. Besloten (gebruiker bevestigd): **beide branches severity `info`** — aanwezigheid `status: "pass"`, afwezigheid `status: "info"` met disclaimer. De check telt in de http-categorie dus altijd als pass en verlaagt de score nooit; ontbrekende telemetrie wordt niet gestraft.
 
 ## Besluiten
 
@@ -50,8 +52,8 @@
 
 ## Acceptatiecriteria
 
-- [ ] `observability-signals` detecteert reporting-headers (`Report-To`/`NEL`/CSP-reporting) en bekende RUM/error-tracking-beacons, met de gevonden signalen als evidence.
-- [ ] Afwezigheid van signalen levert hooguit `low`/info met een expliciete disclaimer dat dit géén bewijs van ontbrekende audit-logging is; nooit `medium`/`high`.
-- [ ] Geen score-straf (of gewicht ~0) voor ontbrekende signalen; geen dubbeltelling met de bestaande `security-txt`-check.
-- [ ] Herbruikt bestaande header-parsing/JS-libdetectie; geen nieuwe queue, externe API of credentials.
-- [ ] Pure `classifyObservability` is unit-getest, inclusief de niet-strafgevende afwezigheids-tak.
+- [x] `observability-signals` detecteert reporting-headers (`Report-To`/`NEL`/`Reporting-Endpoints`/CSP-reporting) en bekende RUM/error-tracking-beacons (Sentry, Datadog RUM, LogRocket, Bugsnag, New Relic Browser, Rollbar), met de gevonden signalen als evidence.
+- [x] Afwezigheid van signalen levert een `info`-severity finding met expliciete disclaimer dat dit géén bewijs van ontbrekende audit-logging is; nooit `low`/`medium`/`high`.
+- [x] Geen score-straf voor ontbrekende signalen (severity blijft `info` = pass); security.txt wordt alleen als signaal gebruikt, niet dubbel als finding gerapporteerd.
+- [x] Herbruikt bestaande header-parsing/JS-libdetectie + één guarded GET naar security.txt; geen nieuwe queue, externe API of credentials.
+- [x] Pure `classifyObservability` is unit-getest, inclusief de niet-strafgevende afwezigheids-tak.

@@ -28,6 +28,7 @@ import { createCruxFieldDataCheck } from "./http/crux-field-data";
 import { COMPLIANCE_CHECK_IDS, complianceCheck } from "./http/compliance";
 import { stackDetectionCheck } from "./http/stack-detection";
 import { hostingSecurityCheck } from "./http/hosting-fingerprint";
+import { observabilitySignalsCheck } from "./http/observability";
 import { wafResilienceCheck } from "./http/waf-resilience";
 import { createClientDepsCveCheck } from "./http/client-deps-cve";
 import { baasSecurityCheck } from "./http/baas-security";
@@ -130,6 +131,10 @@ export function buildRegistry(
       // Plan 69: hosting-fingerprint & platform-security (passief; hergebruikt
       // de homepage-fetch). Eén site-level finding met platform-context.
       toImplemented(hostingSecurityCheck),
+      // Plan 79: observability-signalen (G11 herdefinieerd) — passief, default-aan.
+      // Reporting-headers + RUM/error-tracking-beacons + security.txt. Informatief:
+      // altijd info-severity, afwezigheid straft de score niet.
+      toImplemented(observabilitySignalsCheck),
       // Plan 73: WAF/CDN-weerbaarheid & API-rate-limit-inspectie (G7) — passief:
       // fingerprint WAF/CDN + inspecteert rate-limit-headers op de bestaande
       // fetch. De actieve burst-helft (rate-limit-burst) wordt geproduceerd door
