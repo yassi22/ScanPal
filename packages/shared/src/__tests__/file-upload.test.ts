@@ -5,7 +5,6 @@ import {
   UPLOAD_SIZE_PROBE_BYTES,
   buildProbeBody,
   classifyUploadOutcome,
-  isClientSideOnlyRestriction,
   makeCanaryToken,
   outputDiffersFromSource,
 } from "../file-upload";
@@ -131,17 +130,15 @@ describe("outputDiffersFromSource", () => {
     const source = '  <?php echo "tok123"; ?>  ';
     expect(outputDiffersFromSource(source, '<?php echo "tok123"; ?>', "tok123")).toBe(false);
   });
-});
 
-describe("isClientSideOnlyRestriction", () => {
-  it("true wanneer een accept-attribute aanwezig is en de server toch opsloeg", () => {
-    expect(isClientSideOnlyRestriction({ acceptAttribute: "image/*", stored: true })).toBe(true);
-  });
-  it("false zonder accept-attribute", () => {
-    expect(isClientSideOnlyRestriction({ acceptAttribute: null, stored: true })).toBe(false);
-  });
-  it("false wanneer de server niet opsloeg", () => {
-    expect(isClientSideOnlyRestriction({ acceptAttribute: "image/*", stored: false })).toBe(false);
+  it("false voor een verbatim teruggegeven groot bestand wanneer bron én body gelijk zijn afgekapt (like-for-like)", () => {
+    // Regressie: de size-probe (token vooraan + veel vulling) die de server
+    // ongewijzigd opslaat en teruggeeft. Wordt de body afgekapt terwijl de bron
+    // ook afgekapt is, dan is dit géén executie — enkel opslag/teruggave.
+    const token = "a".repeat(32);
+    const truncate = (s: string) => (s.length > 2048 ? s.slice(0, 2048) + "…" : s);
+    const source = token + "A".repeat(2 * 1024 * 1024);
+    expect(outputDiffersFromSource(truncate(source), truncate(source), token)).toBe(false);
   });
 });
 

@@ -279,7 +279,16 @@ async function uploadProbe(
       accepted,
       stored_url: storedUrl,
       retrieved,
-      executed: retrieved && outputDiffersFromSource(source, retrievedBody, token),
+      // "Executed" alleen voor actieve types (php/svg/…): een octet-stream/size-
+      // probe kán per definitie niet server-side uitgevoerd worden, dus die mag
+      // nooit als RCE-klasse binnenkomen. Vergelijk bovendien like-for-like: de
+      // opgehaalde body is met truncateBody afgekapt, dus de bron ook — anders
+      // leest een verbatim-teruggegeven groot bestand (2 KiB afgekapt ≠ 2 MiB
+      // bron) valselijk als "uitgevoerd" (plan besluit 8: geen valse stelligheid).
+      executed:
+        retrieved &&
+        probe.active_type &&
+        outputDiffersFromSource(truncateBody(source), retrievedBody, token),
       retrieved_body: retrievedBody,
       status,
     },

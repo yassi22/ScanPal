@@ -185,18 +185,16 @@ export type UploadFlowRunResult =
  * wanneer het token niet in de respons voorkomt (geen bewijs), of wanneer de
  * respons — na trimmen — identiek is aan de geüploade bron (het bestand is
  * enkel teruggegeven/gedownload, niet uitgevoerd).
+ *
+ * De vergelijking is een letterlijke gelijkheidscheck, dus de aanroeper MOET
+ * `uploadedSource` en `retrievedBody` op dezelfde manier begrenzen/afkappen.
+ * Geef je een volledige bron mee terwijl de body is afgekapt, dan leest een
+ * verbatim-teruggegeven groot bestand valselijk als "uitgevoerd" (de afgekapte
+ * body is nooit gelijk aan de volledige bron).
  */
 export function outputDiffersFromSource(uploadedSource: string, retrievedBody: string, token: string): boolean {
   if (!retrievedBody.includes(token)) return false;
   return retrievedBody.trim() !== uploadedSource.trim();
-}
-
-/**
- * Herkent schijnbeveiliging: er is een client-side `accept=`-restrictie
- * aanwezig, maar de server sloeg het bestand toch op.
- */
-export function isClientSideOnlyRestriction(input: { acceptAttribute: string | null; stored: boolean }): boolean {
-  return input.acceptAttribute !== null && input.stored;
 }
 
 /**

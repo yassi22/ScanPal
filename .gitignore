@@ -27,6 +27,10 @@ npm-debug.log*
 # test
 coverage/
 
+# tool scratch output (regenerated session artifacts, not source)
+.playwright-cli/
+.impeccable/review/
+
 # local DeepSeekAndDestroy run state
 DeepSeekAndDestroy/**/ephemeral-db/
 DeepSeekAndDestroy/**/*.log
