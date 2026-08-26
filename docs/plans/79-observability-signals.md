@@ -2,7 +2,7 @@
 
 **Doel**: Gap **G11** ("Audit Logging & Monitoring") is in de gap-analyse bewust geparkeerd omdat je andermans logging **niet van buitenaf kunt observeren** — een echte black-box "audit-logging-scanner" zou verzonnen zijn. Dit plan herdefinieert G11 tot wat black-box wél eerlijk meetbaar is: **extern-zichtbare observability-signalen** als *indirecte* aanwijzing dat een site foutrapportage/monitoring heeft ingericht. Passief, default-aan. Het is uitdrukkelijk **geen** bewijs dat auth-events gelogd of bewaard worden.
 
-**Status**: 📝 Plan klaar (niet gestart). Feature 79. Vervangt de "needs-definition"-parkeerstatus van G11 door een strak afgebakende passieve check.
+**Status**: ✅ Opgeleverd. Feature 79. Vervangt de "needs-definition"-parkeerstatus van G11 door een strak afgebakende passieve check.
 
 ## Besluiten
 
@@ -50,8 +50,12 @@
 
 ## Acceptatiecriteria
 
-- [ ] `observability-signals` detecteert reporting-headers (`Report-To`/`NEL`/CSP-reporting) en bekende RUM/error-tracking-beacons, met de gevonden signalen als evidence.
-- [ ] Afwezigheid van signalen levert hooguit `low`/info met een expliciete disclaimer dat dit géén bewijs van ontbrekende audit-logging is; nooit `medium`/`high`.
-- [ ] Geen score-straf (of gewicht ~0) voor ontbrekende signalen; geen dubbeltelling met de bestaande `security-txt`-check.
-- [ ] Herbruikt bestaande header-parsing/JS-libdetectie; geen nieuwe queue, externe API of credentials.
-- [ ] Pure `classifyObservability` is unit-getest, inclusief de niet-strafgevende afwezigheids-tak.
+- [x] `observability-signals` detecteert reporting-headers (`Report-To`/`NEL`/CSP-reporting) en bekende RUM/error-tracking-beacons, met de gevonden signalen als evidence.
+- [x] Afwezigheid van signalen levert hooguit `low`/info met een expliciete disclaimer dat dit géén bewijs van ontbrekende audit-logging is; nooit `medium`/`high`.
+- [x] Geen score-straf (of gewicht ~0) voor ontbrekende signalen; geen dubbeltelling met de bestaande `security-txt`-check — `security_txt` is één boolean-signaal binnen de gezamenlijke classificatie, geen eigen severity-beoordeling.
+- [x] Herbruikt bestaande header-parsing/JS-libdetectie; geen nieuwe queue, externe API of credentials. (De security.txt-Contact-check hergebruikt de bestaande `parseSecurityTxt`-parser via één extra, rate-limited fetch — geen nieuwe infrastructuur.)
+- [x] Pure `classifyObservability` is unit-getest, inclusief de niet-strafgevende afwezigheids-tak.
+
+**Implementatienotities**:
+- `security_txt` wordt gemeten via een eigen, rate-limited fetch naar `/.well-known/security.txt` (hergebruikt `parseSecurityTxt`) — er is geen mechanisme in de worker om resultaten van andere checks binnen dezelfde scan te delen, dus "hergebruik" betekent hier de parser, niet de fetch zelf.
+- "Geen score-straf" bleek niet vanzelf te volgen uit `severity: "low"`: `passRatio` (in `scoring.ts`) telt elke niet-`info`-severity als niet-pass, dus een `low`-finding zou de categorie-/overall-score wél degraderen. Opgelost met een expliciete `SCORE_EXCLUDED_CHECK_IDS`-uitsluiting in `scoring.ts` (zelfde plek als de bestaande `!item.active`-uitsluiting) — `observability-signals` telt in geen van beide richtingen mee, ook niet bij aanwezigheid van signalen.

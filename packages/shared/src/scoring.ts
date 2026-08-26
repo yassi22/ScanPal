@@ -21,6 +21,18 @@ export type CategoryScores = z.infer<typeof categoryScoresSchema>;
 export const COMPLIANCE_WEIGHT = 0.1;
 
 /**
+ * Plan 79, besluit 3: `observability-signals` is uitdrukkelijk informatief en
+ * mag geen score-straf opleveren (afwezigheid van client-side telemetrie
+ * bewijst niets over server-side audit-logging). De `low`-severity op de
+ * afwezigheids-tak zou anders wél als niet-pass meewegen in de pass-ratio —
+ * daarom wordt dit check-id net als actieve-test-findings uitgesloten van
+ * zowel de categorie- als de overall-score.
+ */
+export const SCORE_EXCLUDED_CHECK_IDS: ReadonlySet<string> = new Set([
+  "observability-signals",
+]);
+
+/**
  * Pass-ratio per categorie: `info`-findings / totaal × 100 (zelfde logica als
  * de resultaten-UI, `CategoryScore` in scan-result.tsx). Actieve-test-findings
  * (plan 52) tellen niet mee; een categorie zonder checks is `null`
@@ -32,7 +44,10 @@ export function categoryScoresFromFindings(findings: Finding[]): CategoryScores 
   const scores = {} as CategoryScores;
   for (const category of scanCategorySchema.options) {
     const relevant = findings.filter(
-      (item) => item.category === category && !item.active,
+      (item) =>
+        item.category === category &&
+        !item.active &&
+        !SCORE_EXCLUDED_CHECK_IDS.has(item.check_id),
     );
     if (relevant.length === 0) {
       scores[category] = null;
@@ -52,7 +67,9 @@ export function categoryScoresFromFindings(findings: Finding[]): CategoryScores 
  * De aggregator (plan 27) schrijft deze als `scans.score`.
  */
 export function overallScoreFromFindings(findings: Finding[]): number {
-  const relevant = findings.filter((item) => !item.active);
+  const relevant = findings.filter(
+    (item) => !item.active && !SCORE_EXCLUDED_CHECK_IDS.has(item.check_id),
+  );
   if (relevant.length === 0) return 0;
   const compliance = relevant.filter((item) => item.category === "compliance");
   const rest = relevant.filter((item) => item.category !== "compliance");

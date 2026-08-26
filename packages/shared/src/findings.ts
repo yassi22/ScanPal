@@ -20,6 +20,10 @@ import {
   type HostingFingerprintEvidence,
 } from "./hosting-fingerprint";
 import {
+  observabilityEvidenceSchema,
+  type ObservabilityEvidence,
+} from "./observability";
+import {
   redirectsMixedEvidenceSchema,
   type RedirectsMixedEvidence,
 } from "./redirects-mixed";
@@ -148,6 +152,7 @@ export const findingSchema = z.object({
       metaTagsEvidenceSchema,
       stackDetectionEvidenceSchema,
       hostingFingerprintEvidenceSchema,
+      observabilityEvidenceSchema,
       redirectsMixedEvidenceSchema,
       subresourcesEvidenceSchema,
       structuredDataEvidenceSchema,
@@ -313,6 +318,7 @@ export type InlineCheckLike = {
     | MetaTagsEvidence
     | StackDetectionEvidence
     | HostingFingerprintEvidence
+    | ObservabilityEvidence
     | RedirectsMixedEvidence
     | SubresourcesEvidence
     | StructuredDataEvidence
@@ -351,6 +357,7 @@ export function evidenceText(
     | MetaTagsEvidence
     | StackDetectionEvidence
     | HostingFingerprintEvidence
+    | ObservabilityEvidence
     | RedirectsMixedEvidence
     | SubresourcesEvidence
     | StructuredDataEvidence
@@ -429,6 +436,9 @@ export function evidenceText(
         .map((s) => `${s.signal}:${s.severity} ${s.detail}`)
         .join(" | ");
       return `platform=${evidence.platform}${signals ? ` | ${signals}` : ""}`;
+    }
+    if (evidence.kind === "observability-signals") {
+      return `reporting_headers=${evidence.reporting_headers.join(",")} beacons=${evidence.beacons.join(",")} security_txt=${evidence.security_txt}`;
     }
     if (evidence.kind === "redirects-mixed") {
       return `redirected=${evidence.redirected} https_upgraded=${evidence.https_upgraded} final=${evidence.final_url} mixed=${evidence.mixed_content.length}`;
@@ -816,6 +826,8 @@ const REMEDIATION: Record<string, string> = {
     "Voeg GDPR-signalen toe: een DSAR/data-verwijderingsverwijzing en een CMP/IAB-TCF-signaal zodat bezoekers hun rechten kunnen uitoefenen.",
   "stack-detection":
     "Informatief — geen actie vereist. Stacksignalen helpen bij het diagnosticeren van beveiligings- en SEO-problemen.",
+  "observability-signals":
+    "Aanbeveling (goede praktijk, geen kwetsbaarheid): richt client-side error-reporting (bijv. Sentry, Datadog RUM, Bugsnag) en CSP-reporting (report-to/report-uri, Report-To/NEL) in zodat fouten die gebruikers ondervinden zichtbaar worden. Afwezigheid van deze extern-zichtbare signalen zegt niets over of er server-side audit-logging is — dat blijft van buitenaf onmeetbaar.",
   "hosting-security":
     "Verberg de origin-server achter het CDN (overschrijf de `server`-header via Cloudflare Transform/Response-Header Rules of Vercel/Netlify headers-config). Zet `cache-control: private` op geauthenticeerde documenten (vercel.json `headers` / netlify.toml `[[headers]]` / Cloudflare Rules) zodat sessie-content niet via gedeelde caches lekt. Scan de productie-URL, niet een publieke preview/branch-deploy.",
   "redirects-mixed":

@@ -112,6 +112,22 @@ describe("categoryScoresFromFindings", () => {
     ]);
     expect(scores.http).toBeNull();
   });
+
+  it("excludeert observability-signals uit de score (plan 79, besluit 3 — geen straf voor afwezige signalen)", () => {
+    const withoutObservability = categoryScoresFromFindings([
+      makeFinding({ category: "http", severity: "info" }),
+      makeFinding({ category: "http", severity: "info" }),
+    ]);
+    const withObservabilityAbsence = categoryScoresFromFindings([
+      makeFinding({ category: "http", severity: "info" }),
+      makeFinding({ category: "http", severity: "info" }),
+      makeFinding({ check_id: "observability-signals", category: "http", severity: "low" }),
+    ]);
+    // De score verandert niet door de observability-absence-finding toe te
+    // voegen — dat is precies "geen score-straf (of gewicht ~0)".
+    expect(withObservabilityAbsence.http).toBe(withoutObservability.http);
+    expect(withObservabilityAbsence.http).toBe(100);
+  });
 });
 
 describe("overallScoreFromFindings (compliance-gewicht, plan 61)", () => {
@@ -152,5 +168,17 @@ describe("overallScoreFromFindings (compliance-gewicht, plan 61)", () => {
       makeFinding({ category: "compliance", severity: "high", active: true }),
     ];
     expect(overallScoreFromFindings(scores)).toBe(100);
+  });
+
+  it("telt observability-signals niet mee in de overall-score (plan 79)", () => {
+    const scores = [
+      makeFinding({ category: "http", severity: "info" }),
+      makeFinding({ category: "http", severity: "high" }),
+      makeFinding({ check_id: "observability-signals", category: "http", severity: "low" }),
+    ];
+    // Zonder de observability-finding: 1 pass van 2 = 50. Met erbij (maar
+    // geëxcludeerd) moet de overall-score ongewijzigd blijven op 50, niet
+    // dalen naar 33 (1 van 3).
+    expect(overallScoreFromFindings(scores)).toBe(50);
   });
 });

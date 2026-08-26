@@ -16,6 +16,7 @@ import {
   COMPLIANCE_DISCLAIMER,
   computeCruxDivergences,
   scanCategories,
+  SCORE_EXCLUDED_CHECK_IDS,
   type CategoryProgress,
   type CruxData,
   type CwvEvidence,
@@ -772,7 +773,10 @@ function CategoryScore({
   items: Finding[];
 }) {
   const relevant = items.filter(
-    (item) => item.category === category && !item.active,
+    (item) =>
+      item.category === category &&
+      !item.active &&
+      !SCORE_EXCLUDED_CHECK_IDS.has(item.check_id),
   );
   if (relevant.length === 0) {
     return (

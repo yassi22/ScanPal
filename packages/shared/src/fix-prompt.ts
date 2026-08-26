@@ -145,6 +145,8 @@ export const fixPromptTemplates: Record<string, string> = {
     "You are a security engineer. Add signature verification to the webhook handlers.",
   "tenant-isolation":
     "You are a security engineer. Fix the cross-tenant data access issue found (enforce tenant scoping on every query).",
+  "observability-signals":
+    "You are a platform engineer. This is a good-practice recommendation, not a vulnerability: set up client-side error reporting (e.g. Sentry, Datadog RUM, Bugsnag) and CSP/NEL reporting (report-to/report-uri, Report-To, NEL headers) so client-side errors become visible. Absence of these externally-visible signals does not prove there is no server-side audit logging.",
   "hosting-security":
     "You are a platform/security engineer. Hide the origin server behind the CDN (override the server header) and set cache-control: private on authenticated documents so session content does not leak via shared caches.",
   "subdomain-takeover":

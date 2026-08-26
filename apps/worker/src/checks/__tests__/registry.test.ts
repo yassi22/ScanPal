@@ -45,7 +45,8 @@ describe("skeletonTotals (progress-skelet)", () => {
     // Plan 74: baas-security produceert 3 passieve http-checks
     // (supabase/firebase/convex-security) → http 27->30.
     // Plan 75: threat-intel voegt één passieve site-level http-check toe → 31.
-    expect(totals.http).toBe(31);
+    // Plan 79: observability-signals is een nieuwe passieve http-check → 32.
+    expect(totals.http).toBe(32);
     expect(totals.seo).toBe(6);
     expect(totals.aeo).toBe(9);
     expect(totals.compliance).toBe(5);
@@ -58,10 +59,10 @@ describe("skeletonTotals (progress-skelet)", () => {
     const registry = buildRegistry(rateLimit, mockRunner, cruxDeps);
     const totals = skeletonTotals(registry, ["http", "browser"], true);
     // 12 actieve-test-catalog-checks (plan 73 voegt rate-limit-burst toe) +
-    // 31 passieve http-checks (plan 75 voegt threat-intel toe) +
+    // 32 passieve http-checks (plan 79 voegt observability-signals toe) +
     // 7 auth-flow-checks (plan 77) + 5 upload-checks (plan 78), beide alleen
     // met active-tests. De upload-ids zitten niet ook in active-tests zelf.
-    expect(totals.http).toBe(55);
+    expect(totals.http).toBe(56);
     expect(totals.compliance).toBe(5);
   });
 

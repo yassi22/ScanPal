@@ -15,7 +15,7 @@ Twee ✅'s met een slag om de arm (diepte niet geverifieerd, niet als gap geteld
 
 **Al gedekt (26):** SQL Injection · XSS · API Key Exposure (`secrets-in-html`+`secrets-in-bundles`) · CORS · CSRF · Open Redirect · GraphQL (introspection; injection-diepte onbevestigd) · JWT · Debug Endpoints · Input Validation · Source Code SAST (`semgrep`) · Webhook Signature · IDOR · Tenant Isolation · Security Headers (8) · SSL/TLS · Cookie & Session (5) · GitHub Repo Security (`gitleaks`+`repo-health`) · Legal Compliance (5) · Uptime & Status Pages · Domain Watchtower · Performance & CWV (`core-web-vitals`+`crux-field-data`) · Accessibility WCAG · SEO¹ · AEO¹ · Dependency Vulnerability (`osv-scanner` — **zie G4-kanttekening**).
 
-**Gaten (10 + 1 herdefinieerd):** hieronder, gegroepeerd naar bouwkost, niet naar CheckVibe-categorie. **Status (2026-08-25):** G1–G8 opgeleverd ✅ (plannen 68–75); G9/G10/G11 hebben een plan 📝 (77/78/79), met de eigendom-verificatie-voorwaarde al opgeleverd (plan 76). Elk gat is nu gedekt door code of een plan.
+**Gaten (10 + 1 herdefinieerd):** hieronder, gegroepeerd naar bouwkost, niet naar CheckVibe-categorie. **Status (2026-08-26):** G1–G8 + G11 opgeleverd ✅ (plannen 68–75, 79); G9/G10 hebben een plan 📝 (77/78), met de eigendom-verificatie-voorwaarde al opgeleverd (plan 76). Elk gat is nu gedekt door code of een plan.
 
 ---
 
@@ -54,7 +54,7 @@ Deze erven de gating van plan 52 (`active: true` + opt-in + Pro).
 
 ## G11 — herdefinieerd (was: parkeren — te definiëren)
 
-- **G11 — Audit Logging & Monitoring.** CheckVibe claimt "verifies security events are properly logged". Black-box heeft dit geen betrouwbare betekenis (je kunt andermans logging niet observeren). **Besloten**: niet blind een audit-logging-scanner verzinnen, maar herdefiniëren tot wat black-box wél eerlijk meetbaar is — *extern-zichtbare observability-signalen* (CSP-reporting/`Report-To`/`NEL`-headers + error-tracking/RUM-beacons + security.txt) als indirecte aanwijzing. Afwezigheid → hooguit `low`/info met expliciete disclaimer, nooit een straf. Zie [plan 79](plans/79-observability-signals.md) 📝.
+- **G11 — Audit Logging & Monitoring.** CheckVibe claimt "verifies security events are properly logged". Black-box heeft dit geen betrouwbare betekenis (je kunt andermans logging niet observeren). **Besloten**: niet blind een audit-logging-scanner verzinnen, maar herdefiniëren tot wat black-box wél eerlijk meetbaar is — *extern-zichtbare observability-signalen* (CSP-reporting/`Report-To`/`NEL`-headers + error-tracking/RUM-beacons + security.txt) als indirecte aanwijzing. Afwezigheid → hooguit `low`/info met expliciete disclaimer, nooit een straf. Zie [plan 79](plans/79-observability-signals.md) ✅.
 
 ---
 
@@ -65,7 +65,7 @@ Deze erven de gating van plan 52 (`active: true` + opt-in + Pro).
 3. ✅ **G5 (Supabase/Firebase)** — opgeleverd (plan 74).
 4. ✅ **G7 / G6** — opgeleverd (plannen 73/72).
 5. 📝 **Tier 3 (G9/G10)** — plannen klaar (77/78); hoogste risico/gating. De eigendom-verificatie-flow (voorwaarde) is opgeleverd (plan 76), dus deze kunnen opgepakt worden.
-6. 📝 **G11** — herdefinieerd tot passieve observability-signalen (plan 79); lage prioriteit, geen straf-severity.
+6. ✅ **G11** — herdefinieerd tot passieve observability-signalen, opgeleverd (plan 79); lage prioriteit, geen straf-severity.
 
 ## Classificatie-legenda
 
